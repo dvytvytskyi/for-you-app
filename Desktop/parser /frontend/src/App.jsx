@@ -30,8 +30,8 @@ export default function App() {
   useEffect(() => {
     const fetchDefault = async () => {
       try {
-        const res = await fetch("/medblue.json", { cache: "no-store" });
-        if (!res.ok) throw new Error("Missing /medblue.json in public/");
+        const res = await fetch("/sunset_bay.json", { cache: "no-store" });
+        if (!res.ok) throw new Error("Missing /sunset_bay.json in public/");
         const json = await res.json();
         setData(json);
       } catch (e) {
@@ -73,7 +73,7 @@ export default function App() {
     };
   }, []);
 
-  const projectName = data?.project_info?.project_name || data?.general_info?.project_name || "MEDBLUE MARBELLA";
+  const projectName = data?.project_info?.project_name || data?.general_info?.project_name || "SUNSET BAY ESTEPONA";
   const description = data?.project_info?.description || data?.general_info?.description || "";
   const url = data?.project_info?.url || data?.general_info?.url || "";
 
@@ -95,6 +95,11 @@ export default function App() {
   const unitsData = useMemo(() => {
     const allUnits = data?.ai_analysis?.units_analysis?.units_data || [];
     return allUnits.filter(unit => unit.unit_type === 'apartment_unit_plan');
+  }, [data]);
+
+  // Таблиця цін
+  const priceData = useMemo(() => {
+    return data?.price_availability?.responsive_table?.units_data || [];
   }, [data]);
 
   const filteredGalleryImages = useMemo(() => {
@@ -150,7 +155,18 @@ export default function App() {
                 <LocationCard locationData={locationData} projectName={projectName} />
               </section>
 
-              {/* 4. Планування юнітів */}
+              {/* 4. Таблиця цін */}
+              {priceData.length > 0 && (
+                <section className="mb-16">
+                  <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-2xl font-semibold tracking-tight">Ціни та доступність</h2>
+                    <span className="text-sm text-slate-500">{priceData.length} квартир</span>
+                  </div>
+                  <PriceTable prices={priceData} />
+                </section>
+              )}
+
+              {/* 5. Планування юнітів */}
               <section className="mb-16">
                 <div className="flex items-center justify-between mb-8">
                   <h2 className="text-2xl font-semibold tracking-tight">Планування квартир</h2>
@@ -296,6 +312,51 @@ function GalleryGrid({ images }) {
         onNavigate={(i) => setOpenIndex(i)}
       />
     </>
+  );
+}
+
+function PriceTable({ prices }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse border border-slate-200 rounded-xl overflow-hidden">
+        <thead className="bg-slate-50">
+          <tr>
+            <th className="border border-slate-200 px-4 py-3 text-left text-sm font-semibold text-slate-900">Референс</th>
+            <th className="border border-slate-200 px-4 py-3 text-left text-sm font-semibold text-slate-900">Тип</th>
+            <th className="border border-slate-200 px-4 py-3 text-left text-sm font-semibold text-slate-900">Поверх</th>
+            <th className="border border-slate-200 px-4 py-3 text-left text-sm font-semibold text-slate-900">Спальні</th>
+            <th className="border border-slate-200 px-4 py-3 text-left text-sm font-semibold text-slate-900">Ванні</th>
+            <th className="border border-slate-200 px-4 py-3 text-left text-sm font-semibold text-slate-900">Площа (м²)</th>
+            <th className="border border-slate-200 px-4 py-3 text-left text-sm font-semibold text-slate-900">Тераса (м²)</th>
+            <th className="border border-slate-200 px-4 py-3 text-left text-sm font-semibold text-slate-900">Ціна (€)</th>
+            <th className="border border-slate-200 px-4 py-3 text-left text-sm font-semibold text-slate-900">Статус</th>
+          </tr>
+        </thead>
+        <tbody>
+          {prices.map((price, idx) => (
+            <tr key={idx} className="hover:bg-slate-50 transition-colors">
+              <td className="border border-slate-200 px-4 py-3 text-sm font-medium text-slate-900">{price.ref}</td>
+              <td className="border border-slate-200 px-4 py-3 text-sm text-slate-700">{price.type}</td>
+              <td className="border border-slate-200 px-4 py-3 text-sm text-slate-700">{price.floor}</td>
+              <td className="border border-slate-200 px-4 py-3 text-sm text-slate-700">{price.beds}</td>
+              <td className="border border-slate-200 px-4 py-3 text-sm text-slate-700">{price.baths}</td>
+              <td className="border border-slate-200 px-4 py-3 text-sm text-slate-700">{price.built}</td>
+              <td className="border border-slate-200 px-4 py-3 text-sm text-slate-700">{price.terrace}</td>
+              <td className="border border-slate-200 px-4 py-3 text-sm font-semibold text-green-600">{price.price}</td>
+              <td className="border border-slate-200 px-4 py-3 text-sm">
+                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                  price.availability === 'Disponible' 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  {price.availability}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

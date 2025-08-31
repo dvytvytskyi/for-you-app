@@ -143,9 +143,11 @@ def get_projects_list_only():
     finally:
         auth_manager.close()
 
-def parse_general_info():
-    """Парсинг general_info для MEDBLUE MARBELLA"""
-    print("Парсинг general_info для MEDBLUE MARBELLA...")
+def parse_general_info(project_name=None):
+    """Парсинг general_info для проекту"""
+    if not project_name:
+        project_name = "MEDBLUE MARBELLA"  # За замовчуванням
+    print(f"Парсинг general_info для {project_name}...")
     
     auth_manager = AuthManager()
     try:
@@ -164,12 +166,12 @@ def parse_general_info():
         parser = ProjectParser(driver)
         
         # Парсинг general_info для конкретного проекту
-        success = parser.parse_project_general_info("MEDBLUE MARBELLA")
+        success = parser.parse_project_general_info(project_name)
         
         if success:
-            print("✅ General_info успішно зпарсено та збережено")
+            print(f"✅ General_info успішно зпарсено та збережено для {project_name}")
         else:
-            print("❌ Помилка парсингу general_info")
+            print(f"❌ Помилка парсингу general_info для {project_name}")
         
         # Вихід з системи
         auth_manager.logout()
@@ -179,9 +181,11 @@ def parse_general_info():
     finally:
         auth_manager.close()
 
-def parse_media():
-    """Парсинг media для MEDBLUE MARBELLA"""
-    print("Парсинг media для MEDBLUE MARBELLA...")
+def parse_media(project_name=None):
+    """Парсинг media для проекту"""
+    if not project_name:
+        project_name = "MEDBLUE MARBELLA"  # За замовчуванням
+    print(f"Парсинг media для {project_name}...")
     
     auth_manager = AuthManager()
     try:
@@ -200,12 +204,12 @@ def parse_media():
         parser = ProjectParser(driver)
         
         # Парсинг media для конкретного проекту
-        success = parser.parse_project_media("MEDBLUE MARBELLA")
+        success = parser.parse_project_media(project_name)
         
         if success:
-            print("✅ Media успішно зпарсено та збережено")
+            print(f"✅ Media успішно зпарсено та збережено для {project_name}")
         else:
-            print("❌ Помилка парсингу media")
+            print(f"❌ Помилка парсингу media для {project_name}")
         
         # Вихід з системи
         auth_manager.logout()
@@ -251,9 +255,11 @@ def parse_price_availability():
     finally:
         auth_manager.close()
 
-def parse_plans():
-    """Парсинг планів для MEDBLUE MARBELLA"""
-    print("Парсинг планів для MEDBLUE MARBELLA...")
+def parse_plans(project_name=None):
+    """Парсинг планів для проекту"""
+    if not project_name:
+        project_name = "MEDBLUE MARBELLA"  # За замовчуванням
+    print(f"Парсинг планів для {project_name}...")
     
     auth_manager = AuthManager()
     try:
@@ -272,12 +278,12 @@ def parse_plans():
         parser = ProjectParser(driver)
         
         # Парсинг планів для конкретного проекту
-        success = parser.parse_project_plans("MEDBLUE MARBELLA")
+        success = parser.parse_project_plans(project_name)
         
         if success:
-            print("✅ Плани успішно зпарсено та збережено")
+            print(f"✅ Плани успішно зпарсено та збережено для {project_name}")
         else:
-            print("❌ Помилка парсингу планів")
+            print(f"❌ Помилка парсингу планів для {project_name}")
         
         # Вихід з системи
         auth_manager.logout()
@@ -411,13 +417,16 @@ if __name__ == "__main__":
             auth_manager = AuthManager()
             auth_manager.clear_session()
         elif command == "general_info":
-            parse_general_info()
+            project_name = sys.argv[2] if len(sys.argv) > 2 else None
+            parse_general_info(project_name)
         elif command == "media":
-            parse_media()
+            project_name = sys.argv[2] if len(sys.argv) > 2 else None
+            parse_media(project_name)
         elif command == "price":
             parse_price_availability()
         elif command == "plans":
-            parse_plans()
+            project_name = sys.argv[2] if len(sys.argv) > 2 else None
+            parse_plans(project_name)
         elif command == "quality":
             parse_quality_specs()
         elif command == "brochure":
