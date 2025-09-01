@@ -1,0 +1,995 @@
+{
+  "project_info": {
+    "name": "Imagine by Marein",
+    "slug": "imagine-by-marein",
+    "location": "Bel Air, Estepona, Costa del Sol",
+    "price_range": "2.890.000€",
+    "units": 15,
+    "type": "Exclusive Villas",
+    "ai_processed_at": "2025-09-01 15:21:06"
+  },
+  "description": {
+    "key_features": [
+      "Private enclave of 15 exclusive villas",
+      "Southeast-facing villas",
+      "Two spacious levels with basement option",
+      "High-end finishes",
+      "Private swimming pools",
+      "Lush private gardens",
+      "Sea views from upper floors",
+      "Private parking for two vehicles",
+      "Electric car charging station",
+      "Gated community"
+    ],
+    "amenities": [
+      "Anantara Villa Padierna Palace Hotel & Golf Resort",
+      "METT Hotel & Beach Resort",
+      "Shops and restaurants",
+      "Schools",
+      "Golden beaches",
+      "Top-tier golf courses",
+      "5-star hotels",
+      "Exclusive beach clubs"
+    ]
+  },
+  "renders": {
+    "summary": {
+      "total_count": 34,
+      "processed_with_ai": true
+    },
+    "documents": [
+      {
+        "filename": "Solarium-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Solarium 5.jpg",
+        "path": "render/Solarium-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Solarium 5.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Solarium-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Solarium 5.jpg",
+        "type": "render",
+        "size": 18847,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"Solarium/Rooftop Terrace\",\n  \"key_features\": [\n    \"Outdoor seating area\",\n    \"Infinity pool\",\n    \"Modular sofa\",\n    \"Coffee tables\",\n    \"Planters with plants\",\n    \"Rugs\",\n    \"Elevated view\"\n  ],\n  \"style_and_design_elements\": [\n    \"Modern\",\n    \"Minimalist\",\n    \"Mediterranean influences\",\n    \"Neutral color palette\",\n    \"Natural materials\",\n    \"Clean lines\"\n  ],\n  \"quality_assessment\": {\n    \"resolution\": \"High\",\n    \"lighting\": \"Excellent\",\n    \"rendering_quality\": \"Excellent\",\n    \"overall_quality\": \"Excellent\"\n  },\n  \"text_labels\": [],\n  \"overall_impression\": \"The image presents a luxurious and serene solarium with high-end outdoor furniture and a stunning view. The design is sophisticated and inviting, emphasizing relaxation and outdoor living.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Aseo-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Bathroom 2.jpg",
+        "path": "render/Aseo-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Bathroom 2.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Aseo-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Bathroom 2.jpg",
+        "type": "render",
+        "size": 17684,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"Bathroom\",\n  \"key_features\": [\n    \"Floating vanity\",\n    \"Round mirror\",\n    \"Textured wall panels\",\n    \"Integrated lighting\",\n    \"Minimalist design\",\n    \"Neutral color palette\"\n  ],\n  \"style_and_design_elements\": [\n    \"Modern\",\n    \"Minimalist\",\n    \"Contemporary\",\n    \"Neutral tones\",\n    \"Natural materials\",\n    \"Clean lines\"\n  ],\n  \"quality_assessment\": \"High-quality render, realistic lighting and textures.\",\n  \"text_or_labels\": [],\n  \"overall_impression\": \"A modern, minimalist bathroom design with a calming and sophisticated atmosphere.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Sotano-Salon-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Basement-Living.jpg",
+        "path": "render/Sotano-Salon-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Basement-Living.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Sotano-Salon-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Basement-Living.jpg",
+        "type": "render",
+        "size": 16396,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"basement living room\",\n  \"key_features\": [\n    \"built-in shelving units\",\n    \"fireplace (likely electric)\",\n    \"recessed lighting\",\n    \"coffered ceiling\",\n    \"soft seating\",\n    \"coffee table\"\n  ],\n  \"style_and_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"contemporary\",\n    \"neutral color palette\",\n    \"wood paneling\",\n    \"indirect lighting\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_or_labels_visible\": [],\n  \"overall_impression\": \"The image depicts a high-quality, modern basement living room with a calm and sophisticated atmosphere. The design is clean and functional, with a focus on creating a relaxing and comfortable space.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Fachada-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Frontview.jpg",
+        "path": "render/Fachada-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Frontview.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Fachada-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Frontview.jpg",
+        "type": "render",
+        "size": 22087,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"exterior\",\n  \"key_features\": [\n    \"modern villa\",\n    \"swimming pool\",\n    \"large windows\",\n    \"balconies\",\n    \"landscaped garden\",\n    \"outdoor seating area\"\n  ],\n  \"style_and_design_elements\": [\n    \"contemporary\",\n    \"minimalist\",\n    \"clean lines\",\n    \"white exterior\",\n    \"dark accents\",\n    \"large glass panels\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [],\n  \"overall_impression\": \"A luxurious and modern villa with a sleek design and high-end features. The render is of high quality and effectively showcases the property's appeal.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Cocina-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Comedor.jpg",
+        "path": "render/Cocina-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Comedor.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Cocina-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Comedor.jpg",
+        "type": "render",
+        "size": 21439,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"Dining Room\",\n  \"key_features\": [\n    \"Large dining table with seating for eight\",\n    \"Modern light fixtures\",\n    \"Floor-to-ceiling windows with views of a pool and garden\",\n    \"Neutral color palette\",\n    \"Luxury furnishings\",\n    \"Open-plan design\"\n  ],\n  \"style_and_design_elements\": [\n    \"Contemporary\",\n    \"Minimalist\",\n    \"Modern\",\n    \"Luxury\",\n    \"Open-concept\"\n  ],\n  \"quality_assessment\": \"High-quality render with excellent detail and realistic lighting\",\n  \"text_or_labels_visible\": [],\n  \"overall_impression\": \"The image depicts a luxurious and spacious dining room in a modern villa. The design is sophisticated and elegant, with a focus on natural light and outdoor views. The high-quality render creates a realistic and inviting atmosphere.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Sotano-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Sitting-Area.jpg",
+        "path": "render/Sotano-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Sitting-Area.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Sotano-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Sitting-Area.jpg",
+        "type": "render",
+        "size": 20920,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"sitting area\",\n  \"key_features_visible\": [\n    \"large sectional sofa\",\n    \"coffee table\",\n    \"armchair\",\n    \"built-in shelving\",\n    \"large windows\",\n    \"view of outdoor patio with greenery\",\n    \"recessed lighting\",\n    \"modern fireplace\",\n    \"wooden wall paneling\"\n  ],\n  \"style_and_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"contemporary\",\n    \"neutral color palette\",\n    \"clean lines\",\n    \"natural materials\",\n    \"high ceilings\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_or_labels_visible\": [],\n  \"overall_impression\": \"The image depicts a luxurious and spacious sitting area with a modern and minimalist design. The use of natural light and neutral colors creates a calm and inviting atmosphere. The high-quality render showcases attention to detail and a sophisticated aesthetic.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Baño-principal-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Bathroom.jpg",
+        "path": "render/Baño-principal-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Bathroom.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Baño-principal-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Bathroom.jpg",
+        "type": "render",
+        "size": 30701,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"bathroom\",\n  \"key_features\": [\n    \"double vanity with stone countertop\",\n    \"large mirror\",\n    \"walk-in shower\",\n    \"access to outdoor area\",\n    \"modern lighting fixtures\",\n    \"wooden cabinetry\"\n  ],\n  \"style_and_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"contemporary\",\n    \"neutral color palette\",\n    \"natural materials (wood and stone)\",\n    \"clean lines\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_or_labels\": [],\n  \"overall_impression\": \"The image depicts a luxurious and modern bathroom with high-end finishes and a spa-like atmosphere. The design is clean, sophisticated, and inviting.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Sotano-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Kitchen-Area.jpg",
+        "path": "render/Sotano-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Kitchen-Area.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Sotano-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Kitchen-Area.jpg",
+        "type": "render",
+        "size": 20971,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"kitchen/bar area\",\n  \"key_features\": [\n    \"built-in bar\",\n    \"shelving\",\n    \"large circular window\",\n    \"modern bar stools\",\n    \"integrated lighting\",\n    \"sliding glass doors leading to outdoor area\",\n    \"minimalist design\"\n  ],\n  \"style_and_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"contemporary\",\n    \"clean lines\",\n    \"neutral color palette\",\n    \"subtle Asian influences\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_or_labels_visible\": [],\n  \"overall_impression\": \"The image depicts a high-quality, modern kitchen/bar area with a sleek and sophisticated design. The use of neutral colors and clean lines creates a calming and elegant atmosphere. The large circular window adds a unique architectural element and brings in natural light.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Exterior-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Exterior-Area.jpg",
+        "path": "render/Exterior-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Exterior-Area.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Exterior-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Exterior-Area.jpg",
+        "type": "render",
+        "size": 21366,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"Exterior Area; Outdoor Kitchen; Patio; Garden\",\n  \"key_features\": [\n    \"Outdoor kitchen with built-in appliances\",\n    \"Covered patio with dining area\",\n    \"Lounge seating area\",\n    \"Fire pit\",\n    \"Landscaped garden\",\n    \"Modern design\",\n    \"Clean lines\",\n    \"Minimalist aesthetic\"\n  ],\n  \"style_and_design_elements\": [\n    \"Contemporary\",\n    \"Minimalist\",\n    \"Modern\",\n    \"Clean lines\",\n    \"Neutral color palette\",\n    \"Natural materials (wood)\",\n    \"Integrated design\"\n  ],\n  \"quality_assessment\": \"High-quality render; realistic depiction of materials and lighting; good composition\",\n  \"text_labels\": [],\n  \"overall_impression\": \"The image presents a luxurious and modern outdoor living space. The design is sophisticated and inviting, emphasizing relaxation and entertainment. The high-quality render enhances the appeal and provides a clear vision of the property's potential.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Sotano-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Winnery.jpg",
+        "path": "render/Sotano-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Winnery.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Sotano-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Winnery.jpg",
+        "type": "render",
+        "size": 25125,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"wine cellar\",\n  \"key_features\": [\n    \"built-in wine racks\",\n    \"stone flooring\",\n    \"recessed lighting\",\n    \"textured wall\",\n    \"modern design\"\n  ],\n  \"style_and_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"contemporary\",\n    \"clean lines\",\n    \"neutral color palette\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_or_labels\": [],\n  \"overall_impression\": \"A sophisticated and well-designed wine cellar with ample storage space. The minimalist design creates a clean and elegant atmosphere.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Cocina-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Comedor-Views.jpg",
+        "path": "render/Cocina-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Comedor-Views.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Cocina-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Comedor-Views.jpg",
+        "type": "render",
+        "size": 23267,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"Dining Room/Kitchen\",\n  \"key_features\": [\n    \"Large windows with garden views\",\n    \"Modern dining table and chairs\",\n    \"Built-in cabinetry and shelving\",\n    \"Marble wall feature\",\n    \"Contemporary lighting fixtures\",\n    \"Open-plan design\",\n    \"High ceilings\"\n  ],\n  \"style_and_design_elements\": [\n    \"Contemporary\",\n    \"Modern\",\n    \"Minimalist\",\n    \"Luxury\",\n    \"Neutral color palette\",\n    \"Natural light\",\n    \"High-end finishes\"\n  ],\n  \"quality_assessment\": \"High-quality render; realistic depiction of materials and lighting.\",\n  \"text_or_labels\": [],\n  \"overall_impression\": \"The image presents a luxurious and modern dining room with a seamless transition to an outdoor space. The design is sophisticated and inviting, emphasizing natural light and high-end finishes.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Fachada-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Facade-Night.jpg",
+        "path": "render/Fachada-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Facade-Night.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Fachada-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Facade-Night.jpg",
+        "type": "render",
+        "size": 20718,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"exterior\",\n  \"key_features\": [\n    \"modern villa\",\n    \"swimming pool\",\n    \"large windows\",\n    \"outdoor seating area\",\n    \"two stories\",\n    \"clean lines\",\n    \"minimalist design\"\n  ],\n  \"style_and_design_elements\": [\n    \"contemporary\",\n    \"minimalist\",\n    \"modern\",\n    \"clean lines\",\n    \"large glass windows\",\n    \"neutral color palette\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_or_labels\": [],\n  \"overall_impression\": \"A luxurious and modern villa with a sleek design and high-end features. The image is well-rendered and showcases the property in a positive light.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Fachada-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Facade-Pool.jpg",
+        "path": "render/Fachada-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Facade-Pool.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Fachada-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Facade-Pool.jpg",
+        "type": "render",
+        "size": 22375,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"exterior\",\n  \"key_features\": [\n    \"modern villa\",\n    \"swimming pool\",\n    \"large windows\",\n    \"outdoor seating area\",\n    \"landscaped garden\"\n  ],\n  \"style_and_design_elements\": [\n    \"contemporary\",\n    \"minimalist\",\n    \"clean lines\",\n    \"white exterior\",\n    \"dark accents\",\n    \"large glass panels\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [],\n  \"overall_impression\": \"A high-quality rendering of a luxurious, modern villa with a focus on clean lines and spacious outdoor living areas. The image conveys a sense of elegance and tranquility.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Solarium-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Solarium-Views-Sunset.jpg",
+        "path": "render/Solarium-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Solarium-Views-Sunset.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Solarium-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Solarium-Views-Sunset.jpg",
+        "type": "render",
+        "size": 17091,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"solarium\",\n  \"key_features\": [\n    \"rooftop terrace\",\n    \"outdoor seating area\",\n    \"lounge furniture\",\n    \"pergola\",\n    \"planted pots\",\n    \"rugs\",\n    \"coffee tables\",\n    \"sunset view\",\n    \"low wall\",\n    \"tiled flooring\"\n  ],\n  \"style_and_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"neutral color palette\",\n    \"natural materials\",\n    \"landscaped\",\n    \"contemporary\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [],\n  \"overall_impression\": \"A high-quality render depicting a luxurious and relaxing rooftop solarium with modern furniture and a stunning sunset view. The design is sophisticated and inviting.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Sotano-Gym-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Basement-Billard.jpg",
+        "path": "render/Sotano-Gym-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Basement-Billard.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Sotano-Gym-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Basement-Billard.jpg",
+        "type": "render",
+        "size": 17900,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"Basement Game Room/Recreation Room\",\n  \"key_features\": [\n    \"Pool table\",\n    \"Recessed lighting\",\n    \"Wall-mounted decor\",\n    \"Large mirror/glass wall\",\n    \"Carpeted floor\",\n    \"Indirect lighting\",\n    \"Modern pendant lights\"\n  ],\n  \"style_and_design_elements\": [\n    \"Contemporary\",\n    \"Modern\",\n    \"Luxury\",\n    \"Minimalist\",\n    \"Neutral color palette\",\n    \"Warm lighting\"\n  ],\n  \"quality_assessment\": \"High-quality render; good lighting and detail.\",\n  \"text_or_labels_visible\": [],\n  \"overall_impression\": \"A luxurious and modern basement game room with a sophisticated and relaxing atmosphere.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Vestidor-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Vestidor 1.jpg",
+        "path": "render/Vestidor-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Vestidor 1.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Vestidor-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Vestidor 1.jpg",
+        "type": "render",
+        "size": 23013,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"walk-in closet\",\n  \"key_features\": [\n    \"built-in wardrobes\",\n    \"ample shelving\",\n    \"drawer units\",\n    \"shoe storage\",\n    \"hanging space\",\n    \"light wood finish\",\n    \"natural light\"\n  ],\n  \"style_and_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"contemporary\",\n    \"light and airy\",\n    \"clean lines\",\n    \"neutral color palette\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_or_labels\": [],\n  \"overall_impression\": \"The image depicts a luxurious and well-designed walk-in closet with ample storage space. The modern and minimalist design creates a clean and organized atmosphere.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Dormitorio-principal-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Master-Bedroom.jpg",
+        "path": "render/Dormitorio-principal-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Master-Bedroom.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Dormitorio-principal-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Master-Bedroom.jpg",
+        "type": "render",
+        "size": 16691,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"master bedroom\",\n  \"key_features\": [\n    \"king-size bed\",\n    \"nightstands\",\n    \"large mirror\",\n    \"dressing table\",\n    \"built-in wardrobe (partially visible)\",\n    \"accent lighting\",\n    \"area rug\",\n    \"ottoman\",\n    \"wood paneling\",\n    \"large window (partially visible)\"\n  ],\n  \"style_and_design_elements\": [\n    \"contemporary\",\n    \"minimalist\",\n    \"neutral color palette\",\n    \"natural materials (wood)\",\n    \"subtle textures\",\n    \"elegant\",\n    \"sophisticated\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_or_labels\": [],\n  \"overall_impression\": \"The image depicts a luxurious and spacious master bedroom with a calming and sophisticated atmosphere. The design is modern and minimalist, utilizing high-quality materials and finishes. The lighting is well-integrated, enhancing the overall ambiance.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Sotano-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Make-up.jpg",
+        "path": "render/Sotano-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Make-up.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Sotano-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Make-up.jpg",
+        "type": "render",
+        "size": 20042,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"bedroom\",\n  \"key_features\": [\n    \"large circular mirror\",\n    \"built-in vanity with lighting\",\n    \"textured wall covering\",\n    \"wooden furniture\",\n    \"access to outdoor space\",\n    \"modern lighting fixtures\"\n  ],\n  \"style_and_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"contemporary\",\n    \"neutral color palette\",\n    \"natural materials\",\n    \"subtle textures\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [],\n  \"overall_impression\": \"The image depicts a luxurious and serene bedroom with a modern design. The use of natural materials and neutral colors creates a calming atmosphere. The high-quality render showcases attention to detail and a sophisticated aesthetic.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Vestidor-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Vestidor 2.jpg",
+        "path": "render/Vestidor-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Vestidor 2.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Vestidor-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Vestidor 2.jpg",
+        "type": "render",
+        "size": 18695,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"entryway/hallway\",\n  \"key_features\": [\n    \"built-in wardrobe/closet\",\n    \"mirror\",\n    \"floating vanity/console table\",\n    \"recessed lighting\",\n    \"light-colored walls and flooring\",\n    \"minimalist design\"\n  ],\n  \"style_and_design_elements\": [\n    \"contemporary\",\n    \"minimalist\",\n    \"clean lines\",\n    \"modern\",\n    \"neutral color palette\"\n  ],\n  \"quality_assessment\": {\n    \"resolution\": \"high\",\n    \"lighting\": \"well-lit\",\n    \"rendering_quality\": \"high\",\n    \"overall_quality\": \"excellent\"\n  },\n  \"text_or_labels\": [],\n  \"overall_impression\": \"The image depicts a modern and stylish entryway with a built-in wardrobe and a minimalist design. The use of light colors and clean lines creates a spacious and elegant feel.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Sotano-Dormitorio-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Basement-Bedroom.jpg",
+        "path": "render/Sotano-Dormitorio-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Basement-Bedroom.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Sotano-Dormitorio-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Basement-Bedroom.jpg",
+        "type": "render",
+        "size": 17144,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"bedroom\",\n  \"key_features\": [\n    \"double bed\",\n    \"nightstands\",\n    \"built-in wardrobe\",\n    \"indirect lighting\",\n    \"large window\",\n    \"textured wall\",\n    \"area rug\"\n  ],\n  \"style_and_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"neutral color palette\",\n    \"subtle texture\",\n    \"clean lines\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_or_labels\": [],\n  \"overall_impression\": \"The image depicts a modern, high-end basement bedroom with a calming and sophisticated atmosphere. The design is minimalist yet luxurious, with attention to detail in the lighting, textures, and furniture selection.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Vestidor-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Vestidor 3.jpg",
+        "path": "render/Vestidor-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Vestidor 3.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Vestidor-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Vestidor 3.jpg",
+        "type": "render",
+        "size": 20211,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"dressing room\",\n  \"key_features\": [\n    \"built-in wardrobe\",\n    \"vanity with mirror\",\n    \"recessed lighting\",\n    \"modern door\",\n    \"window with view of garden\"\n  ],\n  \"style_and_design_elements\": [\n    \"contemporary\",\n    \"minimalist\",\n    \"clean lines\",\n    \"neutral color palette\",\n    \"integrated design\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_or_labels\": [],\n  \"overall_impression\": \"The image depicts a modern and luxurious dressing room with high-quality finishes and a sophisticated design. The space is well-lit and functional, creating a calm and organized atmosphere.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Sotano-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Gym.jpg",
+        "path": "render/Sotano-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Gym.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Sotano-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Gym.jpg",
+        "type": "render",
+        "size": 21164,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"gym\",\n  \"key_features\": [\n    \"Treadmill\",\n    \"Stationary bikes\",\n    \"Other exercise equipment\",\n    \"Mirrors\",\n    \"Wood paneling\",\n    \"Recessed lighting\",\n    \"Large windows\",\n    \"Glass door to another room (possibly a sauna or changing room)\"\n  ],\n  \"style_and_design_elements\": [\n    \"Modern\",\n    \"Contemporary\",\n    \"Minimalist\",\n    \"Luxury\",\n    \"Neutral color palette\",\n    \"Clean lines\"\n  ],\n  \"quality_assessment\": \"High-quality render; realistic lighting and textures.\",\n  \"text_or_labels\": [],\n  \"overall_impression\": \"The image depicts a high-end, modern home gym with state-of-the-art equipment. The design is sleek and sophisticated, creating a luxurious and inviting atmosphere.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Entrada-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Entrance-Facade 2.jpg",
+        "path": "render/Entrada-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Entrance-Facade 2.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Entrada-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Entrance-Facade 2.jpg",
+        "type": "render",
+        "size": 19020,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"exterior\",\n  \"key_features\": [\n    \"modern villa\",\n    \"clean lines\",\n    \"large windows\",\n    \"minimalist design\",\n    \"double garage\",\n    \"landscaped grounds\"\n  ],\n  \"style_and_design_elements\": [\n    \"contemporary\",\n    \"minimalist\",\n    \"geometric\",\n    \"white exterior walls\",\n    \"dark window frames\",\n    \"flat roof\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [],\n  \"overall_impression\": \"A high-quality architectural rendering of a luxurious, modern villa. The image conveys a sense of spaciousness, elegance, and sophistication.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Cocina-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Kitchen 2.jpg",
+        "path": "render/Cocina-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Kitchen 2.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Cocina-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Kitchen 2.jpg",
+        "type": "render",
+        "size": 19235,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"kitchen\",\n  \"key_features\": [\n    \"modern kitchen\",\n    \"sliding glass doors\",\n    \"dark wood cabinetry\",\n    \"marble or stone countertops\",\n    \"wine cooler\",\n    \"integrated appliances\",\n    \"high ceilings\",\n    \"recessed lighting\"\n  ],\n  \"style_and_design_elements\": [\n    \"modern\",\n    \"contemporary\",\n    \"minimalist\",\n    \"luxury\",\n    \"open plan\",\n    \"clean lines\",\n    \"neutral color palette\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_or_labels\": [],\n  \"overall_impression\": \"The image depicts a high-end, modern kitchen with a sleek and sophisticated design. The use of glass and dark wood creates a luxurious and spacious feel. The open plan design seamlessly integrates the kitchen with an adjacent living area.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Exterior-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Exterior-Kitchen.jpg",
+        "path": "render/Exterior-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Exterior-Kitchen.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Exterior-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Exterior-Kitchen.jpg",
+        "type": "render",
+        "size": 21588,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"Outdoor Kitchen and Dining Area\",\n  \"key_features\": [\n    \"Outdoor kitchen with countertop and built-in appliances\",\n    \"Dining table with chairs\",\n    \"Pergola or covered structure\",\n    \"Landscaping with plants and trees\",\n    \"Rattan or wicker dining chairs\",\n    \"Concrete or stone-like countertops and walls\"\n  ],\n  \"style_and_design_elements\": [\n    \"Modern\",\n    \"Contemporary\",\n    \"Minimalist\",\n    \"Tropical\",\n    \"Neutral color palette\",\n    \"Natural materials (wood, stone)\",\n    \"Clean lines\"\n  ],\n  \"quality_assessment\": \"High. The render is detailed and realistic, showing high-quality materials and design.\",\n  \"text_or_labels_visible\": [],\n  \"overall_impression\": \"The image depicts a luxurious and inviting outdoor kitchen and dining area, ideal for entertaining. The design is sophisticated and blends seamlessly with the surrounding landscape.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Sotano-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Kitchen.jpg",
+        "path": "render/Sotano-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Kitchen.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Sotano-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Kitchen.jpg",
+        "type": "render",
+        "size": 19439,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"Basement/Lower Level\",\n  \"key_features\": [\n    \"Wet bar with seating\",\n    \"Large screen TV\",\n    \"Modern furniture\",\n    \"Recessed lighting\",\n    \"Decorative wall paneling\",\n    \"Open floor plan\",\n    \"Large circular wall feature\"\n  ],\n  \"style_and_design_elements\": [\n    \"Contemporary\",\n    \"Modern\",\n    \"Minimalist\",\n    \"Neutral color palette\",\n    \"Warm wood tones\",\n    \"Metallic accents\",\n    \"Subtle Asian influences\"\n  ],\n  \"quality_assessment\": \"High-quality render, showing good detail and realistic lighting.\",\n  \"text_or_labels\": [],\n  \"overall_impression\": \"The image depicts a luxurious and sophisticated basement entertainment area. The design is modern and elegant, with a focus on clean lines and high-end materials.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Cocina-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Kitchen 3.jpg",
+        "path": "render/Cocina-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Kitchen 3.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Cocina-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Kitchen 3.jpg",
+        "type": "render",
+        "size": 19969,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"kitchen\",\n  \"key_features\": [\n    \"large island\",\n    \"dark wood cabinetry\",\n    \"marble backsplash\",\n    \"built-in appliances\",\n    \"wine cooler\",\n    \"track lighting\",\n    \"large windows\",\n    \"open floor plan\"\n  ],\n  \"style_and_design_elements\": [\n    \"modern\",\n    \"contemporary\",\n    \"luxury\",\n    \"minimalist\",\n    \"high-end finishes\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_or_labels\": [],\n  \"overall_impression\": \"The image depicts a luxurious and modern kitchen with high-quality finishes and a spacious layout. The design is sleek and sophisticated, with a focus on clean lines and natural materials.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Exterior-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Exterior-Kitchen-Area.jpg",
+        "path": "render/Exterior-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Exterior-Kitchen-Area.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Exterior-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Exterior-Kitchen-Area.jpg",
+        "type": "render",
+        "size": 20521,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"Outdoor Kitchen and Lounge Area\",\n  \"key_features\": [\n    \"Covered patio\",\n    \"Outdoor kitchen with bar\",\n    \"Fire pit\",\n    \"Lounge seating\",\n    \"Rattan furniture\",\n    \"Neutral color palette\",\n    \"Landscaping\",\n    \"Natural light\"\n  ],\n  \"style_and_design_elements\": [\n    \"Modern\",\n    \"Mediterranean\",\n    \"Minimalist\",\n    \"Natural materials\",\n    \"Clean lines\",\n    \"Neutral tones\"\n  ],\n  \"quality_assessment\": \"High quality render, realistic depiction of materials and lighting\",\n  \"text_or_labels_visible\": [],\n  \"overall_impression\": \"Relaxing and sophisticated outdoor living space. The design is inviting and well-integrated with the surrounding landscape.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Salon-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Kitchen-Living-Room.jpg",
+        "path": "render/Salon-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Kitchen-Living-Room.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Salon-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Kitchen-Living-Room.jpg",
+        "type": "render",
+        "size": 16916,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"Kitchen and Living Room\",\n  \"key_features\": [\n    \"Open plan kitchen and living area\",\n    \"High ceilings\",\n    \"Large glass doors leading to pool area\",\n    \"Modern fireplace\",\n    \"Luxury furniture\",\n    \"Neutral color palette\",\n    \"Large area rug\"\n  ],\n  \"style_and_design_elements\": [\n    \"Contemporary\",\n    \"Modern\",\n    \"Minimalist\",\n    \"Luxury\",\n    \"Open concept\",\n    \"Neutral tones\",\n    \"High-end finishes\"\n  ],\n  \"quality_assessment\": \"High quality render, showing excellent detail and realism.\",\n  \"text_or_labels_visible\": [],\n  \"overall_impression\": \"The image depicts a luxurious and spacious open-plan kitchen and living area in a modern villa. The design is sophisticated and elegant, with a focus on natural light and high-end finishes. The overall impression is one of opulence and comfort.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Fachada-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Kitchen-Pool.jpg",
+        "path": "render/Fachada-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Kitchen-Pool.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Fachada-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Kitchen-Pool.jpg",
+        "type": "render",
+        "size": 22415,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"exterior\",\n  \"key_features\": [\n    \"modern villa\",\n    \"swimming pool\",\n    \"outdoor seating area\",\n    \"two stories\",\n    \"balcony\",\n    \"landscaped garden\"\n  ],\n  \"style_and_design_elements\": [\n    \"contemporary\",\n    \"minimalist\",\n    \"clean lines\",\n    \"white exterior\",\n    \"large windows\",\n    \"geometric shapes\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [],\n  \"overall_impression\": \"A high-quality rendering of a luxurious, modern villa with a focus on clean lines and spacious outdoor living areas. The image evokes a sense of tranquility and upscale living.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Sotano-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Basement-Gym-Wine.jpg",
+        "path": "render/Sotano-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Basement-Gym-Wine.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Sotano-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Basement-Gym-Wine.jpg",
+        "type": "render",
+        "size": 19567,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"basement\",\n  \"key_features\": [\n    \"gym\",\n    \"wine cellar\",\n    \"glass partitions\",\n    \"modern design\",\n    \"high ceilings\",\n    \"built-in storage\"\n  ],\n  \"style_and_design_elements\": [\n    \"contemporary\",\n    \"minimalist\",\n    \"luxurious\",\n    \"neutral color palette\",\n    \"integrated lighting\",\n    \"sleek finishes\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_or_labels\": [],\n  \"overall_impression\": \"The image depicts a high-end, modern basement gym and wine cellar. The space is well-designed and luxurious, with a focus on clean lines and high-quality materials. The use of glass partitions creates a sense of openness and spaciousness.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Solarium-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Solarium-Pool-views 1.jpg",
+        "path": "render/Solarium-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Solarium-Pool-views 1.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Solarium-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Solarium-Pool-views 1.jpg",
+        "type": "render",
+        "size": 12293,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"Solarium/Outdoor Living Space\",\n  \"key_features\": [\n    \"Infinity pool\",\n    \"Outdoor seating area\",\n    \"Panoramic views\",\n    \"Modern pergola\",\n    \"Landscaping with palm trees and planters\"\n  ],\n  \"style_and_design_elements\": [\n    \"Modern\",\n    \"Contemporary\",\n    \"Minimalist\",\n    \"Clean lines\",\n    \"Neutral color palette\"\n  ],\n  \"quality_assessment\": \"High-quality render; realistic depiction of lighting, materials, and textures.\",\n  \"text_labels\": [],\n  \"overall_impression\": \"The image presents a luxurious and serene outdoor living space with stunning views. The design is sophisticated and inviting, emphasizing relaxation and enjoyment of the surrounding landscape.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Salon-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Living-Room-Views.jpg",
+        "path": "render/Salon-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Living-Room-Views.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Salon-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Living-Room-Views.jpg",
+        "type": "render",
+        "size": 16892,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"living room\",\n  \"key_features\": [\n    \"high ceilings\",\n    \"large windows\",\n    \"sliding glass doors\",\n    \"pool view\",\n    \"fireplace\",\n    \"built-in entertainment center\",\n    \"modern furniture\",\n    \"neutral color palette\"\n  ],\n  \"style_and_design_elements\": [\n    \"modern\",\n    \"contemporary\",\n    \"minimalist\",\n    \"luxury\",\n    \"open plan\",\n    \"natural light\",\n    \"high-end finishes\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_or_labels\": [],\n  \"overall_impression\": \"The image depicts a luxurious and spacious modern living room with stunning views of a pool and garden. The design is sophisticated and elegant, with a focus on natural light and high-end finishes.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Solarium-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Solarium-Dinning-Area-Sunset.jpg",
+        "path": "render/Solarium-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Solarium-Dinning-Area-Sunset.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/render/Solarium-imagine-MAREIN-New-Golden-Mile-Estepona-Independent-Villa-NVOGA-Marbella-Realty-Solarium-Dinning-Area-Sunset.jpg",
+        "type": "render",
+        "size": 17149,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"Solarium/Outdoor Dining Area\",\n  \"key_features\": [\n    \"Pergola\",\n    \"Outdoor dining table and chairs\",\n    \"Built-in grill/BBQ\",\n    \"Planters with tropical plants\",\n    \"Lounge seating area\",\n    \"Light fixtures\",\n    \"Area rug\"\n  ],\n  \"style_and_design_elements\": [\n    \"Modern\",\n    \"Minimalist\",\n    \"Mediterranean influences\",\n    \"Neutral color palette\",\n    \"Natural materials (wood, rattan)\",\n    \"Clean lines\"\n  ],\n  \"quality_assessment\": \"High. The render is detailed, realistic, and well-lit, showcasing the space effectively.\",\n  \"text_or_labels_visible\": [],\n  \"overall_impression\": \"The image presents a luxurious and inviting outdoor dining and relaxation space. The design is sophisticated yet relaxed, emphasizing natural elements and a connection to the surrounding landscape.\"\n}\n```\n"
+        },
+        "processed": true
+      }
+    ]
+  },
+  "plans": {
+    "summary": {
+      "total_count": 30,
+      "processed_with_ai": true
+    },
+    "documents": [
+      {
+        "filename": "floorplans villa 10 - imagine by marein_page-0005.jpg",
+        "path": "plan/floorplans villa 10 - imagine by marein_page-0005.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans villa 10 - imagine by marein_page-0005.jpg",
+        "type": "plan",
+        "size": 8047,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_type\": [\n    \"rooftop terrace\",\n    \"outdoor kitchen\",\n    \"lounge area\",\n    \"dining area\"\n  ],\n  \"key_features\": [\n    \"large rooftop terrace\",\n    \"outdoor dining area\",\n    \"lounge seating areas\",\n    \"outdoor kitchen area\",\n    \"built-in planters/greenery\",\n    \"stair access\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"clean lines\",\n    \"open plan\",\n    \"functional layout\"\n  ],\n  \"quality_assessment\": \"High-quality architectural plan, clear and easy to understand.\",\n  \"text_labels\": [\n    \"imagine by marein\",\n    \"VILLA 10\",\n    \"various dimensions and specifications (partially visible)\",\n    \"NVOGA\",\n    \"M\"\n  ],\n  \"overall_impression\": \"A well-designed and spacious rooftop terrace plan with a modern and minimalist aesthetic. The plan is clear, detailed, and provides a good understanding of the space's layout and features.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans villa 10 - imagine by marein_page-0004.jpg",
+        "path": "plan/floorplans villa 10 - imagine by marein_page-0004.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans villa 10 - imagine by marein_page-0004.jpg",
+        "type": "plan",
+        "size": 9279,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_type\": [\n    \"basement\",\n    \"storage\",\n    \"utility\"\n  ],\n  \"key_features_visible\": [\n    \"staircase\",\n    \"multiple rooms\",\n    \"open space\"\n  ],\n  \"style_and_design_elements\": [\n    \"minimalist\",\n    \"modern\",\n    \"functional\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels_visible\": [\n    \"imagine by marein\",\n    \"villa 10\",\n    \"nvoga\",\n    \"m\"\n  ],\n  \"overall_impression\": \"A clean and clear floor plan of a basement area, showcasing a functional layout with defined spaces.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans villa 10 - imagine by marein_page-0001.jpg",
+        "path": "plan/floorplans villa 10 - imagine by marein_page-0001.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans villa 10 - imagine by marein_page-0001.jpg",
+        "type": "plan",
+        "size": 8662,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"living room\",\n    \"kitchen\",\n    \"dining room\",\n    \"garage\",\n    \"pool\",\n    \"bedroom\"\n  ],\n  \"key_features\": [\n    \"open plan living\",\n    \"large pool\",\n    \"double garage\",\n    \"outdoor space\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"contemporary\",\n    \"minimalist\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [\n    \"imagine by marein\",\n    \"villa 10\",\n    \"nvoga\",\n    \"m\"\n  ],\n  \"overall_impression\": \"A high-quality floor plan depicting a modern, spacious villa with a focus on open-plan living and outdoor space. The design is clean and minimalist.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans villa 10 - imagine by marein_page-0003.jpg",
+        "path": "plan/floorplans villa 10 - imagine by marein_page-0003.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans villa 10 - imagine by marein_page-0003.jpg",
+        "type": "plan",
+        "size": 9204,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"bedroom\",\n    \"bathroom\",\n    \"living_room\",\n    \"staircase\"\n  ],\n  \"key_features\": [\n    \"open_plan_living\",\n    \"multiple_bedrooms\",\n    \"internal_staircase\",\n    \"potentially_ensuite_bathrooms\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"clean_lines\",\n    \"open_concept\"\n  ],\n  \"quality_assessment\": {\n    \"resolution\": \"good\",\n    \"clarity\": \"good\",\n    \"detail\": \"moderate\"\n  },\n  \"text_labels\": [\n    \"imagine\",\n    \"by Marein\",\n    \"Villa 10\",\n    \"NVOGA\",\n    \"M\"\n  ],\n  \"overall_impression\": \"A clean and modern floor plan showcasing a spacious villa with multiple bedrooms and an open-plan living area.  The plan is well-presented and easy to understand.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans villa 10 - imagine by marein_page-0002.jpg",
+        "path": "plan/floorplans villa 10 - imagine by marein_page-0002.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans villa 10 - imagine by marein_page-0002.jpg",
+        "type": "plan",
+        "size": 11190,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"living room\",\n    \"dining room\",\n    \"kitchen\",\n    \"garage\",\n    \"hallway\"\n  ],\n  \"key_features\": [\n    \"open plan living area\",\n    \"large kitchen\",\n    \"double garage\",\n    \"multiple dining areas\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"contemporary\",\n    \"open concept\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [\n    \"imagine by Marein\",\n    \"Villa 10\",\n    \"NVOGA\",\n    \"M\"\n  ],\n  \"overall_impression\": \"A high-quality floor plan depicting a spacious, modern villa with an open-plan layout and a double garage. The plan is well-organized and easy to understand.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans Villa 07 - imagine by marein_page-0003.jpg",
+        "path": "plan/floorplans Villa 07 - imagine by marein_page-0003.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans Villa 07 - imagine by marein_page-0003.jpg",
+        "type": "plan",
+        "size": 9091,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"bedroom\",\n    \"bathroom\",\n    \"living room\",\n    \"kitchen\"\n  ],\n  \"key_features\": [\n    \"open floor plan\",\n    \"multiple bedrooms\",\n    \"staircase\",\n    \"large living area\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"clean lines\",\n    \"neutral color palette\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [\n    \"imagine by marein\",\n    \"villa 07\",\n    \"floor plan\",\n    \"nvoga\",\n    \"m\"\n  ],\n  \"overall_impression\": \"A high-quality floor plan depicting a modern, spacious villa with a clean and minimalist design.  The plan is well-organized and easy to understand.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans villa 08 - imagine by marein_page-0005.jpg",
+        "path": "plan/floorplans villa 08 - imagine by marein_page-0005.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans villa 08 - imagine by marein_page-0005.jpg",
+        "type": "plan",
+        "size": 7905,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"rooftop terrace\",\n    \"pool area\",\n    \"lounge area\",\n    \"outdoor kitchen\"\n  ],\n  \"key_features\": [\n    \"infinity pool\",\n    \"outdoor seating\",\n    \"built-in barbeque\",\n    \"sun deck\",\n    \"staircase\",\n    \"planting areas\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"clean lines\",\n    \"open plan\",\n    \"integrated design\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [\n    \"imagine by marein\",\n    \"villa 08\",\n    \"nvoga\",\n    \"marein\"\n  ],\n  \"overall_impression\": \"A high-quality architectural plan showcasing a luxurious and modern rooftop terrace design with an infinity pool and ample outdoor living space. The plan is well-organized and easy to understand.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans villa 08 - imagine by marein_page-0004.jpg",
+        "path": "plan/floorplans villa 08 - imagine by marein_page-0004.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans villa 08 - imagine by marein_page-0004.jpg",
+        "type": "plan",
+        "size": 9338,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_type\": [\n    \"basement\",\n    \"storage\",\n    \"utility\"\n  ],\n  \"key_features_visible\": [\n    \"open space\",\n    \"staircase\",\n    \"multiple small rooms\",\n    \"potential for customization\"\n  ],\n  \"style_and_design_elements\": [\n    \"minimalist\",\n    \"functional\",\n    \"clean lines\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels_visible\": [\n    \"imagine\",\n    \"by marein\",\n    \"villa 08\",\n    \"floor plan\",\n    \"nvoga\",\n    \"m\"\n  ],\n  \"overall_impression\": \"A clean and well-designed basement floor plan showing a large open area with several smaller rooms, suitable for storage or utility purposes. The plan is professionally presented and easy to understand.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans Villa 07 - imagine by marein_page-0002.jpg",
+        "path": "plan/floorplans Villa 07 - imagine by marein_page-0002.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans Villa 07 - imagine by marein_page-0002.jpg",
+        "type": "plan",
+        "size": 10948,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"garage\",\n    \"living room\",\n    \"kitchen\",\n    \"dining room\",\n    \"bedroom\",\n    \"bathroom\",\n    \"stairs\",\n    \"outdoor area\"\n  ],\n  \"key_features\": [\n    \"open plan living\",\n    \"large kitchen\",\n    \"separate dining area\",\n    \"double garage\",\n    \"outdoor space\",\n    \"internal stairs\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"contemporary\",\n    \"minimalist\",\n    \"open concept\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [\n    \"imagine\",\n    \"by marein\",\n    \"plan\",\n    \"nvoga\",\n    \"m\"\n  ],\n  \"overall_impression\": \"A high-quality floor plan depicting a modern, spacious villa with an open-plan layout and luxurious features.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans Villa 05 - imagine by marein_page-0004.jpg",
+        "path": "plan/floorplans Villa 05 - imagine by marein_page-0004.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans Villa 05 - imagine by marein_page-0004.jpg",
+        "type": "plan",
+        "size": 9328,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"bedroom\",\n    \"bathroom\",\n    \"staircase\",\n    \"open space\"\n  ],\n  \"key_features\": [\n    \"open floor plan\",\n    \"multiple bedrooms\",\n    \"at least one bathroom\",\n    \"internal staircase\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"clean lines\"\n  ],\n  \"quality_assessment\": {\n    \"resolution\": \"good\",\n    \"clarity\": \"good\",\n    \"detail\": \"moderate\"\n  },\n  \"text_labels\": [\n    \"imagine by marein\",\n    \"villa 05\",\n    \"floor plan\",\n    \"room dimensions (likely, not clearly visible)\",\n    \"nvoga\",\n    \"marein\"\n  ],\n  \"overall_impression\": \"A clean and simple floor plan showcasing a modern villa design with an open layout.  The level of detail is sufficient to understand the general layout but lacks specifics on room sizes and features.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans Villa 05 - imagine by marein_page-0005.jpg",
+        "path": "plan/floorplans Villa 05 - imagine by marein_page-0005.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans Villa 05 - imagine by marein_page-0005.jpg",
+        "type": "plan",
+        "size": 7924,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"rooftop terrace\",\n    \"pool area\",\n    \"lounge area\",\n    \"outdoor seating\"\n  ],\n  \"key_features\": [\n    \"infinity pool\",\n    \"outdoor kitchen/bar\",\n    \"large terrace\",\n    \"seating areas\",\n    \"stairs\",\n    \"planting areas\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"clean lines\",\n    \"open plan\",\n    \"luxury\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [\n    \"iImagine by Marein\",\n    \"VILLA 05\",\n    \"SCALE 1:100\",\n    \"NVOGA\",\n    \"M\"\n  ],\n  \"overall_impression\": \"A high-quality architectural plan showcasing a luxurious and modern rooftop terrace design with an infinity pool and ample outdoor living space.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans Villa 07 - imagine by marein_page-0001.jpg",
+        "path": "plan/floorplans Villa 07 - imagine by marein_page-0001.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans Villa 07 - imagine by marein_page-0001.jpg",
+        "type": "plan",
+        "size": 8504,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"garage\",\n    \"living room\",\n    \"kitchen\",\n    \"dining room\",\n    \"bedroom\",\n    \"bathroom\",\n    \"pool\"\n  ],\n  \"key_features\": [\n    \"open plan living\",\n    \"in-ground pool\",\n    \"double garage\",\n    \"multiple bedrooms\",\n    \"large living area\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"contemporary\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [\n    \"imagine by marein\",\n    \"floor plan\",\n    \"nvoga\",\n    \"m\"\n  ],\n  \"overall_impression\": \"A high-quality floor plan depicting a modern, luxurious villa with an open-plan layout, a large pool, and a double garage. The design is clean and minimalist.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans Villa 07 - imagine by marein_page-0005.jpg",
+        "path": "plan/floorplans Villa 07 - imagine by marein_page-0005.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans Villa 07 - imagine by marein_page-0005.jpg",
+        "type": "plan",
+        "size": 7942,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"rooftop terrace\",\n    \"pool area\",\n    \"lounge area\",\n    \"outdoor seating\"\n  ],\n  \"key_features\": [\n    \"infinity pool\",\n    \"outdoor kitchen\",\n    \"large terrace\",\n    \"seating areas\",\n    \"stairs\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"clean lines\",\n    \"open plan\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [\n    \"imagine\",\n    \"by Marein\",\n    \"PLAN\",\n    \"SCALE 1:100\",\n    \"NVOGA\",\n    \"M\"\n  ],\n  \"overall_impression\": \"A high-quality architectural plan showcasing a luxurious and modern rooftop terrace design with an infinity pool and ample outdoor living space.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans Villa 05 - imagine by marein_page-0001.jpg",
+        "path": "plan/floorplans Villa 05 - imagine by marein_page-0001.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans Villa 05 - imagine by marein_page-0001.jpg",
+        "type": "plan",
+        "size": 8480,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"garage\",\n    \"living room\",\n    \"kitchen\",\n    \"dining room\",\n    \"bedrooms\",\n    \"bathrooms\",\n    \"pool\"\n  ],\n  \"key_features\": [\n    \"open plan living\",\n    \"in-ground pool\",\n    \"double garage\",\n    \"large living area\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"contemporary\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [\n    \"imagine by marein\",\n    \"villa 05\",\n    \"nvoga\",\n    \"marein\"\n  ],\n  \"overall_impression\": \"A high-quality floor plan depicting a modern, luxurious villa with an open-plan layout and a private pool.  The plan is well-organized and easy to understand.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans villa 08 - imagine by marein_page-0003.jpg",
+        "path": "plan/floorplans villa 08 - imagine by marein_page-0003.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans villa 08 - imagine by marein_page-0003.jpg",
+        "type": "plan",
+        "size": 9011,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"bedroom\",\n    \"bathroom\",\n    \"living room\",\n    \"kitchen\"\n  ],\n  \"key_features\": [\n    \"open plan living area\",\n    \"multiple bedrooms\",\n    \"internal staircase\",\n    \"outdoor terrace\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"clean lines\",\n    \"open concept\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [\n    \"imagine by marein\",\n    \"villa 08\",\n    \"nvoga\",\n    \"m\"\n  ],\n  \"overall_impression\": \"A high-quality floor plan depicting a modern, spacious villa with an open and airy layout. The plan is well-organized and easy to understand.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans villa 08 - imagine by marein_page-0002.jpg",
+        "path": "plan/floorplans villa 08 - imagine by marein_page-0002.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans villa 08 - imagine by marein_page-0002.jpg",
+        "type": "plan",
+        "size": 10891,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"garage\",\n    \"living room\",\n    \"kitchen\",\n    \"dining room\",\n    \"bedroom\",\n    \"bathroom\",\n    \"outdoor area\"\n  ],\n  \"key_features\": [\n    \"open plan living\",\n    \"large kitchen\",\n    \"separate dining area\",\n    \"double garage\",\n    \"staircase\",\n    \"outdoor seating area\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"contemporary\",\n    \"open concept\",\n    \"minimalist\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [\n    \"imagine\",\n    \"by Marein\",\n    \"Villa 08\",\n    \"NVOGA\",\n    \"M\"\n  ],\n  \"overall_impression\": \"A high-quality floor plan depicting a modern, spacious villa with an open-plan layout and luxurious features.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans Villa 07 - imagine by marein_page-0004.jpg",
+        "path": "plan/floorplans Villa 07 - imagine by marein_page-0004.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans Villa 07 - imagine by marein_page-0004.jpg",
+        "type": "plan",
+        "size": 9340,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"bedroom\",\n    \"bathroom\",\n    \"staircase\",\n    \"open space\"\n  ],\n  \"key_features\": [\n    \"open floor plan\",\n    \"multiple bedrooms\",\n    \"at least one bathroom\",\n    \"internal staircase\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"clean lines\"\n  ],\n  \"quality_assessment\": {\n    \"resolution\": \"good\",\n    \"clarity\": \"good\",\n    \"detail\": \"moderate\"\n  },\n  \"text_labels\": [\n    \"imagine by marein\",\n    \"floor plan\",\n    \"scale\",\n    \"NVOGA\",\n    \"M\"\n  ],\n  \"overall_impression\": \"A clean and modern floor plan showcasing a spacious open-plan layout with multiple bedrooms and a bathroom.  The plan is well-presented and easy to understand.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans Villa 05 - imagine by marein_page-0002.jpg",
+        "path": "plan/floorplans Villa 05 - imagine by marein_page-0002.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans Villa 05 - imagine by marein_page-0002.jpg",
+        "type": "plan",
+        "size": 10940,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"garage\",\n    \"living room\",\n    \"kitchen\",\n    \"dining room\",\n    \"bedroom\",\n    \"bathroom\",\n    \"outdoor area\"\n  ],\n  \"key_features\": [\n    \"open plan living\",\n    \"large kitchen\",\n    \"separate dining area\",\n    \"double garage\",\n    \"stairs\",\n    \"pool\",\n    \"outdoor seating\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"contemporary\",\n    \"minimalist\",\n    \"open concept\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [\n    \"imagine\",\n    \"by Marein\",\n    \"Villa 05\",\n    \"NVOGA\",\n    \"M\"\n  ],\n  \"overall_impression\": \"A high-quality floor plan depicting a modern, spacious villa with an open-plan layout and luxurious features.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans villa 08 - imagine by marein_page-0001.jpg",
+        "path": "plan/floorplans villa 08 - imagine by marein_page-0001.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans villa 08 - imagine by marein_page-0001.jpg",
+        "type": "plan",
+        "size": 8957,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"garage\",\n    \"living room\",\n    \"kitchen\",\n    \"dining room\",\n    \"bedroom\",\n    \"bathroom\",\n    \"pool\"\n  ],\n  \"key_features\": [\n    \"open plan living\",\n    \"in-ground pool\",\n    \"double garage\",\n    \"large outdoor space\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"contemporary\",\n    \"minimalist\",\n    \"clean lines\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [\n    \"imagine by marein\",\n    \"villa 08\",\n    \"nvoga\",\n    \"marein\"\n  ],\n  \"overall_impression\": \"A high-quality floor plan depicting a modern, luxurious villa with an open layout and desirable features such as a private pool and double garage. The plan is well-organized and easy to understand.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans Villa 05 - imagine by marein_page-0003.jpg",
+        "path": "plan/floorplans Villa 05 - imagine by marein_page-0003.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans Villa 05 - imagine by marein_page-0003.jpg",
+        "type": "plan",
+        "size": 9068,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"bedroom\",\n    \"bathroom\",\n    \"living room\",\n    \"kitchen\",\n    \"staircase\"\n  ],\n  \"key_features\": [\n    \"open plan living area\",\n    \"multiple bedrooms\",\n    \"internal staircase\",\n    \"large windows (implied)\",\n    \"potential outdoor space (implied)\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"contemporary\",\n    \"clean lines\",\n    \"open concept\"\n  ],\n  \"quality_assessment\": {\n    \"resolution\": \"good\",\n    \"clarity\": \"excellent\",\n    \"detail\": \"moderate\",\n    \"overall\": \"high\"\n  },\n  \"text_labels\": [\n    \"imagine\",\n    \"by Marein\",\n    \"Villa 05\",\n    \"NIVOGA\",\n    \"M\"\n  ],\n  \"overall_impression\": \"A clean and modern floor plan showcasing a spacious villa with an open layout and multiple bedrooms.  The plan is well-presented and easy to understand.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans villa 09 - imagine by marein_page-0005.jpg",
+        "path": "plan/floorplans villa 09 - imagine by marein_page-0005.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans villa 09 - imagine by marein_page-0005.jpg",
+        "type": "plan",
+        "size": 8003,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"living area\",\n    \"staircase\",\n    \"open space\",\n    \"possible terrace\"\n  ],\n  \"key_features\": [\n    \"open floor plan\",\n    \"internal staircase\",\n    \"large open space\",\n    \"potential outdoor area\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"clean lines\",\n    \"simple layout\"\n  ],\n  \"quality_assessment\": {\n    \"resolution\": \"good\",\n    \"clarity\": \"clear\",\n    \"detail\": \"moderate\"\n  },\n  \"text_labels\": [\n    \"imagine by marein\",\n    \"floor plan\",\n    \"NVOGA\",\n    \"M\"\n  ],\n  \"overall_impression\": \"A clean and modern floor plan showcasing a spacious open-plan design with a central staircase.  The plan suggests a luxurious and minimalist style.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans Villa 06 - imagine by marein_page-0003.jpg",
+        "path": "plan/floorplans Villa 06 - imagine by marein_page-0003.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans Villa 06 - imagine by marein_page-0003.jpg",
+        "type": "plan",
+        "size": 9068,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"bedroom\",\n    \"bathroom\",\n    \"living room\",\n    \"kitchen\",\n    \"staircase\"\n  ],\n  \"key_features\": [\n    \"open plan living area\",\n    \"multiple bedrooms\",\n    \"internal staircase\",\n    \"potentially ensuite bathrooms\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"clean lines\",\n    \"open concept\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [\n    \"imagine by marein\",\n    \"villa 06\",\n    \"nvoga\",\n    \"m\"\n  ],\n  \"overall_impression\": \"A high-quality floor plan depicting a modern, spacious villa with an open and airy layout.  The plan is well-organized and easy to understand.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans Villa 06 - imagine by marein_page-0002.jpg",
+        "path": "plan/floorplans Villa 06 - imagine by marein_page-0002.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans Villa 06 - imagine by marein_page-0002.jpg",
+        "type": "plan",
+        "size": 10938,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"garage\",\n    \"living room\",\n    \"kitchen\",\n    \"dining room\",\n    \"bedroom\",\n    \"bathroom\",\n    \"outdoor area\"\n  ],\n  \"key_features\": [\n    \"open plan living\",\n    \"large kitchen\",\n    \"separate dining area\",\n    \"double garage\",\n    \"staircase\",\n    \"outdoor space\"\n  ],\n  \"style_and_design_elements\": [\n    \"modern\",\n    \"contemporary\",\n    \"minimalist\",\n    \"open concept\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [\n    \"imagine by marein\",\n    \"villa 06\",\n    \"nvoga\",\n    \"m\"\n  ],\n  \"overall_impression\": \"A high-quality floor plan depicting a modern, spacious villa with an open-plan layout and luxurious features.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans villa 09 - imagine by marein_page-0004.jpg",
+        "path": "plan/floorplans villa 09 - imagine by marein_page-0004.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans villa 09 - imagine by marein_page-0004.jpg",
+        "type": "plan",
+        "size": 9199,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_type\": [\n    \"basement\",\n    \"storage\",\n    \"potential living space\"\n  ],\n  \"key_features_visible\": [\n    \"open floor plan\",\n    \"staircase\",\n    \"multiple potential rooms\",\n    \"utility areas\"\n  ],\n  \"style_and_design_elements\": [\n    \"minimalist\",\n    \"modern\",\n    \"functional\"\n  ],\n  \"quality_assessment\": \"High quality architectural plan, clear and easy to read.\",\n  \"text_labels_visible\": [\n    \"imagine by marein\",\n    \"RISE\",\n    \"NO.004\",\n    \"NVOGA\",\n    \"M\"\n  ],\n  \"overall_impression\": \"A clean and well-designed basement floor plan showing significant potential for development.  The plan is professional and easy to understand.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans Villa 06 - imagine by marein_page-0001.jpg",
+        "path": "plan/floorplans Villa 06 - imagine by marein_page-0001.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans Villa 06 - imagine by marein_page-0001.jpg",
+        "type": "plan",
+        "size": 8487,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"garage\",\n    \"living room\",\n    \"kitchen\",\n    \"dining room\",\n    \"bedroom\",\n    \"bathroom\",\n    \"pool\"\n  ],\n  \"key_features\": [\n    \"open plan living\",\n    \"in-ground pool\",\n    \"double garage\",\n    \"multiple bedrooms\",\n    \"large living area\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"contemporary\",\n    \"minimalist\",\n    \"open concept\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [\n    \"imagine by marein\",\n    \"villa 06\",\n    \"nvoga\",\n    \"m\"\n  ],\n  \"overall_impression\": \"A high-quality architectural plan depicting a modern, luxurious villa with an open floor plan and a private pool. The plan is well-organized and easy to understand.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans villa 09 - imagine by marein_page-0003.jpg",
+        "path": "plan/floorplans villa 09 - imagine by marein_page-0003.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans villa 09 - imagine by marein_page-0003.jpg",
+        "type": "plan",
+        "size": 9178,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"bedroom\",\n    \"bathroom\",\n    \"living room\",\n    \"staircase\"\n  ],\n  \"key_features\": [\n    \"multiple bedrooms\",\n    \"multiple bathrooms\",\n    \"large living area\",\n    \"staircase\",\n    \"open plan layout\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"clean lines\",\n    \"open concept\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [\n    \"imagine by marein\",\n    \"floor plan\",\n    \"villa 09\",\n    \"various room dimensions (numerical values)\"\n  ],\n  \"overall_impression\": \"A high-quality floor plan depicting a modern, spacious villa with a clean and minimalist design.  The plan is well-organized and easy to understand.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans Villa 06 - imagine by marein_page-0005.jpg",
+        "path": "plan/floorplans Villa 06 - imagine by marein_page-0005.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans Villa 06 - imagine by marein_page-0005.jpg",
+        "type": "plan",
+        "size": 7922,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"rooftop terrace\",\n    \"pool area\",\n    \"lounge area\",\n    \"outdoor seating\"\n  ],\n  \"key_features\": [\n    \"infinity pool\",\n    \"outdoor kitchen/bar\",\n    \"sun deck\",\n    \"seating areas\",\n    \"stairs\",\n    \"planting areas\"\n  ],\n  \"style_and_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"clean lines\",\n    \"open plan\",\n    \"integrated design\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [\n    \"iImagine by Marein\",\n    \"Villa 06\",\n    \"NVOGA\",\n    \"M\"\n  ],\n  \"overall_impression\": \"A high-quality architectural plan depicting a luxurious and modern rooftop terrace design with an infinity pool and ample outdoor living space. The plan is well-organized and easy to understand.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans Villa 06 - imagine by marein_page-0004.jpg",
+        "path": "plan/floorplans Villa 06 - imagine by marein_page-0004.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans Villa 06 - imagine by marein_page-0004.jpg",
+        "type": "plan",
+        "size": 9330,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"bedroom\",\n    \"bathroom\",\n    \"staircase\",\n    \"open space\"\n  ],\n  \"key_features\": [\n    \"open floor plan\",\n    \"multiple bedrooms\",\n    \"at least one bathroom\",\n    \"internal staircase\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"clean lines\"\n  ],\n  \"quality_assessment\": {\n    \"resolution\": \"good\",\n    \"clarity\": \"good\",\n    \"detail\": \"moderate\"\n  },\n  \"text_labels\": [\n    \"imagine by marein\",\n    \"villa 06\",\n    \"floor plan\",\n    \"nvoga\",\n    \"m\"\n  ],\n  \"overall_impression\": \"A clean and modern floor plan showcasing an open concept design with multiple bedrooms and a bathroom.  The plan is well-organized and easy to understand.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans villa 09 - imagine by marein_page-0002.jpg",
+        "path": "plan/floorplans villa 09 - imagine by marein_page-0002.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans villa 09 - imagine by marein_page-0002.jpg",
+        "type": "plan",
+        "size": 11029,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"garage\",\n    \"living room\",\n    \"kitchen\",\n    \"dining room\",\n    \"bedroom\",\n    \"bathroom\",\n    \"stairs\",\n    \"outdoor area\"\n  ],\n  \"key_features\": [\n    \"open plan living\",\n    \"large kitchen island\",\n    \"separate dining area\",\n    \"double garage\",\n    \"outdoor terrace\",\n    \"internal staircase\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"contemporary\",\n    \"minimalist\",\n    \"open concept\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [\n    \"imagine by marein\",\n    \"villa 09\",\n    \"nvoga\",\n    \"m\"\n  ],\n  \"overall_impression\": \"A high-quality architectural plan showcasing a modern, spacious villa with an open-plan layout and luxurious features.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "floorplans villa 09 - imagine by marein_page-0001.jpg",
+        "path": "plan/floorplans villa 09 - imagine by marein_page-0001.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/plan/floorplans villa 09 - imagine by marein_page-0001.jpg",
+        "type": "plan",
+        "size": 9230,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"plan\",\n  \"room_area_types\": [\n    \"garage\",\n    \"living room\",\n    \"kitchen\",\n    \"dining room\",\n    \"pool\",\n    \"bedroom\"\n  ],\n  \"key_features\": [\n    \"open plan living\",\n    \"double garage\",\n    \"infinity pool\",\n    \"large outdoor space\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"contemporary\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [\n    \"imagine by marein\",\n    \"villa 09\",\n    \"ground floor\",\n    \"avenida de europa\",\n    \"nvoga\",\n    \"marein\"\n  ],\n  \"overall_impression\": \"A high-quality floor plan showcasing a modern, luxurious villa with an open-plan layout, double garage, and infinity pool. The design is minimalist and contemporary, emphasizing clean lines and spaciousness.\"\n}\n```\n"
+        },
+        "processed": true
+      }
+    ]
+  },
+  "qualities": {
+    "summary": {
+      "total_count": 13,
+      "processed_with_ai": true
+    },
+    "documents": [
+      {
+        "filename": "Quality Specifications IMAGINE by marein_page-0008.jpg",
+        "path": "quality/Quality Specifications IMAGINE by marein_page-0008.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/quality/Quality Specifications IMAGINE by marein_page-0008.jpg",
+        "type": "quality",
+        "size": 12931,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"kitchen\",\n  \"key_features\": [\n    \"modern kitchen design\",\n    \"integrated appliances\",\n    \"sliding glass doors\",\n    \"dark wood cabinetry\",\n    \"island counter\",\n    \"Miele appliances\"\n  ],\n  \"style_and_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"contemporary\",\n    \"clean lines\",\n    \"neutral color palette\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [\n    \"KITCHEN\",\n    \"SANTOS\",\n    \"KÖK studio\",\n    \"Miele\"\n  ],\n  \"overall_impression\": \"A high-quality rendering of a modern, luxurious kitchen with sleek design and high-end appliances.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Quality Specifications IMAGINE by marein_page-0009.jpg",
+        "path": "quality/Quality Specifications IMAGINE by marein_page-0009.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/quality/Quality Specifications IMAGINE by marein_page-0009.jpg",
+        "type": "quality",
+        "size": 13270,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"photo\",\n  \"room_area_type\": \"living room\",\n  \"key_features_visible\": [\n    \"double-height ceiling\",\n    \"large fireplace\",\n    \"chandelier\",\n    \"sectional sofa\",\n    \"coffee table\",\n    \"large windows\",\n    \"outdoor view\"\n  ],\n  \"style_and_design_elements\": [\n    \"modern\",\n    \"contemporary\",\n    \"luxury\",\n    \"minimalist\",\n    \"neutral color palette\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_or_labels_visible\": [\n    \"Imagine\",\n    \"Facilities\",\n    \"Electricity and Telecommunications\",\n    \"Video Intercom Access Control System\",\n    \"HR Conditioning, Heating and Ventilation\",\n    \"Water Supply, Domestic Water and Irrigation\",\n    \"Lighting\",\n    \"No restrictive view changing from the existing view\",\n    \"Home Automation System\"\n  ],\n  \"overall_impression\": \"The image showcases a luxurious and spacious living room with high-end finishes and a modern design. The high ceilings and large windows create a bright and airy atmosphere. The overall impression is one of elegance and sophistication.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Quality Specifications IMAGINE by marein_page-0004.jpg",
+        "path": "quality/Quality Specifications IMAGINE by marein_page-0004.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/quality/Quality Specifications IMAGINE by marein_page-0004.jpg",
+        "type": "quality",
+        "size": 13063,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": [\"Outdoor patio/lounge\", \"Dining room\"],\n  \"key_features_visible\": [\"Outdoor seating area with furniture\", \"Dining table and chairs\", \"Modern design\", \"Large windows/doors\", \"Natural light\", \"Stone/tile flooring\", \"Wall decor\"],\n  \"style_and_design_elements\": [\"Modern\", \"Contemporary\", \"Mediterranean influences\", \"Neutral color palette\", \"Clean lines\"],\n  \"quality_assessment\": \"High quality render; good lighting and detail; realistic representation of materials and textures.\",\n  \"text_or_labels_visible\": [\"IMAGINE\", \"FLOORS\", \"INTERIOR\", \"Description of materials and finishes\"],\n  \"overall_impression\": \"The renders showcase a luxurious and modern living space with a seamless transition between indoor and outdoor areas. The high-quality visuals effectively convey the style and features of the property.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Quality Specifications IMAGINE by marein_page-0010.jpg",
+        "path": "quality/Quality Specifications IMAGINE by marein_page-0010.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/quality/Quality Specifications IMAGINE by marein_page-0010.jpg",
+        "type": "quality",
+        "size": 12332,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": [\"exterior\", \"pool area\", \"garden\"],\n  \"key_features\": [\"modern villa\", \"swimming pool\", \"landscaped garden\", \"parking\", \"outdoor lighting\", \"security system\"],\n  \"style_and_design_elements\": [\"modern\", \"contemporary\", \"minimalist\", \"clean lines\", \"large windows\", \"neutral color palette\"],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [\"OUTDOORS\", \"GARDEN AND IRRIGATION\", \"PARKING\", \"POOL BAR\", \"SWIMMING POOL\", \"EXTERIOR LIGHTING\", \"SECURITY SYSTEM\"],\n  \"overall_impression\": \"High-quality renderings showcasing a luxurious modern villa with extensive outdoor amenities.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Quality Specifications IMAGINE by marein_page-0011.jpg",
+        "path": "quality/Quality Specifications IMAGINE by marein_page-0011.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/quality/Quality Specifications IMAGINE by marein_page-0011.jpg",
+        "type": "quality",
+        "size": 11397,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_types\": [\n    \"basement\",\n    \"rooftop terrace\"\n  ],\n  \"key_features\": [\n    \"open plan living area\",\n    \"modern kitchen\",\n    \"infinity pool\",\n    \"outdoor dining area\",\n    \"large screen tv\",\n    \"balcony\"\n  ],\n  \"style_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"luxury\",\n    \"contemporary\",\n    \"clean lines\",\n    \"neutral color palette\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [\n    \"OPTIONAL BASEMENT\",\n    \"OPTIONAL SOLArium\",\n    \"Imagine\",\n    \"various features listed for both basement and solarium\"\n  ],\n  \"overall_impression\": \"The renders depict a luxurious and modern property with high-end finishes and amenities. The images are high-quality and effectively showcase the desirable features of the property.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Quality Specifications IMAGINE by marein_page-0005.jpg",
+        "path": "quality/Quality Specifications IMAGINE by marein_page-0005.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/quality/Quality Specifications IMAGINE by marein_page-0005.jpg",
+        "type": "quality",
+        "size": 15335,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"walk-in closet, exterior of house\",\n  \"key_features_visible\": [\n    \"walk-in closet with shelving and drawers\",\n    \"modern house exterior with pool\",\n    \"clean lines and minimalist design\"\n  ],\n  \"style_and_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"contemporary\",\n    \"clean lines\",\n    \"neutral color palette\"\n  ],\n  \"quality_assessment\": \"High-quality renders showing good detail and lighting.\",\n  \"text_or_labels_visible\": [\n    \"IMAGINE\",\n    \"WOOD CARPENTRY\",\n    \"METAL JOINERY\",\n    \"GLIDING DOORS\",\n    \"ENTRANCE DOOR\",\n    \"INTERIOR BESPOKE DOOR\",\n    \"WARDROBES AND DRESSING ROOMS (LUXO BRAND)\",\n    \"SIMPLEX ACCESS GATES AND PERGOLAS (EXTERIOR)\",\n    \"various descriptions of materials and features\"\n  ],\n  \"overall_impression\": \"The images present a luxurious and modern home with high-end finishes.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Quality Specifications IMAGINE by marein_page-0013.jpg",
+        "path": "quality/Quality Specifications IMAGINE by marein_page-0013.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/quality/Quality Specifications IMAGINE by marein_page-0013.jpg",
+        "type": "quality",
+        "size": 3259,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"logo\",\n  \"room_area_type\": \"null\",\n  \"key_features_visible\": [\n    \"Logo\",\n    \"Text: marein\",\n    \"Stylized 'M' with a small circle\"\n  ],\n  \"style_and_design_elements\": [\n    \"Minimalist\",\n    \"Modern\",\n    \"Black and white\",\n    \"Bold typography\"\n  ],\n  \"quality_assessment\": \"High quality, sharp and clear logo\",\n  \"text_or_labels_visible\": \"marein\",\n  \"overall_impression\": \"A clean and professional logo design for a company named 'marein'.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Quality Specifications IMAGINE by marein_page-0007.jpg",
+        "path": "quality/Quality Specifications IMAGINE by marein_page-0007.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/quality/Quality Specifications IMAGINE by marein_page-0007.jpg",
+        "type": "quality",
+        "size": 10119,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"document\",\n  \"room_area_type\": \"bathroom\",\n  \"key_features_visible\": [\n    \"master bathroom setting\",\n    \"secondary bathroom setting\",\n    \"toilet setting\",\n    \"bathroom vanity\",\n    \"freestanding bathtub\",\n    \"wall-mounted sink\",\n    \"shower\",\n    \"various faucets and fixtures\"\n  ],\n  \"style_and_design_elements\": [\n    \"modern\",\n    \"minimalist\",\n    \"clean lines\",\n    \"neutral color palette\"\n  ],\n  \"quality_assessment\": \"High-quality product specification sheet with clear images and descriptions.\",\n  \"text_or_labels_visible\": [\n    \"Bathroom\",\n    \"GATTONI\",\n    \"Master Bathroom Setting\",\n    \"Secondary Bathroom Setting\",\n    \"Toilet Setting\",\n    \"Bathroom Vanity\",\n    \"Made in Italy\"\n  ],\n  \"overall_impression\": \"A professional and informative document showcasing high-end bathroom fixtures and design options from the Gattoni brand.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Quality Specifications IMAGINE by marein_page-0006.jpg",
+        "path": "quality/Quality Specifications IMAGINE by marein_page-0006.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/quality/Quality Specifications IMAGINE by marein_page-0006.jpg",
+        "type": "quality",
+        "size": 11876,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_type\": \"Bathroom\",\n  \"key_features\": [\n    \"Freestanding bathtub\",\n    \"Large mirror\",\n    \"Double vanity\",\n    \"Walk-in shower\",\n    \"Dark stone wall\",\n    \"Wood-like flooring\"\n  ],\n  \"style_and_design_elements\": [\n    \"Modern\",\n    \"Luxury\",\n    \"Minimalist\",\n    \"Contemporary\",\n    \"Dark and light contrast\"\n  ],\n  \"quality_assessment\": \"High-quality render, showing good detail and realistic materials.\",\n  \"text_labels\": [\n    \"BATHROOMS\",\n    \"TUBS\",\n    \"VANITY UNIT\",\n    \"BATHROOM SHOWER SCREENS\"\n  ],\n  \"overall_impression\": \"The image presents a luxurious and modern bathroom design with high-end finishes and fixtures.  The render is visually appealing and effectively communicates the design concept.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Quality Specifications IMAGINE by marein_page-0012.jpg",
+        "path": "quality/Quality Specifications IMAGINE by marein_page-0012.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/quality/Quality Specifications IMAGINE by marein_page-0012.jpg",
+        "type": "quality",
+        "size": 12472,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_types\": [\n    \"bedroom\",\n    \"rooftop terrace\",\n    \"game room\"\n  ],\n  \"key_features\": [\n    \"king-size bed\",\n    \"large windows\",\n    \"outdoor seating area\",\n    \"pool table\",\n    \"modern furniture\",\n    \"neutral color palette\"\n  ],\n  \"style_and_design_elements\": [\n    \"modern\",\n    \"contemporary\",\n    \"minimalist\",\n    \"luxury\",\n    \"neutral tones\",\n    \"natural materials\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [\n    \"Imagine\",\n    \"INTERIOR DESIGN\",\n    \"AMETO\",\n    \"Luxury Properties\"\n  ],\n  \"overall_impression\": \"The renders depict a luxurious and modern property with high-end finishes and spacious rooms. The rooftop terrace offers stunning views and ample space for relaxation and entertainment. The overall aesthetic is sophisticated and calming.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Quality Specifications IMAGINE by marein_page-0002.jpg",
+        "path": "quality/Quality Specifications IMAGINE by marein_page-0002.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/quality/Quality Specifications IMAGINE by marein_page-0002.jpg",
+        "type": "quality",
+        "size": 11008,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"document\",\n  \"room_area_type\": \"null\",\n  \"key_features_visible\": [\n    \"Project description\",\n    \"Partner logos (Uecko, KN X, Santos, Gaitoni, Technal, Mero)\"\n  ],\n  \"style_and_design_elements\": [\n    \"Modern\",\n    \"Clean design\"\n  ],\n  \"quality_assessment\": \"High quality print or digital image.  Clear text and logos.\",\n  \"text_or_labels_visible\": [\n    \"Imagine\",\n    \"Uecko Marbella\",\n    \"KNX\",\n    \"Santos\",\n    \"Gaitoni\",\n    \"Technal\",\n    \"Mero\",\n    \"Project description text\"\n  ],\n  \"overall_impression\": \"A promotional document showcasing a real estate development, highlighting its design features and partnerships with various brands.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Quality Specifications IMAGINE by marein_page-0003.jpg",
+        "path": "quality/Quality Specifications IMAGINE by marein_page-0003.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/quality/Quality Specifications IMAGINE by marein_page-0003.jpg",
+        "type": "quality",
+        "size": 12673,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"render\",\n  \"room_area_types\": [\n    \"exterior\",\n    \"living_room\"\n  ],\n  \"key_features\": [\n    \"modern_architecture\",\n    \"swimming_pool\",\n    \"large_windows\",\n    \"open_plan_living\",\n    \"minimalist_design\"\n  ],\n  \"style_design_elements\": [\n    \"contemporary\",\n    \"minimalist\",\n    \"clean_lines\",\n    \"neutral_color_palette\"\n  ],\n  \"quality_assessment\": \"high\",\n  \"text_labels\": [\n    \"IMAGINE\",\n    \"FINISHES\",\n    \"EXTERIOR\",\n    \"INTERIOR\"\n  ],\n  \"overall_impression\": \"The renders depict a high-end, modern villa with a focus on clean lines, spacious interiors, and luxurious amenities. The quality of the renders is excellent, showcasing the property in a very appealing way.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Quality Specifications IMAGINE by marein_page-0001.jpg",
+        "path": "quality/Quality Specifications IMAGINE by marein_page-0001.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/quality/Quality Specifications IMAGINE by marein_page-0001.jpg",
+        "type": "quality",
+        "size": 8112,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"document\",\n  \"room_area_type\": null,\n  \"key_features_visible\": [],\n  \"style_and_design_elements\": [\n    \"Abstract background\",\n    \"Cursive text\",\n    \"Minimalist design\"\n  ],\n  \"quality_assessment\": \"High quality image; clear text and visually appealing abstract background.\",\n  \"text_or_labels_visible\": [\n    \"imagine\",\n    \"by marein\",\n    \"quality specifications\"\n  ],\n  \"overall_impression\": \"A high-quality cover page or title page for a document related to 'imagine' by 'marein', likely showcasing quality specifications.\"\n}\n```\n"
+        },
+        "processed": true
+      }
+    ]
+  },
+  "prices": {
+    "summary": {
+      "total_count": 6,
+      "processed_with_ai": true
+    },
+    "documents": [
+      {
+        "filename": "Sales conditions Villa 07 imagine by marein_page-0001.jpg",
+        "path": "price/Sales conditions Villa 07 imagine by marein_page-0001.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/price/Sales conditions Villa 07 imagine by marein_page-0001.jpg",
+        "type": "price",
+        "size": 11205,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"document\",\n  \"room_area_type\": null,\n  \"key_features_visible\": [\n    \"Villa 07\",\n    \"Plot area: 601.15 sqm\",\n    \"Built area: 161.72 sqm\",\n    \"Price: 1,290,000 € + VAT\",\n    \"Payment schedule details\",\n    \"Optional basement\",\n    \"Completion and delivery timeline\"\n  ],\n  \"style_and_design_elements\": null,\n  \"quality_assessment\": \"Good quality scan of a document providing pricing and payment details for a villa.\",\n  \"text_labels_visible\": [\n    \"imagine\",\n    \"Villa 07\",\n    \"Plot area: 601.15 sqm\",\n    \"Total Built Area: 161.72 sqm\",\n    \"Price: 1,290,000 € + VAT\",\n    \"Provisional deposit for the first season (10%)\",\n    \"Building permit (20%)\",\n    \"Enabling license, the Particular Control and obtaining the\",\n    \"VAT for building permit will also be paid at this stage.\",\n    \"Upon signing of the C.E.O by the purchaser (20%)\",\n    \"Upon signing of the Public Deed of Purchase (10%)\",\n    \"Basement (built area approx. 100 sqm)\",\n    \"The completion and delivery of the houses expected within 36 months from\",\n    \"amounts are paid by the buyer before receipt of the deed.\"\n  ],\n  \"overall_impression\": \"A clear and detailed price list and payment schedule for a villa purchase.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Sales conditions Villa 10 imagine by marein_page-0001.jpg",
+        "path": "price/Sales conditions Villa 10 imagine by marein_page-0001.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/price/Sales conditions Villa 10 imagine by marein_page-0001.jpg",
+        "type": "price",
+        "size": 11189,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"document\",\n  \"room_area_type\": null,\n  \"key_features_visible\": [\n    \"Villa 10\",\n    \"Plot size: 578.00 sqm\",\n    \"Built area: 198.22 sqm\",\n    \"Price: 1,290,000 € + VAT\",\n    \"Payment schedule\",\n    \"Optional extras\",\n    \"Basement floor built area approx. 97.14 sqm\",\n    \"Completion and delivery of the houses expected within 36 months\"\n  ],\n  \"style_and_design_elements\": null,\n  \"quality_assessment\": \"High quality document, clear and well-organized.\",\n  \"text_or_labels_visible\": [\n    \"imagine by marein\",\n    \"Villa 10\",\n    \"Plot size\",\n    \"Built area\",\n    \"Price\",\n    \"Payment schedule\",\n    \"Optional\",\n    \"Basement floor built area approx.\",\n    \"The completion and delivery of the houses expected within 36 months\"\n  ],\n  \"overall_impression\": \"A sales document providing detailed pricing and payment information for Villa 10.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Sales conditions Villa 09 imagine by marein_page-0001.jpg",
+        "path": "price/Sales conditions Villa 09 imagine by marein_page-0001.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/price/Sales conditions Villa 09 imagine by marein_page-0001.jpg",
+        "type": "price",
+        "size": 11224,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"document\",\n  \"room_area_type\": null,\n  \"key_features_visible\": [\n    \"Villa 09\",\n    \"Total Built Area: 166.72 sqm\",\n    \"Plot size: 1,176.20 sqm\",\n    \"Price: 1,500,000 € + VAT\",\n    \"Payment schedule details\",\n    \"Completion and delivery of the house expected within 36 months\"\n  ],\n  \"style_and_design_elements\": null,\n  \"quality_assessment\": \"High quality document image, clear and legible.\",\n  \"text_or_labels_visible\": [\n    \"imagine by marein\",\n    \"Villa 09\",\n    \"Plot size: 1,176.20 sqm\",\n    \"Price: 1,500,000 € + VAT\",\n    \"Total Built Area: 166.72 sqm\",\n    \"Promoter: Imagine Marein\",\n    \"Payment Schedule\",\n    \"Optional\",\n    \"Basement (built area approx. 37.14 sqm)\",\n    \"The completion and delivery of the house is expected within 36 months from the signing of the private purchase contract and commencement of works. If works are delayed for reasons outside the description, the remaining part of the deposit will be refunded and an additional 1% per month will be paid by the promoter. Receipt of the house will be guaranteed by an insurance company.\"\n  ],\n  \"overall_impression\": \"A clear and detailed sales document for Villa 09, outlining the price, payment schedule, and key features.  It appears to be a professional real estate document.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Sales conditions Villa 05 imagine by marein_page-0001.jpg",
+        "path": "price/Sales conditions Villa 05 imagine by marein_page-0001.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/price/Sales conditions Villa 05 imagine by marein_page-0001.jpg",
+        "type": "price",
+        "size": 11193,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"document\",\n  \"room_area_type\": null,\n  \"key_features_visible\": [\n    \"Villa 05\",\n    \"Plot area: 902.08 sqm\",\n    \"Built area: 166.72 sqm\",\n    \"Price: 1,290,000 € + VAT\",\n    \"Payment schedule details\",\n    \"Optional basement\",\n    \"Completion and delivery timeline\"\n  ],\n  \"style_and_design_elements\": null,\n  \"quality_assessment\": \"High quality document image, clear and legible.\",\n  \"text_or_labels_visible\": [\n    \"imagine by marein\",\n    \"Villa 05\",\n    \"Plot area: 902.08 sqm\",\n    \"Price: 1,290,000 € + VAT\",\n    \"Total Built Area: 166.72 sqm\",\n    \"Promoter: Imagine Marein S.L.\",\n    \"Payment Schedule\",\n    \"Provisional deposit for the first phase (10%):\",\n    \"Building license (25% VAT)\",\n    \"Enabling license, the Particular Control and obtaining the\",\n    \"first occupancy license will also be paid at this stage.\",\n    \"10% for monthly payments during the construction.\",\n    \"Upon signing of the Public Deed of Purchase (20% + VAT)\",\n    \"Upon signing of the Public Deed of Purchase (10% + VAT)\",\n    \"OPTIONAL:\",\n    \"Basement (built area approx. 100 sqm)\",\n    \"The completion and delivery of the houses is expected within 36 months from\",\n    \"the signing of the private purchase contract and commencement of works. These\",\n    \"amounts are paid by the buyer after receipt of the declaration.\",\n    \"amounts are paid by the buyer after receipt of the declaration.\"\n  ],\n  \"overall_impression\": \"A clear and detailed sales document for Villa 05, outlining pricing, payment schedule, and key features.  It appears to be a high-quality scan or image of an official document.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Sales conditions Villa 08 imagine by marein_page-0001.jpg",
+        "path": "price/Sales conditions Villa 08 imagine by marein_page-0001.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/price/Sales conditions Villa 08 imagine by marein_page-0001.jpg",
+        "type": "price",
+        "size": 11228,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"document\",\n  \"room_area_type\": null,\n  \"key_features_visible\": [\n    \"Villa 08\",\n    \"Plot 1086.20 sqm\",\n    \"Built Area 166.72 sqm\",\n    \"Price: 1,080,000 € + VAT\",\n    \"Payment schedule\",\n    \"Optional extras\",\n    \"Basement floor built area approx. 101.11 sqm 800,000 € + VAT (inclusive of VAT)\"\n  ],\n  \"style_design_elements\": null,\n  \"quality_assessment\": \"High quality document image, clear and legible.\",\n  \"text_labels_visible\": [\n    \"imagine by marein\",\n    \"Villa 08\",\n    \"Plot 1086.20 sqm\",\n    \"Price: 1,080,000 € + VAT\",\n    \"Total Built Area: 166.72 sqm\",\n    \"Promoter: Imagine Marein\",\n    \"Payment Schedule\",\n    \"Provisional deposit for the first phase (10%):\",\n    \"Building license (20% VAT)\",\n    \"Enabling license (the Particular Control and obtaining the\",\n    \"Note: VAT for building will also be paid at this stage.\",\n    \"10% upon execution of the Public Deed of Purchase (20% VAT)\",\n    \"Upon signing of the Public Deed of Purchase (10% + 20% VAT)\",\n    \"Optional\",\n    \"Basement floor built area approx. 101.11 sqm 800,000 € + VAT (inclusive of VAT)\",\n    \"The completion and delivery of the houses is expected within 30 months from\",\n    \"The payments schedule and the function of the payment terms will commence\",\n    \"from the first month following the signing of the private purchase contract\"\n  ],\n  \"overall_impression\": \"A sales document detailing the price and payment schedule for Villa 08, including optional extras and estimated completion time.\"\n}\n```\n"
+        },
+        "processed": true
+      },
+      {
+        "filename": "Sales conditions Villa 06 imagine by marein_page-0001.jpg",
+        "path": "price/Sales conditions Villa 06 imagine by marein_page-0001.jpg",
+        "full_path": "projects/imagine-by-marein/downloaded_files/price/Sales conditions Villa 06 imagine by marein_page-0001.jpg",
+        "type": "price",
+        "size": 11208,
+        "ai_analysis": {
+          "analysis": "```json\n{\n  \"image_type\": \"document\",\n  \"room_area_type\": null,\n  \"key_features_visible\": [\n    \"Villa 06\",\n    \"Plot area: 601.64 sqm\",\n    \"Total built area: 166.72 sqm\",\n    \"Price: 1,290,000 € + VAT\",\n    \"Payment schedule details\",\n    \"Optional basement\",\n    \"Completion and delivery timeline\"\n  ],\n  \"style_and_design_elements\": null,\n  \"quality_assessment\": \"High quality document image, clear and legible.\",\n  \"text_or_labels_visible\": [\n    \"imagine by marein\",\n    \"Villa 06\",\n    \"Plot area: 601.64 sqm\",\n    \"Price: 1,290,000 € + VAT\",\n    \"Total Built Area: 166.72 sqm\",\n    \"Promoter: Grupo Marein, S.L.\",\n    \"Payment Schedule\",\n    \"Optional:\",\n    \"Basement (built area approx. 100 sqm)\",\n    \"The completion and delivery of the houses expects commencement 30 months from the signing of the private purchase contract and will be guaranteed by 17 months after the IPO for the office. Result of the additional 17 months are pulled by the developer acquisition and declared.\",\n    \"The payments schedule and the signing of the payment terms will commence from the first month following the signing of the private purchase contract\"\n  ],\n  \"overall_impression\": \"A clear and detailed sales document outlining the price and payment schedule for Villa 06, including optional features and a timeline for completion.\"\n}\n```\n"
+        },
+        "processed": true
+      }
+    ]
+  },
+  "statistics": {
+    "total_files": 83,
+    "total_processed": 83,
+    "villa_types": 6,
+    "render_types": 10,
+    "quality_pages": 13,
+    "plan_pages_per_villa": 5
+  },
+  "metadata": {
+    "source": "NVOGA Portal",
+    "processing_method": "Local AI Analysis",
+    "data_structure": "AI-Enhanced JSON",
+    "version": "2.0",
+    "completeness": "Complete with AI Analysis"
+  }
+}
