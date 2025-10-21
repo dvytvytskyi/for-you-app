@@ -1464,26 +1464,29 @@
     if (path[1] && allowedLanguages.includes(path[1])) {
         language = path[1];
     }
-    document.addEventListener("DOMContentLoaded", function () {
+    
+    // Глобальна функція checkPolygon для доступу з будь-якого місця
+    window.checkPolygon = function() {
         const trashButton = document.getElementById("trash");
         const btnDraw = document.getElementById('draw');
         const btnFilterMobile = document.getElementById('filterMobilePhone');
-
-        function checkPolygon() {
-            const urlParams = new URLSearchParams(decodeURIComponent(window.location.search));
-            if (urlParams.has("polygon")) {
-                trashButton.classList.add("active");
-                btnList.classList.remove('hidden');
-                btnDraw.classList.add('hidden');
-                btnFilterMobile.classList.add('hidden');
-            } else {
-                trashButton.classList.remove("active");
-                btnList.classList.add('hidden');
-                btnDraw.classList.remove("hidden");
-                btnFilterMobile.classList.remove("hidden");
-            }
+        const btnList = document.getElementById('list');
+        
+        const urlParams = new URLSearchParams(decodeURIComponent(window.location.search));
+        if (urlParams.has("polygon")) {
+            if (trashButton) trashButton.classList.add("active");
+            if (btnList) btnList.classList.remove('hidden');
+            if (btnDraw) btnDraw.classList.add('hidden');
+            if (btnFilterMobile) btnFilterMobile.classList.add('hidden');
+        } else {
+            if (trashButton) trashButton.classList.remove("active");
+            if (btnList) btnList.classList.add('hidden');
+            if (btnDraw) btnDraw.classList.remove("hidden");
+            if (btnFilterMobile) btnFilterMobile.classList.remove("hidden");
         }
-
+    };
+    
+    document.addEventListener("DOMContentLoaded", function () {
         // Первоначальная проверка при загрузке страницы
         checkPolygon();
 
@@ -4339,12 +4342,29 @@ let allProjectsGeoJSON = null;
     // ===================================
 
     // Touch and click events for markers
+    // For touch devices, we need to handle touchstart and prevent default behavior
+    const handleMarkerTouch = (e) => {
+        e.preventDefault(); // Prevent default touch behavior
+        onMarkerClick(e);
+    };
+    
     map.on('click', 'unclustered-point', onMarkerClick);
-    map.on('touchend', 'unclustered-point', onMarkerClick);
+    map.on('touchstart', 'unclustered-point', handleMarkerTouch);
     map.on('mouseenter', 'unclustered-point', () => { map.getCanvas().style.cursor = 'pointer'; });
     map.on('mouseleave', 'unclustered-point', () => { map.getCanvas().style.cursor = ''; });
     
     // Touch and click events for clusters
+    const handleClusterTouch = (e) => {
+        e.preventDefault(); // Prevent default touch behavior
+        const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] });
+        if (!features || !features.length) return;
+        const clusterId = features[0].properties.cluster_id;
+        map.getSource('projects').getClusterExpansionZoom(clusterId, (err, zoom) => {
+            if (err) return;
+            map.easeTo({ center: features[0].geometry.coordinates, zoom: zoom });
+        });
+    };
+    
     const handleClusterClick = (e) => {
         const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] });
         if (!features || !features.length) return;
@@ -4356,7 +4376,7 @@ let allProjectsGeoJSON = null;
     };
     
     map.on('click', 'clusters', handleClusterClick);
-    map.on('touchend', 'clusters', handleClusterClick);
+    map.on('touchstart', 'clusters', handleClusterTouch);
     map.on('mouseenter', 'clusters', () => { map.getCanvas().style.cursor = 'pointer'; });
     map.on('mouseleave', 'clusters', () => { map.getCanvas().style.cursor = ''; });
 
