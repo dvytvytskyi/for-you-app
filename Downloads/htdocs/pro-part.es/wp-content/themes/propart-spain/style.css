@@ -4563,7 +4563,30 @@ hr {
     }
     
     .closeNavBottom {
-        display: block !important;
+        display: flex !important;
+        position: fixed !important;
+        top: 32px !important;
+        right: 32px !important;
+        width: 56px !important;
+        height: 56px !important;
+        border: 2px solid #fff !important;
+        border-radius: 50% !important;
+        background: no-repeat center url(./icons/shared/closeWhite.svg) !important;
+        background-size: 24px 24px !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        z-index: 12 !important;
+        transition: transform 0.2s ease, background-color 0.2s ease !important;
+    }
+    
+    .closeNavBottom:hover {
+        transform: scale(1.1) !important;
+        background-color: rgba(255, 255, 255, 0.1) !important;
+    }
+    
+    .closeNavBottom:active {
+        transform: scale(0.95) !important;
     }
 }
 
