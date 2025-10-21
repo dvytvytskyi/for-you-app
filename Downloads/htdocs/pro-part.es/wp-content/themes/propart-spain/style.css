@@ -4685,6 +4685,41 @@ hr {
         gap: 16px !important;
     }
     
+    .filterPropertiesWrapper__dropDown_body {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    
+    .filterPropertiesWrapper__dropDown_list {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        padding-right: 0 !important;
+    }
+    
+    .filterPropertiesWrapper__dropDown_item {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 12px 16px !important;
+    }
+    
+    .filterPropertiesWrapper__customCheckBox {
+        flex-shrink: 0 !important;
+        margin-left: auto !important;
+    }
+    
+    .adapriveFilters__main-dropdowns > div {
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    
+    .filterPropertiesWrapper__dropDown {
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    
     .adapriveFilters__main-buttonsBottom {
         margin-top: 24px !important;
         gap: 12px !important;
