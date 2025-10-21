@@ -4514,6 +4514,59 @@ hr {
     }
 }
 
+/* Tablet styles - iPad and iPad Pro */
+@media screen and (min-width: 768px) and (max-width: 1366px) {
+    .menuButton {
+        display: block !important;
+    }
+    
+    .nav {
+        display: none !important;
+    }
+    
+    .showNav {
+        display: flex !important;
+        align-items: flex-start !important;
+        flex-direction: column !important;
+        gap: 24px !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        background-color: #717171f1 !important;
+        padding: 120px 48px 48px !important;
+        z-index: 11 !important;
+        overflow-y: auto !important;
+    }
+    
+    .showNav .navList {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 24px !important;
+        align-items: flex-start !important;
+    }
+    
+    .showNav .navLink {
+        color: #fff !important;
+        font-size: 24px !important;
+        opacity: 1 !important;
+    }
+    
+    .showNav .navLink.active:after {
+        background-color: #fff !important;
+    }
+    
+    .fixedMenue {
+        display: flex !important;
+    }
+    
+    .closeNavBottom {
+        display: block !important;
+    }
+}
+
 .headerContent {
     display: flex;
     flex-direction: column;
@@ -11277,9 +11330,10 @@ p {
 }
 
 .project-inquiry-buttons .button-black {
-    flex: 1;
+    flex: 0 0 auto;
     justify-content: center;
     gap: 8px;
+    min-width: 150px;
 }
 
 .project-inquiry-buttons .button-black svg {
@@ -11465,7 +11519,7 @@ p {
     }
     
     .project-inquiry-buttons .button-black {
-        width: 100%;
+    
     }
 
     .project-inquiry-row {
