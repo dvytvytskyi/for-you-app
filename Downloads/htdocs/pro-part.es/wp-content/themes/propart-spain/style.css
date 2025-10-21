@@ -10225,11 +10225,12 @@ p {
 	width: 100%;
 	height: 100%;
 	border-radius: 40px;
-    margin-right: 50px;
+    margin: 0;
+    padding: 0;
 }
 
 .mapProjectWrapper {
-    padding-inline: 64px;
+    padding-inline: 24px;
     box-sizing: border-box;
     margin-bottom: 10px;
     z-index: 1;
@@ -10240,7 +10241,7 @@ p {
 
 @media (max-width: 768px) {
     #mapOffPlanById {
-        margin-right: 0;
+        margin: 0;
     }
 }
 
