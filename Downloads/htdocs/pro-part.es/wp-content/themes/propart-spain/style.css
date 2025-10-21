@@ -10494,11 +10494,11 @@ p {
 	.mapListProjects {
 		width: 100vw !important;
 		max-width: 100vw !important;
-		height: 70vh !important;
+		height: 90vh !important;
 		left: 0 !important;
 		right: 0 !important;
 		top: auto !important;
-		bottom: -70vh !important;
+		bottom: -90vh !important;
 		border-radius: 20px 20px 0 0 !important;
 		transition: bottom 0.3s ease-in-out, opacity 0.3s ease-in-out !important;
 		box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15) !important;
@@ -10512,7 +10512,7 @@ p {
 		transform: translateX(0) !important;
 	}
 	
-	/* Backdrop overlay for mobile */
+	/* Backdrop overlay for mobile - white with transparency */
 	.mapListProjects::before {
 		content: '';
 		position: fixed;
@@ -10520,7 +10520,9 @@ p {
 		left: 0;
 		right: 0;
 		bottom: 0;
-		background: rgba(0, 0, 0, 0.4);
+		background: rgba(255, 255, 255, 0.85);
+		backdrop-filter: blur(4px);
+		-webkit-backdrop-filter: blur(4px);
 		opacity: 0;
 		pointer-events: none;
 		transition: opacity 0.3s ease-in-out;
@@ -10558,16 +10560,28 @@ p {
 	.mapListProjects__title {
 		font-size: 20px;
 		padding-right: 40px;
+		text-align: center;
+		width: 100%;
+	}
+	
+	.mapListProjects__count {
+		text-align: center;
+		padding: 12px 20px;
 	}
 	
 	.mapListProjects__list {
 		padding: 12px 16px;
 		gap: 10px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
 	}
 	
 	.mapListProjects__card {
 		border-radius: 12px;
 		padding: 10px;
+		max-width: 600px;
+		width: 100%;
 	}
 }
 
@@ -10575,8 +10589,8 @@ p {
 @media screen and (max-width: 480px) {
 	.mapListProjects {
 		width: 100vw !important;
-		height: 70vh !important;
-		bottom: -70vh !important;
+		height: 90vh !important;
+		bottom: -90vh !important;
 	}
 	
 	.mapListProjects.active {
