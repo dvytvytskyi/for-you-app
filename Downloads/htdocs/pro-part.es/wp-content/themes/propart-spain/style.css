@@ -1007,6 +1007,11 @@ ul {
         font-family: 'Onest', Arial, sans-serif;
         overflow: hidden;
     }
+    
+    /* Hide mobile close button on desktop */
+    .mapPopup__close-mobile {
+        display: none;
+    }
 
     /* Слайдер та зображення */
     .mapPopup .swiper-container {
@@ -1083,14 +1088,20 @@ ul {
     /* Mobile styles for map popup */
     @media (max-width: 768px) {
         .mapboxgl-popup {
-            max-width: 260px !important;
+            max-width: 280px !important;
             /* Center popup horizontally */
             left: 50% !important;
             transform: translateX(-50%) !important;
         }
         
+        .mapboxgl-popup-content {
+            border-radius: 16px !important;
+        }
+        
         .mapPopup {
-            width: 260px;
+            width: 280px;
+            border-radius: 16px;
+            overflow: hidden;
         }
         
         .mapPopup .swiper-container {
@@ -1098,7 +1109,7 @@ ul {
         }
         
         .mapPopup__texts {
-            padding: 10px;
+            padding: 10px 12px;
         }
         
         .mapPopup__info-title {
@@ -1117,6 +1128,27 @@ ul {
         .mapPopupBtnRedirect {
             font-size: 12px;
             padding: 7px 14px;
+        }
+        
+        /* Close button for mobile */
+        .mapPopup__close-mobile {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: #f5f5f5;
+            border: none;
+            border-radius: 0 0 16px 16px;
+            font-family: Onest, sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: #313131;
+            cursor: pointer;
+            text-align: center;
+            transition: background-color 0.2s;
+        }
+        
+        .mapPopup__close-mobile:active {
+            background-color: #e0e0e0;
         }
         
         /* Popup positioned from bottom on mobile - center it horizontally */

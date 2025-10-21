@@ -4614,6 +4614,7 @@ let allProjectsGeoJSON = null;
 										${projectsList}
 									</div>
 								</div>
+								<button class="mapPopup__close-mobile">Close</button>
 							</div>`;
 
 						const popupNode = document.createElement('div');
@@ -4643,6 +4644,18 @@ let allProjectsGeoJSON = null;
 						if (closeBtn) {
 							closeBtn.addEventListener('click', () => {
 								// Find and remove the popup
+								const popup = document.querySelector('.mapboxgl-popup');
+								if (popup) {
+									popup.remove();
+								}
+							});
+						}
+						
+						// Add event listener for mobile close button
+						const mobileCloseBtn = popupNode.querySelector('.mapPopup__close-mobile');
+						if (mobileCloseBtn) {
+							mobileCloseBtn.addEventListener('click', (ev) => {
+								ev.stopPropagation();
 								const popup = document.querySelector('.mapboxgl-popup');
 								if (popup) {
 									popup.remove();
@@ -4710,6 +4723,7 @@ let allProjectsGeoJSON = null;
 								</div>
 							</div>
 						</div>
+						<button class="mapPopup__close-mobile">Close</button>
 					</div>`;
 
 				const popupNode = document.createElement('div');
@@ -4730,6 +4744,18 @@ let allProjectsGeoJSON = null;
 					 }
 					 window.open(redirectUrl, '_blank');
 				});
+				
+				// Add event listener for mobile close button
+				const mobileCloseBtn = popupNode.querySelector('.mapPopup__close-mobile');
+				if (mobileCloseBtn) {
+					mobileCloseBtn.addEventListener('click', (ev) => {
+						ev.stopPropagation();
+						const popup = document.querySelector('.mapboxgl-popup');
+						if (popup) {
+							popup.remove();
+						}
+					});
+				}
 
 				console.log(`Opening single project popup at clicked coordinates: ${clickedCoordinates[0]}, ${clickedCoordinates[1]}`);
 				
