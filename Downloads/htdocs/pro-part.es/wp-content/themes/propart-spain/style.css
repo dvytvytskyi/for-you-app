@@ -1089,9 +1089,6 @@ ul {
     @media (max-width: 768px) {
         .mapboxgl-popup {
             max-width: 280px !important;
-            /* Center popup horizontally */
-            left: 50% !important;
-            transform: translateX(-50%) !important;
         }
         
         .mapboxgl-popup-content {
@@ -1151,12 +1148,7 @@ ul {
             background-color: #e0e0e0;
         }
         
-        /* Popup positioned from bottom on mobile - center it horizontally */
-        .mapboxgl-popup-anchor-bottom {
-            left: 50% !important;
-            transform: translateX(-50%) !important;
-        }
-        
+        /* Popup positioned from bottom on mobile */
         .mapboxgl-popup-anchor-bottom .mapboxgl-popup-content {
             margin-left: auto;
             margin-right: auto;

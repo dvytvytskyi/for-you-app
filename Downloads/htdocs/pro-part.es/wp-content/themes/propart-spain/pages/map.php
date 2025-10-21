@@ -4667,17 +4667,43 @@ let allProjectsGeoJSON = null;
 					
 					// Визначаємо чи це мобільний пристрій
 					const isMobile = window.innerWidth <= 768;
-					const popupOptions = {
-						closeButton: false,
-						className: 'project-popup',
-						anchor: isMobile ? 'bottom' : 'left',
-						offset: isMobile ? [0, -10] : 15
-					};
 					
-					new mapboxgl.Popup(popupOptions)
-						.setLngLat(clickedCoordinates)
-						.setDOMContent(popupNode)
-						.addTo(map);
+					// На мобільних центруємо карту на точці, щоб popup з'явився посередині
+					if (isMobile) {
+						map.easeTo({
+							center: clickedCoordinates,
+							duration: 300
+						});
+						
+						// Чекаємо завершення анімації
+						setTimeout(() => {
+							const mapCenter = map.getCenter();
+							const popupOptions = {
+								closeButton: false,
+								className: 'project-popup',
+								anchor: 'bottom',
+								offset: [0, -10]
+							};
+							
+							new mapboxgl.Popup(popupOptions)
+								.setLngLat([mapCenter.lng, mapCenter.lat])
+								.setDOMContent(popupNode)
+								.addTo(map);
+						}, 300);
+					} else {
+						// Десктопна версія без змін
+						const popupOptions = {
+							closeButton: false,
+							className: 'project-popup',
+							anchor: 'left',
+							offset: 15
+						};
+						
+						new mapboxgl.Popup(popupOptions)
+							.setLngLat(clickedCoordinates)
+							.setDOMContent(popupNode)
+							.addTo(map);
+					}
 					
 					return;
 				}
@@ -4761,22 +4787,52 @@ let allProjectsGeoJSON = null;
 				
 				// Визначаємо чи це мобільний пристрій
 				const isMobile = window.innerWidth <= 768;
-				const popupOptions = {
-					closeButton: false,
-					className: 'project-popup',
-					anchor: isMobile ? 'bottom' : 'left',
-					offset: isMobile ? [0, -10] : 15
-				};
 				
-				new mapboxgl.Popup(popupOptions)
-					.setLngLat(clickedCoordinates)
-					.setDOMContent(popupNode)
-					.addTo(map);
-
+				// На мобільних центруємо карту на точці, щоб popup з'явився посередині
+				if (isMobile) {
+					map.easeTo({
+						center: clickedCoordinates,
+						duration: 300
+					});
+					
+					// Чекаємо завершення анімації
+					setTimeout(() => {
+						const mapCenter = map.getCenter();
+						const popupOptions = {
+							closeButton: false,
+							className: 'project-popup',
+							anchor: 'bottom',
+							offset: [0, -10]
+						};
+						
+						new mapboxgl.Popup(popupOptions)
+							.setLngLat([mapCenter.lng, mapCenter.lat])
+							.setDOMContent(popupNode)
+							.addTo(map);
+							
+						if (window.Swiper) {
+							new Swiper(popupNode.querySelector('.swiper-container'), { loop: true });
+						}
+					}, 300);
+				} else {
+					// Десктопна версія без змін
+					const popupOptions = {
+						closeButton: false,
+						className: 'project-popup',
+						anchor: 'left',
+						offset: 15
+					};
+					
+					new mapboxgl.Popup(popupOptions)
+						.setLngLat(clickedCoordinates)
+						.setDOMContent(popupNode)
+						.addTo(map);
+						
 					if (window.Swiper) {
 						new Swiper(popupNode.querySelector('.swiper-container'), { loop: true });
 					}
 				}
+			}
 
 				// ВСТАВТЕ ЦЮ ВЕРСІЮ
 function onDrawCreate(e) {
