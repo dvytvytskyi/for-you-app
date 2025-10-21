@@ -4639,14 +4639,24 @@ let allProjectsGeoJSON = null;
 							});
 						}
 
-						console.log(`Opening multi-project popup at clicked coordinates: ${clickedCoordinates[0]}, ${clickedCoordinates[1]}`);
-						new mapboxgl.Popup({ closeButton: false, className: 'project-popup', anchor: 'left', offset: 15 })
-							.setLngLat(clickedCoordinates)
-							.setDOMContent(popupNode)
-							.addTo(map);
-						
-						return;
-					}
+					console.log(`Opening multi-project popup at clicked coordinates: ${clickedCoordinates[0]}, ${clickedCoordinates[1]}`);
+					
+					// Визначаємо чи це мобільний пристрій
+					const isMobile = window.innerWidth <= 768;
+					const popupOptions = {
+						closeButton: false,
+						className: 'project-popup',
+						anchor: isMobile ? 'bottom' : 'left',
+						offset: isMobile ? [0, -10] : 15
+					};
+					
+					new mapboxgl.Popup(popupOptions)
+						.setLngLat(clickedCoordinates)
+						.setDOMContent(popupNode)
+						.addTo(map);
+					
+					return;
+				}
 
 					// For single projects, show normal popup
 					// Safely parse images with error handling
@@ -4710,11 +4720,21 @@ let allProjectsGeoJSON = null;
 					 window.open(redirectUrl, '_blank');
 				});
 
-					console.log(`Opening single project popup at clicked coordinates: ${clickedCoordinates[0]}, ${clickedCoordinates[1]}`);
-					new mapboxgl.Popup({ closeButton: false, className: 'project-popup', anchor: 'left', offset: 15 })
-						.setLngLat(clickedCoordinates)
-						.setDOMContent(popupNode)
-						.addTo(map);
+				console.log(`Opening single project popup at clicked coordinates: ${clickedCoordinates[0]}, ${clickedCoordinates[1]}`);
+				
+				// Визначаємо чи це мобільний пристрій
+				const isMobile = window.innerWidth <= 768;
+				const popupOptions = {
+					closeButton: false,
+					className: 'project-popup',
+					anchor: isMobile ? 'bottom' : 'left',
+					offset: isMobile ? [0, -10] : 15
+				};
+				
+				new mapboxgl.Popup(popupOptions)
+					.setLngLat(clickedCoordinates)
+					.setDOMContent(popupNode)
+					.addTo(map);
 
 					if (window.Swiper) {
 						new Swiper(popupNode.querySelector('.swiper-container'), { loop: true });
