@@ -4342,29 +4342,16 @@ let allProjectsGeoJSON = null;
     // ===================================
 
     // Touch and click events for markers
-    // For touch devices, we need to handle touchstart and prevent default behavior
-    const handleMarkerTouch = (e) => {
-        e.preventDefault(); // Prevent default touch behavior
-        onMarkerClick(e);
-    };
-    
+    // Using both click and touchend for better cross-device compatibility
     map.on('click', 'unclustered-point', onMarkerClick);
-    map.on('touchstart', 'unclustered-point', handleMarkerTouch);
+    map.on('touchend', 'unclustered-point', (e) => {
+        // On mobile, touchend works better than touchstart for preventing conflicts
+        onMarkerClick(e);
+    });
     map.on('mouseenter', 'unclustered-point', () => { map.getCanvas().style.cursor = 'pointer'; });
     map.on('mouseleave', 'unclustered-point', () => { map.getCanvas().style.cursor = ''; });
     
     // Touch and click events for clusters
-    const handleClusterTouch = (e) => {
-        e.preventDefault(); // Prevent default touch behavior
-        const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] });
-        if (!features || !features.length) return;
-        const clusterId = features[0].properties.cluster_id;
-        map.getSource('projects').getClusterExpansionZoom(clusterId, (err, zoom) => {
-            if (err) return;
-            map.easeTo({ center: features[0].geometry.coordinates, zoom: zoom });
-        });
-    };
-    
     const handleClusterClick = (e) => {
         const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] });
         if (!features || !features.length) return;
@@ -4376,7 +4363,7 @@ let allProjectsGeoJSON = null;
     };
     
     map.on('click', 'clusters', handleClusterClick);
-    map.on('touchstart', 'clusters', handleClusterTouch);
+    map.on('touchend', 'clusters', handleClusterClick);
     map.on('mouseenter', 'clusters', () => { map.getCanvas().style.cursor = 'pointer'; });
     map.on('mouseleave', 'clusters', () => { map.getCanvas().style.cursor = ''; });
 
