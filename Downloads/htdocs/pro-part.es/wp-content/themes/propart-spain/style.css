@@ -4588,6 +4588,49 @@ hr {
     .closeNavBottom:active {
         transform: scale(0.95) !important;
     }
+    
+    /* Filters styling for tablets */
+    .filterPropertiesWrapper {
+        padding: 24px 32px 16px !important;
+    }
+    
+    .filterPropertiesWrapper__inputWrapper {
+        height: 48px !important;
+    }
+    
+    .filtersMap__tablet-btn {
+        height: 48px !important;
+        padding: 0 24px !important;
+        border-radius: 40px !important;
+        font-size: 16px !important;
+    }
+    
+    .filtersMap__tablet-btn span {
+        display: inline !important;
+    }
+    
+    .filterPropertiesWrapper__adapriveWrapper {
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+    }
+    
+    .filtersMap__tablet-length {
+        display: flex !important;
+        width: 18px !important;
+        height: 18px !important;
+        font-size: 10px !important;
+    }
+    
+    .filtersMap__tablet-length.active {
+        visibility: visible !important;
+    }
+    
+    #offPlanFiltetAdaptive,
+    #secondaryFiltetAdaptive,
+    #rentFiltetAdaptive {
+        height: 48px !important;
+    }
 }
 
 .headerContent {
