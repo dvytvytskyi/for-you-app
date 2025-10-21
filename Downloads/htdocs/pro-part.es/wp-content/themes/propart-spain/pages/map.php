@@ -4404,6 +4404,17 @@ let allProjectsGeoJSON = null;
             hidePolygonProjectsList();
         });
     }
+    
+    // Закриття модалки при кліку на backdrop (тільки на мобільних)
+    const polygonProjectsListModal = document.getElementById('polygonProjectsList');
+    if (polygonProjectsListModal && window.innerWidth <= 768) {
+        polygonProjectsListModal.addEventListener('click', (e) => {
+            // Закриваємо тільки якщо клікнули саме на backdrop (::before псевдоелемент)
+            if (e.target === polygonProjectsListModal) {
+                hidePolygonProjectsList();
+            }
+        });
+    }
 }
 
 				function onMapLoad() {
