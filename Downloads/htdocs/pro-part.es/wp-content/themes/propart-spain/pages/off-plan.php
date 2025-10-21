@@ -881,6 +881,7 @@
             const headerSetupFilterButtons = () => {
                 const offPlanButton = document.getElementById("offPlanAdaptiveBtnHeader");
                 const secondaryButton = document.getElementById("secondaryAdaptiveBtnHeader");
+                const rentButton = document.getElementById("rentAdaptiveBtnHeader");
 
                 if (!offPlanButton || !secondaryButton) {
                     console.warn("Filter buttons are missing, please check the HTML structure.");
@@ -892,14 +893,27 @@
 
                 offPlanButton.classList.remove("active");
                 secondaryButton.classList.remove("active");
+                if (rentButton) rentButton.classList.remove("active");
 
                 if (initialValue === "Off plan") {
                     offPlanButton.classList.add("active");
                 } else if (initialValue === "Secondary") {
                     secondaryButton.classList.add("active");
+                } else if (initialValue === "Rent" && rentButton) {
+                    rentButton.classList.add("active");
                 }
 
                 const updateVisibleFilter = (selectedValue) => {
+                    // Якщо вибрано Rent, перенаправляємо на сторінку Rent
+                    if (selectedValue === "Rent") {
+                        const urlParams = new URLSearchParams(window.location.search);
+                        urlParams.set("visible", "Rent");
+                        urlParams.set("page", "0");
+                        const rentUrl = `/rent?${urlParams.toString()}`;
+                        window.location.href = rentUrl;
+                        return;
+                    }
+                    
                     // Обновляем значение visible в redirectData
                     redirectData.visible = selectedValue;
 
@@ -907,9 +921,11 @@
                     if (selectedValue === "Off plan") {
                         offPlanButton.classList.add("active");
                         secondaryButton.classList.remove("active");
+                        if (rentButton) rentButton.classList.remove("active");
                     } else if (selectedValue === "Secondary") {
                         secondaryButton.classList.add("active");
                         offPlanButton.classList.remove("active");
+                        if (rentButton) rentButton.classList.remove("active");
                     }
 
                     console.log(redirectData);
@@ -923,6 +939,12 @@
                 secondaryButton.addEventListener("click", () => {
                     updateVisibleFilter("Secondary");
                 });
+                
+                if (rentButton) {
+                    rentButton.addEventListener("click", () => {
+                        updateVisibleFilter("Rent");
+                    });
+                }
             };
             setInterval(headerSetupFilterButtons, 500);
 
@@ -7759,10 +7781,20 @@
         function offPlanSetupFilterButtons() {
             const offPlanButton = document.getElementById("offPlanAdaptiveBtnOffPlan");
             const secondaryButton = document.getElementById("secondaryAdaptiveBtnOffPlan");
+            const rentButton = document.getElementById("rentAdaptiveBtnOffPlan");
 
             const updateVisibleFilter = (selectedValue) => {
                 const currentUrl = window.location.href.split("?")[0]; // Get the base URL without any query parameters
                 const urlParams = new URLSearchParams(window.location.search); // Use search instead of hash
+
+                // Якщо вибрано Rent, перенаправляємо на сторінку Rent
+                if (selectedValue === "Rent") {
+                    urlParams.set("visible", "Rent");
+                    urlParams.set("page", "0");
+                    const rentUrl = `/rent?${urlParams.toString()}`;
+                    window.location.href = rentUrl;
+                    return;
+                }
 
                 urlParams.set("visible", selectedValue); // Update the visible parameter
 
@@ -7780,11 +7812,13 @@
                     offPlanHandoverFilter.style.display = "flex";
                     offPlanButton.classList.add("active");
                     secondaryButton.classList.remove("active");
+                    if (rentButton) rentButton.classList.remove("active");
                 } else if (selectedValue === "Secondary") {
                     parentDiv.style.display = "none"; // Приховуємо батьківський div
                     offPlanHandoverFilter.style.display = "none";
                     secondaryButton.classList.add("active");
                     offPlanButton.classList.remove("active");
+                    if (rentButton) rentButton.classList.remove("active");
                 }
 
 
@@ -7798,6 +7832,10 @@
                 offPlanButton.addEventListener("click", () => updateVisibleFilter("Off plan"));
                 secondaryButton.addEventListener("click", () => updateVisibleFilter("Secondary"));
             }
+            
+            if (rentButton) {
+                rentButton.addEventListener("click", () => updateVisibleFilter("Rent"));
+            }
 
             const urlParams = new URLSearchParams(window.location.search); // Use search instead of hash
             const initialValue = urlParams.get("visible");
@@ -7805,12 +7843,15 @@
             // Clear active classes
             offPlanButton.classList.remove("active");
             secondaryButton.classList.remove("active");
+            if (rentButton) rentButton.classList.remove("active");
 
             // Set initial button state based on URL parameter
             if (initialValue === "Off plan") {
                 offPlanButton.classList.add("active");
             } else if (initialValue === "Secondary") {
                 secondaryButton.classList.add("active");
+            } else if (initialValue === "Rent" && rentButton) {
+                rentButton.classList.add("active");
             }
         }
         offPlanSetupFilterButtons();
