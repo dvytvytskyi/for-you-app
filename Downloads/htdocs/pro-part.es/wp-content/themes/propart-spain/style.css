@@ -4516,6 +4516,17 @@ hr {
 
 /* Tablet styles - iPad and iPad Pro */
 @media screen and (min-width: 768px) and (max-width: 1366px) {
+    /* Використовуємо мобільний фільтр для планшета */
+    .adapriveFilters__bg {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .adapriveFilters__bg.active {
+        display: flex !important;
+    }
+    
     .menuButton {
         display: block !important;
     }

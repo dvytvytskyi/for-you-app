@@ -504,7 +504,11 @@
             fixedMenue.prepend(fixedBtn);
             header.appendChild(fixedMenue);
 
-            const adaptiveFiltersContainer = document.createElement("div");
+            // Використовуємо існуючий мобільний фільтр для планшета
+            const adaptiveFiltersContainer = document.getElementById("offPlanAdaptiveFilters");
+            
+            // Закоментували створення окремого header фільтра
+            /*const adaptiveFiltersContainer = document.createElement("div");
             adaptiveFiltersContainer.className = "adapriveFilters__bg";
             adaptiveFiltersContainer.id = "headerAdaptiveFilters";
             adaptiveFiltersContainer.innerHTML = `
@@ -826,56 +830,71 @@
                 </div>
             </div>
             `;
-            header.appendChild(adaptiveFiltersContainer);
+            // header.appendChild(adaptiveFiltersContainer); // Не потрібно для мобільного фільтра
+            */
 
-            // Функция для управления адаптивным меню (открытие/закрытие)
+            // Функція для управління адаптивним меню (відкриття/закриття) - використовуємо мобільний фільтр
             const adaptiveMenuHandler = () => {
-                // Убедимся, что элементы добавлены в DOM
                 const openFilterButton = header.querySelector("#headerOpenFilterBtn");
-                const closeButton =
-                    adaptiveFiltersContainer.querySelector("#btnCloseHeader");
+                const closeButton = adaptiveFiltersContainer ? adaptiveFiltersContainer.querySelector(".adapriveFilters__header-btnClose") : null;
 
-                if (!openFilterButton || !adaptiveFiltersContainer || !closeButton) {
-                    console.warn(
-                        "Some elements are missing, please check the HTML structure."
-                    );
+                if (!openFilterButton || !adaptiveFiltersContainer) {
+                    console.log("[TABLET FILTER] Waiting for elements...");
                     return;
                 }
 
-                // Открытие меню
+                // Відкриття меню для планшета (768-1366px) і мобільних (<768px)
                 const openAdaptiveMenu = () => {
-                    if (window.innerWidth < 767) {
+                    if (window.innerWidth <= 1366) {
                         adaptiveFiltersContainer.classList.add("active");
                         document.body.style.overflow = "hidden";
+                        console.log("[TABLET FILTER] Filter opened");
                     }
                 };
 
-                // Закрытие меню
+                // Закриття меню
                 const closeAdaptiveMenu = () => {
                     adaptiveFiltersContainer.classList.remove("active");
                     document.body.style.overflow = "";
+                    console.log("[TABLET FILTER] Filter closed");
                 };
 
-                // Добавление обработчиков событий
-                openFilterButton.addEventListener("click", openAdaptiveMenu);
-                closeButton.addEventListener("click", closeAdaptiveMenu);
+                // Додаємо обробник тільки один раз
+                if (!openFilterButton.hasAttribute("data-listener-added")) {
+                    openFilterButton.addEventListener("click", openAdaptiveMenu);
+                    openFilterButton.setAttribute("data-listener-added", "true");
+                    console.log("[TABLET FILTER] Open button listener added");
+                }
 
-                // Закрытие при клике вне области меню
-                adaptiveFiltersContainer.addEventListener("click", (e) => {
-                    if (e.target === adaptiveFiltersContainer) {
-                        closeAdaptiveMenu();
-                    }
-                });
+                // Закриття кнопкою
+                if (closeButton && !closeButton.hasAttribute("data-listener-added")) {
+                    closeButton.addEventListener("click", closeAdaptiveMenu);
+                    closeButton.setAttribute("data-listener-added", "true");
+                    console.log("[TABLET FILTER] Close button listener added");
+                }
 
-                // Возвращаем функцию закрытия для использования в других частях кода
-                return {
-                    closeAdaptiveMenu
-                };
+                // Закриття при кліку поза областю меню
+                if (!adaptiveFiltersContainer.hasAttribute("data-listener-added")) {
+                    adaptiveFiltersContainer.addEventListener("click", (e) => {
+                        if (e.target === adaptiveFiltersContainer) {
+                            closeAdaptiveMenu();
+                        }
+                    });
+                    adaptiveFiltersContainer.setAttribute("data-listener-added", "true");
+                    console.log("[TABLET FILTER] Background click listener added");
+                }
+
+                return { closeAdaptiveMenu };
             };
-            const {
-                closeAdaptiveMenu
-            } = adaptiveMenuHandler();
-            setTimeout(adaptiveMenuHandler, 0);
+            
+            // Викликаємо періодично, поки елементи не з'являться
+            const tabletFilterInterval = setInterval(() => {
+                const result = adaptiveMenuHandler();
+                if (result) {
+                    clearInterval(tabletFilterInterval);
+                    console.log("[TABLET FILTER] Setup complete");
+                }
+            }, 500);
 
             const headerMapImport = document.getElementById("headerMapImport");
 
@@ -904,6 +923,8 @@
                 }
             }
 
+            // Видалено header filter functions - використовуємо мобільний фільтр для планшета
+            /*
             let headerFilterListenersAdded = false;
             const headerSetupFilterButtons = () => {
                 const offPlanButton = document.getElementById("offPlanAdaptiveBtnHeader");
@@ -7905,6 +7926,8 @@
         }
         handleBtnRedirectOffPlan();
         window.addEventListener("popstate", handleBtnRedirectOffPlan);
+        
+        */ // Кінець закоментованих header функцій
 
         function offPlanSetupFilterButtons() {
             const offPlanButton = document.getElementById("offPlanAdaptiveBtnOffPlan");
