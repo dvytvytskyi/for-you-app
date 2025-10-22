@@ -4516,7 +4516,7 @@ hr {
 
 /* Tablet styles - iPad and iPad Pro */
 @media screen and (min-width: 768px) and (max-width: 1366px) {
-    /* Повністю приховуємо фільтр на планшеті */
+    /* Приховуємо мобільні фільтри */
     .fixedMenue {
         display: none !important;
     }
@@ -4535,6 +4535,85 @@ hr {
     
     .adapriveFilters__bg.active {
         display: none !important;
+    }
+    
+    .filterPropertiesWrapper__adapriveWrapper {
+        display: none !important;
+    }
+    
+    /* Показуємо десктопні фільтри на планшеті */
+    .filterPropertiesWrapper__dropdownds {
+        display: flex !important;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .filterPropertiesWrapper__dropDown {
+        flex: 1 1 calc(33.333% - 8px);
+        min-width: 150px;
+        max-width: 200px;
+    }
+    
+    .filterPropertiesWrapper__inputWrapper {
+        flex: 1 1 100%;
+        max-width: 100%;
+        margin-bottom: 12px;
+    }
+    
+    .filterPropertiesWrapper {
+        padding: 20px 24px;
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filtersMap__clearBtn {
+        flex: 0 0 auto;
+        width: auto;
+        padding: 10px 20px;
+        margin-top: 8px;
+    }
+    
+    /* Стилі для dropdown елементів */
+    .filterPropertiesWrapper__dropDown_header {
+        font-size: 14px;
+        padding: 10px 12px;
+        min-height: 44px;
+    }
+    
+    .filterPropertiesWrapper__dropDown_body {
+        min-width: 200px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .filterPropertiesWrapper__dropDown_item {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    
+    .filterPropertiesWrapper__inputWrapper_input {
+        font-size: 14px;
+        padding: 10px 12px;
+    }
+    
+    /* Адаптуємо Price dropdown */
+    .filterPropertiesWrapper__dropDown_body.isPrice {
+        min-width: 300px;
+    }
+    
+    .filterPropertiesWrapper__dropDown_subDropdown {
+        flex: 1;
+    }
+    
+    /* Total projects text */
+    .total-projects-text {
+        padding: 12px 24px;
+        font-size: 16px;
+    }
+    
+    /* Card grid */
+    .card-parent {
+        padding: 0 24px;
     }
     
     .menuButton {
