@@ -4516,15 +4516,25 @@ hr {
 
 /* Tablet styles - iPad and iPad Pro */
 @media screen and (min-width: 768px) and (max-width: 1366px) {
-    /* Використовуємо мобільний фільтр для планшета */
+    /* Повністю приховуємо фільтр на планшеті */
+    .fixedMenue {
+        display: none !important;
+    }
+    
+    #headerOpenFilterBtn {
+        display: none !important;
+    }
+    
+    .filterButtonWhite {
+        display: none !important;
+    }
+    
     .adapriveFilters__bg {
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        display: none !important;
     }
     
     .adapriveFilters__bg.active {
-        display: flex !important;
+        display: none !important;
     }
     
     .menuButton {

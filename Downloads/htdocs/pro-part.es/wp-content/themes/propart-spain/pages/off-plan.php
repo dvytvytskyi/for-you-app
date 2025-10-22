@@ -833,7 +833,7 @@
             // header.appendChild(adaptiveFiltersContainer); // Не потрібно для мобільного фільтра
             */
 
-            // Функція для управління адаптивним меню (відкриття/закриття) - використовуємо мобільний фільтр
+            // Функція для управління адаптивним меню (відкриття/закриття) - ТІЛЬКИ для мобільних (<768px)
             const adaptiveMenuHandler = () => {
                 const openFilterButton = header.querySelector("#headerOpenFilterBtn");
                 const closeButton = adaptiveFiltersContainer ? adaptiveFiltersContainer.querySelector(".adapriveFilters__header-btnClose") : null;
@@ -843,12 +843,14 @@
                     return;
                 }
 
-                // Відкриття меню для планшета (768-1366px) і мобільних (<768px)
+                // Відкриття меню ТІЛЬКИ для мобільних (<768px), планшет ВИМКНЕНО
                 const openAdaptiveMenu = () => {
-                    if (window.innerWidth <= 1366) {
+                    if (window.innerWidth < 768) {
                         adaptiveFiltersContainer.classList.add("active");
                         document.body.style.overflow = "hidden";
-                        console.log("[TABLET FILTER] Filter opened");
+                        console.log("[MOBILE FILTER] Filter opened");
+                    } else {
+                        console.log("[TABLET FILTER] Filter disabled for tablet");
                     }
                 };
 
@@ -899,7 +901,7 @@
             const headerMapImport = document.getElementById("headerMapImport");
 
             function updateHeaderMap() {
-                const isMobile = window.innerWidth < 767;
+                const isMobile = window.innerWidth < 768;
                 if (isMobile && headerMapImport) {
                     headerMapImport.style.height = "0";
                     headerMapImport.style.overflow = "hidden";
@@ -911,11 +913,18 @@
             }
 
             function updateFixedMenueVisibility() {
-                const isMobile = window.innerWidth < 767;
+                const isMobile = window.innerWidth < 768;
+                const isTablet = window.innerWidth >= 768 && window.innerWidth <= 1366;
+                
                 if (isMobile) {
                     // Show filter button on mobile devices regardless of scroll position
                     fixedMenue.style.opacity = 1;
                     fixedMenue.style.visibility = "visible";
+                } else if (isTablet) {
+                    // Hide on tablet - фільтр вимкнено для планшета
+                    fixedMenue.style.opacity = 0;
+                    fixedMenue.style.visibility = "hidden";
+                    fixedMenue.style.display = "none";
                 } else {
                     // Hide on desktop
                     fixedMenue.style.opacity = 0;
