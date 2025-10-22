@@ -904,6 +904,7 @@
                 }
             }
 
+            let headerFilterListenersAdded = false;
             const headerSetupFilterButtons = () => {
                 const offPlanButton = document.getElementById("offPlanAdaptiveBtnHeader");
                 const secondaryButton = document.getElementById("secondaryAdaptiveBtnHeader");
@@ -911,7 +912,6 @@
                 const rentTypeMobile = document.getElementById("headerRentTypeMobile");
 
                 if (!offPlanButton || !secondaryButton) {
-                    console.warn("Filter buttons are missing, please check the HTML structure.");
                     return;
                 }
 
@@ -968,24 +968,28 @@
                     console.log(redirectData);
                 };
 
-                // Добавляем обработчики событий
-                offPlanButton.addEventListener("click", () => {
-                    updateVisibleFilter("Off plan");
-                });
-
-                secondaryButton.addEventListener("click", () => {
-                    updateVisibleFilter("Secondary");
-                });
-                
-                if (rentButton) {
-                    rentButton.addEventListener("click", () => {
-                        updateVisibleFilter("Rent");
+                // Добавляем обработчики событий только один раз
+                if (!headerFilterListenersAdded) {
+                    offPlanButton.addEventListener("click", () => {
+                        updateVisibleFilter("Off plan");
                     });
+
+                    secondaryButton.addEventListener("click", () => {
+                        updateVisibleFilter("Secondary");
+                    });
+                    
+                    if (rentButton) {
+                        rentButton.addEventListener("click", () => {
+                            updateVisibleFilter("Rent");
+                        });
+                    }
+                    headerFilterListenersAdded = true;
                 }
             };
             setInterval(headerSetupFilterButtons, 500);
 
             // Handle Rent Type buttons (Long/Short term) for Header modal
+            let headerRentTypeListenersAdded = false;
             function headerSetupRentTypeButtons() {
                 const longTermBtn = document.getElementById("rentLongTermHeaderBtn");
                 const shortTermBtn = document.getElementById("rentShortTermHeaderBtn");
@@ -1009,8 +1013,12 @@
                     console.log(redirectData);
                 };
                 
-                longTermBtn.addEventListener("click", () => updateRentType("long"));
-                shortTermBtn.addEventListener("click", () => updateRentType("short"));
+                // Додаємо listeners тільки один раз
+                if (!headerRentTypeListenersAdded) {
+                    longTermBtn.addEventListener("click", () => updateRentType("long"));
+                    shortTermBtn.addEventListener("click", () => updateRentType("short"));
+                    headerRentTypeListenersAdded = true;
+                }
                 
                 // Set initial state
                 const rentType = redirectData.rent_type;
@@ -1022,7 +1030,7 @@
                     shortTermBtn.classList.remove("active");
                 }
             }
-            headerSetupRentTypeButtons();
+            setInterval(headerSetupRentTypeButtons, 500);
 
             function headerDropDownBeddroomsMobile() {
                 const dropdownContainer = document.getElementById("headerBedroomsFilterMobile");
@@ -7948,6 +7956,7 @@
         window.addEventListener("popstate", offPlanSetupFilterButtons);
 
         // Handle Rent Type buttons (Long/Short term) for Off Plan modal
+        let offPlanRentTypeListenersAdded = false;
         function offPlanSetupRentTypeButtons() {
             const longTermBtn = document.getElementById("rentLongTermOffPlanBtn");
             const shortTermBtn = document.getElementById("rentShortTermOffPlanBtn");
@@ -7979,8 +7988,12 @@
                     .catch(() => {});
             };
             
-            longTermBtn.addEventListener("click", () => updateRentType("long"));
-            shortTermBtn.addEventListener("click", () => updateRentType("short"));
+            // Додаємо listeners тільки один раз
+            if (!offPlanRentTypeListenersAdded) {
+                longTermBtn.addEventListener("click", () => updateRentType("long"));
+                shortTermBtn.addEventListener("click", () => updateRentType("short"));
+                offPlanRentTypeListenersAdded = true;
+            }
             
             // Set initial state
             const urlParams = new URLSearchParams(window.location.search);
@@ -7994,6 +8007,7 @@
             }
         }
         offPlanSetupRentTypeButtons();
+        setInterval(offPlanSetupRentTypeButtons, 500);
 
         function offPlanDropDownSortMobile() {
             const dropdownContainer = document.getElementById("offPlanSortFilterMobile");
