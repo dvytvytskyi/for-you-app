@@ -1,0 +1,210 @@
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 100;
+  background: rgba(10, 14, 26, 0.8);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(91, 143, 201, 0.1);
+  opacity: 0;
+  transform: translateY(-100%);
+  pointer-events: none;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.header.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.header-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px 80px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+}
+
+/* Логотип */
+.header-logo {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+
+.header-logo:hover {
+  opacity: 0.8;
+}
+
+.logo-image {
+  height: 40px;
+  width: auto;
+}
+
+/* Навігація */
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  flex: 1;
+  justify-content: center;
+}
+
+.nav-link {
+  font-size: 14px;
+  font-weight: 400;
+  color: #8b95a8;
+  text-decoration: none;
+  text-transform: capitalize;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  position: relative;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: #ff8c42;
+  transition: width 0.3s ease;
+}
+
+/* Виділена кнопка Personal Offer */
+.nav-link.highlighted {
+  color: #ff8c42;
+  font-weight: 500;
+}
+
+.nav-link.highlighted:hover {
+  color: #ffa560;
+}
+
+.nav-link:hover {
+  color: #e8edf4;
+}
+
+.nav-link:hover::after {
+  width: 100%;
+}
+
+/* Кнопка інвестора */
+.investor-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  color: #e8edf4;
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Inter', sans-serif;
+}
+
+.investor-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+}
+
+.button-arrow {
+  font-size: 16px;
+  transition: transform 0.3s ease;
+}
+
+.investor-button:hover .button-arrow {
+  transform: translateX(3px);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .header-container {
+    padding: 16px 40px;
+  }
+
+  .header-nav {
+    gap: 24px;
+  }
+
+  .nav-link {
+    font-size: 13px;
+  }
+
+  .investor-button {
+    padding: 10px 20px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-container {
+    padding: 14px 24px;
+  }
+
+  .header-nav {
+    display: none;
+  }
+
+  .logo-image {
+    height: 32px;
+  }
+
+  .investor-button {
+    padding: 10px 16px;
+    font-size: 11px;
+    letter-spacing: 0.6px;
+  }
+
+  .investor-button .button-text {
+    display: inline-block;
+  }
+
+  .investor-button .button-arrow {
+    display: inline-block;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-container {
+    padding: 12px 16px;
+  }
+
+  .logo-image {
+    height: 28px;
+  }
+
+  .investor-button {
+    padding: 8px 12px;
+    font-size: 10px;
+  }
+
+  .investor-button .button-text {
+    display: inline-block;
+    font-size: 9px;
+  }
+
+  .investor-button .button-arrow {
+    display: inline-block;
+    font-size: 12px;
+    margin-left: 4px;
+  }
+}
+

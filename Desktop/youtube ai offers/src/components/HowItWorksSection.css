@@ -1,0 +1,808 @@
+.how-it-works-section {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s ease;
+  padding: 60px 80px;
+  overflow: hidden;
+}
+
+.how-it-works-section.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Шар плавної зміни кольору */
+.color-transition-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #0a0e1a 0%, #060911 100%);
+  z-index: 1;
+  transition: background 3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.how-it-works-section.visible .color-transition-layer {
+  background: linear-gradient(180deg, #1a0f0a 0%, #0f0906 100%);
+}
+
+.how-it-works-section.gradient-shifted .color-transition-layer {
+  background: linear-gradient(90deg, #1a0f0a 0%, #0f0906 100%);
+}
+
+/* Glitch ефект */
+.glitch-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(255, 107, 53, 0.03) 2px,
+      rgba(255, 107, 53, 0.03) 4px
+    );
+  opacity: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.how-it-works-section.visible .glitch-overlay {
+  animation: glitchFade 2s ease-out forwards;
+}
+
+@keyframes glitchFade {
+  0% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+  10% {
+    opacity: 0.8;
+    transform: translateX(-5px);
+  }
+  20% {
+    opacity: 0;
+    transform: translateX(5px);
+  }
+  30% {
+    opacity: 0.6;
+    transform: translateX(-3px);
+  }
+  40% {
+    opacity: 0;
+    transform: translateX(3px);
+  }
+  50% {
+    opacity: 0.4;
+    transform: translateX(-2px);
+  }
+  60% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0.15;
+    transform: translateX(0);
+  }
+}
+
+/* Контент */
+.how-it-works-container {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  max-width: 1200px;
+}
+
+.how-title {
+  font-size: 72px;
+  font-weight: 200;
+  letter-spacing: -2px;
+  color: #ff8c42;
+  text-transform: uppercase;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0;
+  animation: titleFadeIn 0.8s ease-out 0.3s forwards;
+}
+
+@keyframes titleFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.how-it-works-container.title-moved .how-title {
+  top: 80px;
+  left: 80px;
+  font-size: 32px;
+  transform: translate(0, 0);
+}
+
+/* Кроки */
+.steps-container {
+  position: fixed;
+  top: 50%;
+  left: 80px;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  opacity: 0;
+  animation: stepsAppear 0.8s ease-out 0.5s forwards;
+}
+
+@keyframes stepsAppear {
+  from {
+    opacity: 0;
+    transform: translateY(calc(-50% + 20px));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%);
+  }
+}
+
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 24px;
+  background: rgba(255, 140, 66, 0.03);
+  border: 1px solid rgba(255, 140, 66, 0.15);
+  border-radius: 8px;
+  opacity: 0;
+  animation: stepFadeIn 0.6s ease-out forwards;
+  transition: all 0.3s ease;
+  min-width: 320px;
+  position: relative;
+}
+
+.step-with-selection {
+  position: relative;
+}
+
+/* Перший елемент - активний */
+.step-item:nth-child(1) {
+  animation-delay: 0.6s;
+}
+
+.step-item:nth-child(1):not(.step-with-selection),
+.step-item:nth-child(1).step-with-selection:has(.selected-value) {
+  background: rgba(255, 140, 66, 0.08);
+  border-color: rgba(255, 140, 66, 0.4);
+  box-shadow: 0 4px 20px rgba(255, 140, 66, 0.15);
+}
+
+.step-item:nth-child(1) .step-number {
+  color: #ff8c42;
+  font-weight: 400;
+}
+
+.step-item:nth-child(1) .step-text {
+  color: #e8edf4;
+}
+
+/* Другий елемент - активний коли є вибрана ніша АБО коли вибираємо стиль */
+.step-item:nth-child(2).step-with-selection:has(.selected-value) {
+  background: rgba(255, 140, 66, 0.08);
+  border-color: rgba(255, 140, 66, 0.4);
+  box-shadow: 0 4px 20px rgba(255, 140, 66, 0.15);
+}
+
+.step-item:nth-child(2).step-with-selection:has(.selected-value) .step-number {
+  color: #ff8c42;
+  font-weight: 400;
+}
+
+.step-item:nth-child(2).step-with-selection:has(.selected-value) .step-text {
+  color: #e8edf4;
+}
+
+/* Другий елемент активний коли вибрана ніша (навіть без вибраного стилю) */
+.step-item:nth-child(2).active-step {
+  background: rgba(255, 140, 66, 0.08);
+  border-color: rgba(255, 140, 66, 0.4);
+  box-shadow: 0 4px 20px rgba(255, 140, 66, 0.15);
+}
+
+.step-item:nth-child(2).active-step .step-number {
+  color: #ff8c42;
+  font-weight: 400;
+}
+
+.step-item:nth-child(2).active-step .step-text {
+  color: #e8edf4;
+}
+
+/* Інші елементи - неактивні */
+.step-item:nth-child(2) { animation-delay: 0.7s; }
+.step-item:nth-child(3) { animation-delay: 0.8s; }
+.step-item:nth-child(4) { animation-delay: 0.9s; }
+.step-item:nth-child(5) { animation-delay: 1s; }
+.step-item:nth-child(6) { animation-delay: 1.1s; }
+
+@keyframes stepFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.step-number {
+  font-size: 18px;
+  font-weight: 300;
+  color: rgba(255, 140, 66, 0.5);
+  min-width: 30px;
+}
+
+.step-text {
+  font-size: 16px;
+  font-weight: 300;
+  color: #7a8491;
+  letter-spacing: 0.3px;
+}
+
+.step-item:hover {
+  background: rgba(255, 140, 66, 0.06);
+  border-color: rgba(255, 140, 66, 0.25);
+  transform: translateX(4px);
+}
+
+/* Лінія з'єднання */
+.selection-line {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(255, 140, 66, 0.6) 0%, rgba(255, 140, 66, 0.3) 100%);
+  transform: translateY(-50%);
+  opacity: 0;
+  animation: lineGrow 0.5s ease-out forwards;
+}
+
+@keyframes lineGrow {
+  from {
+    width: 0;
+    opacity: 0;
+  }
+  to {
+    width: 60px;
+    opacity: 1;
+  }
+}
+
+/* Вибране значення */
+.selected-value {
+  position: absolute;
+  left: calc(100% + 60px);
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 16px 24px;
+  background: rgba(255, 140, 66, 0.1);
+  border: 1px solid rgba(255, 140, 66, 0.4);
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 400;
+  color: #ff8c42;
+  text-transform: lowercase;
+  white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(255, 140, 66, 0.2);
+  opacity: 0;
+  animation: valueAppear 0.5s ease-out 0.3s forwards;
+}
+
+@keyframes valueAppear {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+/* Контейнер справа */
+.content-container {
+  position: fixed;
+  top: 50%;
+  right: 80px;
+  transform: translateY(-50%);
+  width: 650px;
+  height: 850px;
+  background: linear-gradient(135deg, rgba(10, 14, 26, 0.95) 0%, rgba(26, 15, 10, 0.9) 100%);
+  border: 1px solid rgba(255, 140, 66, 0.2);
+  border-radius: 16px;
+  backdrop-filter: blur(20px);
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  animation: containerAppear 0.8s ease-out 1.5s forwards;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+@keyframes containerAppear {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+/* Вкладки зверху */
+.container-tabs {
+  display: flex;
+  gap: 0;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 8px 8px 0 8px;
+  position: relative;
+  z-index: 2;
+  border-bottom: 1px solid rgba(255, 140, 66, 0.2);
+}
+
+.tab {
+  flex: 1;
+  max-width: 180px;
+  height: 36px;
+  background: rgba(255, 140, 66, 0.05);
+  border: 1px solid rgba(255, 140, 66, 0.15);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  gap: 8px;
+}
+
+.tab > span:first-child {
+  font-size: 12px;
+  font-weight: 300;
+  color: rgba(255, 140, 66, 0.5);
+  letter-spacing: 0.3px;
+  flex: 1;
+  text-align: center;
+}
+
+.tab-close {
+  font-size: 18px;
+  font-weight: 300;
+  color: rgba(255, 140, 66, 0.4);
+  line-height: 1;
+  transition: color 0.2s ease;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.tab-close:hover {
+  color: rgba(255, 140, 66, 0.8);
+  background: rgba(255, 140, 66, 0.1);
+}
+
+.tab.active {
+  background: linear-gradient(135deg, rgba(10, 14, 26, 0.95) 0%, rgba(26, 15, 10, 0.9) 100%);
+  border-color: rgba(255, 140, 66, 0.3);
+}
+
+.tab.active > span:first-child {
+  color: #ff8c42;
+  font-weight: 400;
+}
+
+.tab.active .tab-close {
+  color: rgba(255, 140, 66, 0.6);
+}
+
+.tab:hover:not(.active) {
+  background: rgba(255, 140, 66, 0.08);
+}
+
+/* Контент контейнера */
+.container-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Ніші всередині контейнера */
+.niches-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 180px);
+  grid-template-rows: repeat(2, auto) auto;
+  gap: 16px;
+  opacity: 1;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.niches-grid.hidden {
+  opacity: 0 !important;
+  transform: translate(-50%, -50%) translateX(20px) !important;
+  pointer-events: none;
+  animation: none;
+}
+
+/* Футер контейнера */
+.container-footer {
+  position: relative;
+  height: 60px;
+  background: rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(255, 140, 66, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 2;
+}
+
+.footer-brand {
+  font-size: 13px;
+  font-weight: 300;
+  color: #ff8c42;
+  letter-spacing: 0.5px;
+  font-family: 'Inter', sans-serif;
+}
+
+.footer-time {
+  font-size: 13px;
+  font-weight: 300;
+  color: rgba(255, 140, 66, 0.6);
+  letter-spacing: 0.5px;
+  font-family: 'Inter', sans-serif;
+}
+
+.niche-block {
+  padding: 24px;
+  background: rgba(255, 140, 66, 0.08);
+  border: 1px solid rgba(255, 140, 66, 0.25);
+  border-radius: 12px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 400;
+  color: #ff8c42;
+  text-transform: lowercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+}
+
+.niche-block:nth-child(5) {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: 180px;
+}
+
+.niche-block:hover {
+  background: rgba(255, 140, 66, 0.1);
+  border-color: rgba(255, 140, 66, 0.4);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(255, 140, 66, 0.2);
+}
+
+/* Video Styles Grid */
+.video-styles-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 16px;
+  max-width: 100%;
+  width: calc(100% - 60px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.video-styles-grid.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.video-style-block {
+  position: relative;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 240px;
+  display: flex;
+  align-items: flex-end;
+  padding: 20px;
+}
+
+.video-style-block::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.7) 100%);
+  transition: background 0.3s ease;
+}
+
+.video-style-block:hover::before {
+  background: linear-gradient(180deg, rgba(255, 140, 66, 0.2) 0%, rgba(0, 0, 0, 0.8) 100%);
+}
+
+.style-name {
+  position: relative;
+  z-index: 1;
+  font-size: 18px;
+  font-weight: 300;
+  color: #ffffff;
+  text-transform: lowercase;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.video-style-block:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 24px rgba(255, 140, 66, 0.3);
+}
+
+.video-style-block:hover .style-name {
+  color: #ff8c42;
+}
+
+@media (max-width: 1024px) {
+  .how-it-works-section {
+    padding: 40px 40px;
+  }
+
+  .how-title {
+    font-size: 56px;
+  }
+
+  .how-it-works-container.title-moved .how-title {
+    font-size: 28px;
+    top: 60px;
+    left: 40px;
+  }
+
+  .steps-container {
+    left: 40px;
+  }
+
+  .step-item {
+    min-width: 280px;
+    padding: 16px 20px;
+  }
+
+  .content-container {
+    right: 40px;
+    width: 500px;
+    height: 700px;
+    padding: 30px;
+  }
+
+  .niches-grid {
+    grid-template-columns: repeat(2, 140px);
+    gap: 12px;
+  }
+
+  .niche-block {
+    padding: 20px;
+    min-height: 80px;
+    font-size: 14px;
+  }
+
+  .niche-block:nth-child(5) {
+    width: 140px;
+  }
+
+  .container-footer {
+    height: 50px;
+    padding: 0 20px;
+  }
+
+  .footer-brand {
+    font-size: 12px;
+  }
+
+  .footer-time {
+    font-size: 11px;
+  }
+
+  .video-styles-grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .video-style-block {
+    min-height: 140px;
+    padding: 16px;
+  }
+
+  .style-name {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .how-it-works-section {
+    padding: 30px 24px;
+  }
+
+  .how-title {
+    font-size: 38px;
+    letter-spacing: -1px;
+  }
+
+  .how-it-works-container.title-moved .how-title {
+    font-size: 22px;
+    top: 36px;
+    left: 24px;
+  }
+
+  .steps-container {
+    left: 24px;
+    gap: 10px;
+  }
+
+  .step-item {
+    min-width: 220px;
+    padding: 14px 16px;
+  }
+
+  .step-number {
+    font-size: 15px;
+    min-width: 26px;
+  }
+
+  .step-text {
+    font-size: 13px;
+  }
+
+  .selection-line {
+    width: 40px;
+  }
+
+  .selected-value {
+    left: calc(100% + 40px);
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+
+  .content-container {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .how-it-works-section {
+    padding: 24px 16px;
+  }
+
+  .how-title {
+    font-size: 28px;
+    letter-spacing: -0.5px;
+  }
+
+  .how-it-works-container.title-moved .how-title {
+    font-size: 18px;
+    top: 28px;
+    left: 16px;
+  }
+
+  .steps-container {
+    left: 16px;
+    gap: 8px;
+    width: calc(100% - 32px);
+  }
+
+  .step-item {
+    min-width: auto;
+    width: 100%;
+    padding: 12px 14px;
+  }
+
+  .step-number {
+    font-size: 14px;
+    min-width: 22px;
+  }
+
+  .step-text {
+    font-size: 12px;
+  }
+
+  .selection-line {
+    display: none;
+  }
+
+  .selected-value {
+    position: relative;
+    left: auto;
+    top: auto;
+    transform: none;
+    margin-top: 8px;
+    padding: 10px 16px;
+    font-size: 12px;
+    width: fit-content;
+  }
+
+  .step-with-selection {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .container-tabs {
+    padding: 6px 6px 0 6px;
+  }
+
+  .tab {
+    max-width: none;
+    height: 32px;
+    padding: 0 10px;
+  }
+
+  .tab > span:first-child {
+    font-size: 11px;
+  }
+
+  .tab-close {
+    font-size: 16px;
+  }
+
+  .container-footer {
+    height: 48px;
+    padding: 0 16px;
+  }
+
+  .footer-brand,
+  .footer-time {
+    font-size: 11px;
+  }
+}
+

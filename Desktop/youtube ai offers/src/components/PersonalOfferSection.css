@@ -1,0 +1,387 @@
+.personal-offer-section {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: fit-content;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #0a0e1a 0%, #060911 100%);
+  padding: 120px 80px 120px 80px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+  overflow-y: auto;
+}
+
+.personal-offer-section.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Back Button */
+.back-button {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: rgba(91, 143, 201, 0.08);
+  border: 1px solid rgba(91, 143, 201, 0.2);
+  border-radius: 6px;
+  color: #5b8fc9;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Inter', sans-serif;
+  z-index: 1001;
+}
+
+.back-button:hover {
+  background: rgba(91, 143, 201, 0.12);
+  border-color: rgba(91, 143, 201, 0.4);
+  transform: translateX(-50%) translateY(-2px);
+}
+
+.back-arrow {
+  font-size: 18px;
+  transition: transform 0.3s ease;
+}
+
+.back-button:hover .back-arrow {
+  transform: translateX(-2px);
+}
+
+.offer-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Title */
+.offer-title {
+  font-size: 64px;
+  font-weight: 200;
+  color: #ff8c42;
+  text-transform: uppercase;
+  letter-spacing: -2px;
+  margin-bottom: 16px;
+  line-height: 1.1;
+}
+
+.offer-subtitle {
+  font-size: 18px;
+  font-weight: 300;
+  color: #8b95a8;
+  margin-bottom: 60px;
+  letter-spacing: 0.5px;
+}
+
+/* Content Blocks */
+.offer-content {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.offer-block {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(91, 143, 201, 0.1);
+  border-radius: 12px;
+  padding: 32px;
+  transition: all 0.3s ease;
+}
+
+.offer-block:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(91, 143, 201, 0.2);
+}
+
+.offer-block.highlight {
+  background: rgba(255, 140, 66, 0.05);
+  border-color: rgba(255, 140, 66, 0.2);
+}
+
+.offer-block.highlight:hover {
+  background: rgba(255, 140, 66, 0.08);
+  border-color: rgba(255, 140, 66, 0.3);
+}
+
+/* Headings */
+.offer-heading {
+  font-size: 24px;
+  font-weight: 400;
+  color: #e8edf4;
+  margin-bottom: 20px;
+  letter-spacing: 0.3px;
+}
+
+/* Text */
+.offer-text {
+  font-size: 16px;
+  font-weight: 300;
+  color: #b8c5d6;
+  line-height: 1.8;
+  letter-spacing: 0.3px;
+}
+
+/* Lists */
+.offer-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.offer-list-item {
+  font-size: 16px;
+  font-weight: 300;
+  color: #b8c5d6;
+  line-height: 1.6;
+  padding-left: 28px;
+  position: relative;
+  letter-spacing: 0.3px;
+}
+
+.offer-list-item::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: #5b8fc9;
+  font-weight: 400;
+}
+
+.offer-block.highlight .offer-list-item::before {
+  color: #ff8c42;
+}
+
+/* Pricing */
+.pricing-info {
+  text-align: center;
+}
+
+.price-tag {
+  font-size: 72px;
+  font-weight: 200;
+  color: #ff8c42;
+  letter-spacing: -3px;
+  margin-bottom: 16px;
+  line-height: 1;
+}
+
+.price-description {
+  font-size: 16px;
+  font-weight: 300;
+  color: #b8c5d6;
+  letter-spacing: 0.3px;
+}
+
+/* CTA */
+.offer-cta {
+  text-align: center;
+  padding: 40px 0;
+}
+
+.cta-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 48px;
+  background: rgba(255, 140, 66, 0.1);
+  border: 2px solid rgba(255, 140, 66, 0.4);
+  border-radius: 8px;
+  color: #ff8c42;
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Inter', sans-serif;
+}
+
+.cta-button:hover {
+  background: rgba(255, 140, 66, 0.15);
+  border-color: rgba(255, 140, 66, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(255, 140, 66, 0.3);
+}
+
+.button-arrow {
+  font-size: 20px;
+  transition: transform 0.3s ease;
+}
+
+.cta-button:hover .button-arrow {
+  transform: translateX(5px);
+}
+
+.cta-note {
+  font-size: 14px;
+  font-weight: 300;
+  color: #8b95a8;
+  margin-top: 16px;
+  letter-spacing: 0.3px;
+}
+
+/* Footer */
+.offer-footer {
+  text-align: center;
+  margin-top: 60px;
+  padding-top: 40px;
+  border-top: 1px solid rgba(91, 143, 201, 0.1);
+}
+
+.offer-footer p {
+  font-size: 14px;
+  font-weight: 300;
+  color: #8b95a8;
+  letter-spacing: 0.3px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .personal-offer-section {
+    padding: 100px 40px 100px 40px;
+  }
+
+  .offer-title {
+    font-size: 48px;
+  }
+
+  .price-tag {
+    font-size: 56px;
+  }
+}
+
+@media (max-width: 768px) {
+  .personal-offer-section {
+    padding: 100px 24px 100px 24px;
+  }
+
+  .back-button {
+    bottom: 24px;
+    padding: 10px 16px;
+    font-size: 12px;
+  }
+
+  .back-arrow {
+    font-size: 16px;
+  }
+
+  .offer-container {
+    padding-top: 20px;
+  }
+
+  .offer-title {
+    font-size: 36px;
+    letter-spacing: -1px;
+  }
+
+  .offer-subtitle {
+    font-size: 14px;
+    margin-bottom: 40px;
+  }
+
+  .offer-content {
+    gap: 28px;
+  }
+
+  .offer-block {
+    padding: 20px;
+  }
+
+  .offer-heading {
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+
+  .offer-text {
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .offer-list {
+    gap: 10px;
+  }
+
+  .offer-list-item {
+    font-size: 14px;
+    padding-left: 24px;
+  }
+
+  .price-tag {
+    font-size: 48px;
+    letter-spacing: -2px;
+  }
+
+  .price-description {
+    font-size: 14px;
+  }
+
+  .cta-button {
+    padding: 16px 32px;
+    font-size: 13px;
+  }
+
+  .offer-footer {
+    margin-top: 40px;
+    padding-top: 30px;
+  }
+}
+
+@media (max-width: 480px) {
+  .personal-offer-section {
+    padding: 90px 20px 100px 20px;
+  }
+
+  .offer-container {
+    padding-top: 10px;
+  }
+
+  .offer-title {
+    font-size: 28px;
+    margin-bottom: 12px;
+  }
+
+  .offer-subtitle {
+    font-size: 13px;
+    margin-bottom: 32px;
+  }
+
+  .offer-content {
+    gap: 24px;
+  }
+
+  .offer-block {
+    padding: 18px;
+  }
+
+  .offer-heading {
+    font-size: 16px;
+  }
+
+  .offer-text {
+    font-size: 13px;
+  }
+
+  .offer-list-item {
+    font-size: 13px;
+  }
+
+  .price-tag {
+    font-size: 36px;
+  }
+
+  .cta-button {
+    padding: 14px 28px;
+    font-size: 12px;
+    gap: 8px;
+  }
+}
+

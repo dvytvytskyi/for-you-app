@@ -1,0 +1,157 @@
+.stats-section {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+  overflow: hidden;
+}
+
+.stats-section.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.stats-container {
+  position: relative;
+  max-width: 1000px;
+  width: 100%;
+  height: 300px;
+  padding: 0 80px;
+}
+
+.stat-item {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  opacity: 0;
+  width: 100%;
+}
+
+.stat-item.active {
+  animation: simpleFade 2s ease forwards;
+}
+
+.stat-item.passed {
+  opacity: 0;
+}
+
+.stat-number {
+  font-size: 120px;
+  font-weight: 700;
+  letter-spacing: -4px;
+  line-height: 1;
+  margin-bottom: 24px;
+  background: linear-gradient(
+    90deg, 
+    #ff6b35 0%,
+    #ff8c42 20%,
+    #f7931e 40%,
+    #ffd700 60%,
+    #ff8c42 80%,
+    #ff6b35 100%
+  );
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 15px rgba(255, 107, 53, 0.3)) 
+          drop-shadow(0 0 25px rgba(247, 147, 30, 0.2));
+  animation: cinematicFlow 3s linear infinite;
+}
+
+.stat-label {
+  font-size: 18px;
+  font-weight: 300;
+  color: #e0e7f0;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  line-height: 1.6;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  opacity: 0.9;
+}
+
+@keyframes simpleFade {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes cinematicFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 300% 50%;
+  }
+}
+
+@media (max-width: 1024px) {
+  .stats-container {
+    padding: 0 40px;
+    height: 250px;
+  }
+  
+  .stat-number {
+    font-size: 90px;
+  }
+  
+  .stat-label {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-container {
+    padding: 0 24px;
+    height: 180px;
+  }
+  
+  .stat-number {
+    font-size: 56px;
+    letter-spacing: -2px;
+    margin-bottom: 20px;
+  }
+  
+  .stat-label {
+    font-size: 13px;
+    letter-spacing: 0.8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-container {
+    padding: 0 16px;
+    height: 160px;
+  }
+  
+  .stat-number {
+    font-size: 42px;
+    letter-spacing: -1px;
+    margin-bottom: 16px;
+  }
+  
+  .stat-label {
+    font-size: 11px;
+    letter-spacing: 0.6px;
+    line-height: 1.5;
+  }
+}
+

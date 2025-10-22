@@ -1,0 +1,28 @@
+.app {
+  height: 100vh;
+  height: 100dvh;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+.app.allow-scroll {
+  height: auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+@media (max-width: 768px) {
+  .app {
+    height: 100vh;
+    height: 100dvh;
+  }
+  
+  .app.allow-scroll {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+}
+

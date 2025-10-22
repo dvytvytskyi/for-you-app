@@ -1,0 +1,150 @@
+{
+  "hero": {
+    "clientName": "Alex",
+    "subtitle": "THIS IS PERSONAL OFFER MADE BY DMYTRO, FROM FENIX"
+  },
+  "stats": [
+    {
+      "number": "500M",
+      "label": "Views in last 6 months"
+    },
+    {
+      "number": "4K",
+      "label": "Leads generated in last 6 months"
+    },
+    {
+      "number": "$2.8M",
+      "label": "Revenue generated for clients"
+    }
+  ],
+  "analytics": {
+    "stats": [
+      {
+        "iconType": "views",
+        "value": "1K-2.5K",
+        "title": "Average views per video"
+      },
+      {
+        "iconType": "ctr",
+        "value": "6-7",
+        "title": "Redirects from link/video"
+      },
+      {
+        "iconType": "accounts",
+        "value": "320",
+        "title": "Total amount of accounts"
+      },
+      {
+        "iconType": "weekly",
+        "value": "70-120K",
+        "title": "Weekly views per account"
+      }
+    ],
+    "niches": [
+      "gambling",
+      "betting",
+      "e-com",
+      "podcast"
+    ],
+    "detailedMetrics": {
+      "engagement": [
+        { "label": "Engagement Rate", "value": "3.2%" },
+        { "label": "Average Watch Time", "value": "18 sec" },
+        { "label": "Click-Through Rate", "value": "0.8%" },
+        { "label": "Share Rate", "value": "1.2%" },
+        { "label": "Comment Rate", "value": "0.9%" },
+        { "label": "Save Rate", "value": "1.8%" }
+      ],
+      "content": [
+        { "label": "Videos Published", "value": "20K+" },
+        { "label": "Total Watch Hours", "value": "280K+" },
+        { "label": "Unique Viewers", "value": "6.5M" },
+        { "label": "Repeat Viewers", "value": "18%" },
+        { "label": "Average CPM", "value": "$0.12" },
+        { "label": "Best Performing Time", "value": "8-10 PM" }
+      ],
+      "growth": [
+        { "label": "Monthly Growth", "value": "+8.5%" },
+        { "label": "Follower Growth", "value": "+3.2K/mo" },
+        { "label": "Viral Coefficient", "value": "1.1x" },
+        { "label": "Retention Rate", "value": "42%" },
+        { "label": "Monthly Reach", "value": "850K" },
+        { "label": "Organic Traffic", "value": "72%" }
+      ],
+      "revenue": [
+        { "label": "Cost per 1K Views", "value": "$0.03-0.08" },
+        { "label": "Cost per Lead", "value": "$0.42" },
+        { "label": "Lead Conversion", "value": "2.1%" },
+        { "label": "Avg CPM", "value": "$0.15" },
+        { "label": "Cost per Redirect", "value": "$0.06" },
+        { "label": "Account Setup", "value": "$12" }
+      ],
+      "geographic": [
+        { "label": "USA", "value": "35%" },
+        { "label": "EU", "value": "28%" },
+        { "label": "APAC", "value": "22%" },
+        { "label": "LATAM", "value": "10%" },
+        { "label": "Other", "value": "5%" }
+      ],
+      "platforms": [
+        { "label": "TikTok", "value": "45%" },
+        { "label": "Instagram Reels", "value": "30%" },
+        { "label": "YouTube Shorts", "value": "18%" },
+        { "label": "Other", "value": "7%" }
+      ]
+    }
+  },
+  "personalOffer": {
+    "title": "Personal Offer",
+    "subtitle": "Exclusive proposal for Alex",
+    "intro": "Thank you for your interest in partnering with Fenix Reels. We've prepared a custom offer tailored specifically to your niche and goals. This proposal outlines our premium video content creation and distribution service designed to maximize your reach and engagement.",
+    "included": [
+      "Professional video content creation across 320 active accounts",
+      "Strategic distribution in gambling, betting, e-com, and podcast niches",
+      "Average of 1K-2.5K views per video with consistent engagement",
+      "6-7 redirects from link per video for maximum conversion",
+      "Weekly views of 70-120K per account ensuring sustained visibility",
+      "Dedicated account manager and 24/7 support",
+      "Monthly analytics reports and performance optimization"
+    ],
+    "pricing": {
+      "amount": "$4,999",
+      "description": "per month | Flexible contract terms available"
+    },
+    "terms": [
+      "Minimum contract period: 3 months",
+      "Payment terms: Monthly in advance",
+      "Content delivery: 5-7 business days per batch",
+      "Revisions: Up to 2 rounds of revisions included",
+      "Performance guarantee: Minimum 500M views over 6 months or extended service",
+      "Confidentiality: Full NDA included"
+    ]
+  },
+  "videoStyles": [
+    {
+      "name": "Podcast",
+      "image": "https://www.studiorent.ru/upload_data/332/upldG6Rxzc.jpg"
+    },
+    {
+      "name": "Comedy shortcuts",
+      "image": "https://tnt-online.ru/storage/media/189447/conversions/2WF2DYqXSYIvk41fZDNpuQhxNOkugCz0C0bgqAox-optimized_orig.jpg"
+    },
+    {
+      "name": "Films",
+      "image": "https://i.ytimg.com/vi/cbqv1kbsNUY/maxresdefault.jpg"
+    },
+    {
+      "name": "Live streams",
+      "image": "https://i.ytimg.com/vi/nAHEh2zHjSk/maxresdefault.jpg"
+    },
+    {
+      "name": "Sports",
+      "image": "https://images.squarespace-cdn.com/content/v1/5b92ff41c3c16a37bf243d31/41ab74ad-1991-4665-9452-fc89623484a4/rafael-aparicio-live-cinematic.jpg"
+    },
+    {
+      "name": "Ecom",
+      "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ4OnSp6_LLIahbqqFNS7Oz8BxQLilog07Yjw&s"
+    }
+  ]
+}
+
