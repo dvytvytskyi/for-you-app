@@ -985,6 +985,45 @@
             };
             setInterval(headerSetupFilterButtons, 500);
 
+            // Handle Rent Type buttons (Long/Short term) for Header modal
+            function headerSetupRentTypeButtons() {
+                const longTermBtn = document.getElementById("rentLongTermHeaderBtn");
+                const shortTermBtn = document.getElementById("rentShortTermHeaderBtn");
+                
+                if (!longTermBtn || !shortTermBtn) return;
+                
+                const updateRentType = (rentType) => {
+                    // Обновляем значение rent_type в redirectData
+                    redirectData.rent_type = rentType;
+                    redirectData.page = 0;
+                    
+                    // Update button styles
+                    if (rentType === "long") {
+                        longTermBtn.classList.add("active");
+                        shortTermBtn.classList.remove("active");
+                    } else {
+                        shortTermBtn.classList.add("active");
+                        longTermBtn.classList.remove("active");
+                    }
+                    
+                    console.log(redirectData);
+                };
+                
+                longTermBtn.addEventListener("click", () => updateRentType("long"));
+                shortTermBtn.addEventListener("click", () => updateRentType("short"));
+                
+                // Set initial state
+                const rentType = redirectData.rent_type;
+                if (rentType === "short") {
+                    shortTermBtn.classList.add("active");
+                    longTermBtn.classList.remove("active");
+                } else {
+                    longTermBtn.classList.add("active");
+                    shortTermBtn.classList.remove("active");
+                }
+            }
+            headerSetupRentTypeButtons();
+
             function headerDropDownBeddroomsMobile() {
                 const dropdownContainer = document.getElementById("headerBedroomsFilterMobile");
 
@@ -7907,6 +7946,54 @@
         }
         offPlanSetupFilterButtons();
         window.addEventListener("popstate", offPlanSetupFilterButtons);
+
+        // Handle Rent Type buttons (Long/Short term) for Off Plan modal
+        function offPlanSetupRentTypeButtons() {
+            const longTermBtn = document.getElementById("rentLongTermOffPlanBtn");
+            const shortTermBtn = document.getElementById("rentShortTermOffPlanBtn");
+            
+            if (!longTermBtn || !shortTermBtn) return;
+            
+            const updateRentType = (rentType) => {
+                const currentUrl = window.location.href.split("?")[0];
+                const urlParams = new URLSearchParams(window.location.search);
+                
+                urlParams.set("rent_type", rentType);
+                urlParams.set("page", "0");
+                
+                const newUrl = `${currentUrl}?${urlParams.toString()}`;
+                window.history.replaceState({}, "", newUrl);
+                
+                // Update button styles
+                if (rentType === "long") {
+                    longTermBtn.classList.add("active");
+                    shortTermBtn.classList.remove("active");
+                } else {
+                    shortTermBtn.classList.add("active");
+                    longTermBtn.classList.remove("active");
+                }
+                
+                // Fetch projects based on the updated filter
+                fetchOffPlanProjects()
+                    .then(() => {})
+                    .catch(() => {});
+            };
+            
+            longTermBtn.addEventListener("click", () => updateRentType("long"));
+            shortTermBtn.addEventListener("click", () => updateRentType("short"));
+            
+            // Set initial state
+            const urlParams = new URLSearchParams(window.location.search);
+            const rentType = urlParams.get("rent_type");
+            if (rentType === "short") {
+                shortTermBtn.classList.add("active");
+                longTermBtn.classList.remove("active");
+            } else {
+                longTermBtn.classList.add("active");
+                shortTermBtn.classList.remove("active");
+            }
+        }
+        offPlanSetupRentTypeButtons();
 
         function offPlanDropDownSortMobile() {
             const dropdownContainer = document.getElementById("offPlanSortFilterMobile");
