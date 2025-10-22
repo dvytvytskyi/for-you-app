@@ -203,6 +203,19 @@
                             Rent
                         </div>
                     </div>
+                    
+                    <!-- Rent Type Filter -->
+                    <div class="adapriveFilters__rent-type-mobile" id="offPlanRentTypeMobile" style="display: none; margin-top: 16px;">
+                        <div class="adapriveFilters__main-buttons">
+                            <div class="adapriveFilters__main-btn active" id="rentLongTermOffPlanBtn" data-rent-type="long">
+                                Long term
+                            </div>
+                            <div class="adapriveFilters__main-btn" id="rentShortTermOffPlanBtn" data-rent-type="short">
+                                Short term
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="adapriveFilters__main-dropdowns">
                         <div>
                             <div id="offPlanLocationFilterMobile" class="filterPropertiesWrapper__dropDown">
@@ -529,6 +542,19 @@
                                 Rent
                             </div>
                         </div>
+                        
+                        <!-- Rent Type Filter for Header -->
+                        <div class="adapriveFilters__rent-type-mobile" id="headerRentTypeMobile" style="display: none; margin-top: 16px;">
+                            <div class="adapriveFilters__main-buttons">
+                                <div class="adapriveFilters__main-btn active" id="rentLongTermHeaderBtn" data-rent-type="long">
+                                    Long term
+                                </div>
+                                <div class="adapriveFilters__main-btn" id="rentShortTermHeaderBtn" data-rent-type="short">
+                                    Short term
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="adapriveFilters__main-dropdowns">
                             <div>
                                 <div
@@ -882,6 +908,7 @@
                 const offPlanButton = document.getElementById("offPlanAdaptiveBtnHeader");
                 const secondaryButton = document.getElementById("secondaryAdaptiveBtnHeader");
                 const rentButton = document.getElementById("rentAdaptiveBtnHeader");
+                const rentTypeMobile = document.getElementById("headerRentTypeMobile");
 
                 if (!offPlanButton || !secondaryButton) {
                     console.warn("Filter buttons are missing, please check the HTML structure.");
@@ -897,35 +924,45 @@
 
                 if (initialValue === "Off plan") {
                     offPlanButton.classList.add("active");
+                    if (rentTypeMobile) rentTypeMobile.style.display = "none";
                 } else if (initialValue === "Secondary") {
                     secondaryButton.classList.add("active");
+                    if (rentTypeMobile) rentTypeMobile.style.display = "none";
                 } else if (initialValue === "Rent" && rentButton) {
                     rentButton.classList.add("active");
+                    if (rentTypeMobile) rentTypeMobile.style.display = "block";
                 }
 
                 const updateVisibleFilter = (selectedValue) => {
-                    // Якщо вибрано Rent, перенаправляємо на сторінку Rent
-                    if (selectedValue === "Rent") {
-                        const urlParams = new URLSearchParams(window.location.search);
-                        urlParams.set("visible", "Rent");
-                        urlParams.set("page", "0");
-                        const rentUrl = `/rent?${urlParams.toString()}`;
-                        window.location.href = rentUrl;
-                        return;
-                    }
-                    
                     // Обновляем значение visible в redirectData
                     redirectData.visible = selectedValue;
+                    
+                    // Якщо вибрано Rent і немає rent_type, додаємо за замовчуванням
+                    if (selectedValue === "Rent" && !redirectData.rent_type) {
+                        redirectData.rent_type = "long";
+                    }
+                    
+                    // Якщо переключаємося з Rent, видаляємо rent_type
+                    if (selectedValue !== "Rent") {
+                        delete redirectData.rent_type;
+                    }
 
                     // Обновляем стили кнопок
                     if (selectedValue === "Off plan") {
                         offPlanButton.classList.add("active");
                         secondaryButton.classList.remove("active");
                         if (rentButton) rentButton.classList.remove("active");
+                        if (rentTypeMobile) rentTypeMobile.style.display = "none";
                     } else if (selectedValue === "Secondary") {
                         secondaryButton.classList.add("active");
                         offPlanButton.classList.remove("active");
                         if (rentButton) rentButton.classList.remove("active");
+                        if (rentTypeMobile) rentTypeMobile.style.display = "none";
+                    } else if (selectedValue === "Rent") {
+                        if (rentButton) rentButton.classList.add("active");
+                        offPlanButton.classList.remove("active");
+                        secondaryButton.classList.remove("active");
+                        if (rentTypeMobile) rentTypeMobile.style.display = "block";
                     }
 
                     console.log(redirectData);
@@ -7782,21 +7819,23 @@
             const offPlanButton = document.getElementById("offPlanAdaptiveBtnOffPlan");
             const secondaryButton = document.getElementById("secondaryAdaptiveBtnOffPlan");
             const rentButton = document.getElementById("rentAdaptiveBtnOffPlan");
+            const rentTypeMobile = document.getElementById("offPlanRentTypeMobile");
 
             const updateVisibleFilter = (selectedValue) => {
                 const currentUrl = window.location.href.split("?")[0]; // Get the base URL without any query parameters
                 const urlParams = new URLSearchParams(window.location.search); // Use search instead of hash
 
-                // Якщо вибрано Rent, перенаправляємо на сторінку Rent
-                if (selectedValue === "Rent") {
-                    urlParams.set("visible", "Rent");
-                    urlParams.set("page", "0");
-                    const rentUrl = `/rent?${urlParams.toString()}`;
-                    window.location.href = rentUrl;
-                    return;
-                }
-
                 urlParams.set("visible", selectedValue); // Update the visible parameter
+                
+                // Якщо вибрано Rent і немає rent_type, додаємо за замовчуванням
+                if (selectedValue === "Rent" && !urlParams.has("rent_type")) {
+                    urlParams.set("rent_type", "long");
+                }
+                
+                // Якщо переключаємося з Rent, видаляємо rent_type
+                if (selectedValue !== "Rent") {
+                    urlParams.delete("rent_type");
+                }
 
                 // Construct the new URL
                 const newUrl = `${currentUrl}?${urlParams.toString()}`;
@@ -7813,12 +7852,21 @@
                     offPlanButton.classList.add("active");
                     secondaryButton.classList.remove("active");
                     if (rentButton) rentButton.classList.remove("active");
+                    if (rentTypeMobile) rentTypeMobile.style.display = "none";
                 } else if (selectedValue === "Secondary") {
                     parentDiv.style.display = "none"; // Приховуємо батьківський div
                     offPlanHandoverFilter.style.display = "none";
                     secondaryButton.classList.add("active");
                     offPlanButton.classList.remove("active");
                     if (rentButton) rentButton.classList.remove("active");
+                    if (rentTypeMobile) rentTypeMobile.style.display = "none";
+                } else if (selectedValue === "Rent") {
+                    parentDiv.style.display = "none";
+                    offPlanHandoverFilter.style.display = "none";
+                    if (rentButton) rentButton.classList.add("active");
+                    offPlanButton.classList.remove("active");
+                    secondaryButton.classList.remove("active");
+                    if (rentTypeMobile) rentTypeMobile.style.display = "block";
                 }
 
 
@@ -7848,10 +7896,13 @@
             // Set initial button state based on URL parameter
             if (initialValue === "Off plan") {
                 offPlanButton.classList.add("active");
+                if (rentTypeMobile) rentTypeMobile.style.display = "none";
             } else if (initialValue === "Secondary") {
                 secondaryButton.classList.add("active");
+                if (rentTypeMobile) rentTypeMobile.style.display = "none";
             } else if (initialValue === "Rent" && rentButton) {
                 rentButton.classList.add("active");
+                if (rentTypeMobile) rentTypeMobile.style.display = "block";
             }
         }
         offPlanSetupFilterButtons();
