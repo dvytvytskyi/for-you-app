@@ -1,0 +1,22 @@
+# Composer dependencies
+/vendor/
+composer.lock
+composer.phar
+
+# Temporary PDF files
+/temp-pdfs/
+
+# Node modules (if used in future)
+node_modules/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+

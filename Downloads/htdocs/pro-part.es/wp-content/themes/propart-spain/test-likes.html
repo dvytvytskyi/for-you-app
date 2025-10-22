@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Property Likes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f7f6;
+        }
+        .property-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .property-card {
+            background-color: #fff;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform .2s ease-in-out, box-shadow .2s ease-in-out;
+            position: relative;
+        }
+        .property-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 16px rgba(0,0,0,0.2);
+        }
+        .heart-wrapper {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            cursor: pointer;
+            background: rgba(255,255,255,0.9);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+        .heart-wrapper:hover {
+            background-color: #e0e0e0;
+        }
+        .heart-icon {
+            width: 24px;
+            height: 24px;
+        }
+        .property-image {
+            width: 100%;
+            height: 200px;
+            background-color: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .property-details {
+            padding: 20px;
+        }
+        .property-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .property-price {
+            font-size: 18px;
+            color: #2e7d32;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .property-location {
+            font-size: 14px;
+            color: #666;
+        }
+        .liked-count {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-size: 1.1rem;
+        }
+        .clear-btn {
+            background: #d32f2f;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            transition: background-color 0.2s;
+        }
+        .clear-btn:hover {
+            background: #b71c1c;
+        }
+    </style>
+</head>
+<body>
+    <h1>Property Like System Test</h1>
+
+    <div class="liked-count">
+        Liked Properties: <span id="likedCount">0</span>
+    </div>
+
+    <button class="clear-btn" onclick="clearAllLiked()">Clear All Liked</button>
+    <button class="clear-btn" onclick="showLikedIds()">Show Liked IDs</button>
+
+    <div class="property-grid" id="propertyGrid">
+        <!-- Property cards will be generated here -->
+    </div>
+
+    <script src="js/property-like-utils.js"></script>
+    <script>
+        // Sample property data
+        const sampleProperties = [
+            { id: 491, development_name: "La Cala Plot", price: 300000, town: "La Cala de Mijas", province: "Málaga", type: "Plot" },
+            { id: 492, development_name: "Marbella Villa", price: 850000, town: "Marbella", province: "Málaga", type: "Villa" },
+            { id: 493, development_name: "Estepona Apartment", price: 450000, town: "Estepona", province: "Málaga", type: "Apartment" },
+            { id: 494, development_name: "Benahavis Penthouse", price: 1200000, town: "Benahavis", province: "Málaga", type: "Penthouse" },
+            { id: 495, development_name: "Fuengirola Townhouse", price: 380000, town: "Fuengirola", province: "Málaga", type: "Townhouse" },
+            { id: 496, development_name: "Mijas Golf Villa", price: 950000, town: "Mijas", province: "Málaga", type: "Villa" }
+        ];
+        // Generate property cards
+        function generatePropertyCards() {
+            const grid = document.getElementById('propertyGrid');
+            grid.innerHTML = '';
+            sampleProperties.forEach(property => {
+                const card = document.createElement('div');
+                card.className = 'property-card';
+                card.setAttribute('data-property-id', property.id);
+                card.innerHTML = `
+                    <div class="property-image">Property ${property.id}</div>
+                    <div class="heart-wrapper" data-property-id="${property.id}">
+                        <svg class="heart-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="property-details">
+                        <div class="property-title">${property.development_name}</div>
+                        <div class="property-price">€${property.price.toLocaleString()}</div>
+                        <div class="property-location">${property.town}, ${property.province}</div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            // Setup like buttons after generating cards
+            if (window.propertyLikeUtils) {
+                window.propertyLikeUtils.setupExistingLikeButtons();
+                updateLikedCount();
+            }
+        }
+        // Update liked count display
+        function updateLikedCount() {
+            if (window.getLikedCount) {
+                const count = window.getLikedCount();
+                document.getElementById('likedCount').textContent = count;
+            }
+        }
+        // Clear all liked properties
+        function clearAllLiked() {
+            if (window.clearAllLiked) {
+                window.clearAllLiked();
+            }
+            updateLikedCount();
+        }
+        // Show liked property IDs
+        function showLikedIds() {
+            if (window.exportLikedProperties) {
+                const data = window.exportLikedProperties();
+                alert(`Liked Properties:\nCount: ${data.count}\nIDs: ${data.ids.join(', ')}\nTimestamp: ${data.timestamp}`);
+            }
+        }
+        // Listen for like/unlike events
+        document.addEventListener('propertyLiked', (e) => {
+            console.log('Property liked:', e.detail.propertyId);
+            updateLikedCount();
+        });
+        document.addEventListener('propertyUnliked', (e) => {
+            console.log('Property unliked:', e.detail.propertyId);
+            updateLikedCount();
+        });
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            generatePropertyCards();
+        });
+        // Update count every second to catch any changes
+        setInterval(updateLikedCount, 1000);
+    </script>
+</body>
+</html>

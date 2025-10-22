@@ -3955,7 +3955,7 @@ window.addEventListener("DOMContentLoaded", () => {
         logoContainer.appendChild(logoImg);
   const navItems = [
     { text: "Home", url: `${language && "/" + language}/` },
-    { text: "New building", url: `${language && "/" + language}/new-buildings?page=0&visible=Off+plan` },
+    { text: "New building", url: `${language && "/" + language}/new-buildings?visible=Off+plan` },
     {
       text: "Secondary",
       url: `${language && "/" + language}/secondaries?page=0&visible=Secondary`,

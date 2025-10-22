@@ -1,0 +1,13 @@
+{
+    "name": "propart-spain/theme",
+    "description": "Pro-Part Spain Theme",
+    "type": "wordpress-theme",
+    "require": {
+        "mpdf/mpdf": "^8.2"
+    },
+    "config": {
+        "vendor-dir": "vendor",
+        "optimize-autoloader": true
+    }
+}
+

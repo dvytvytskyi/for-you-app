@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Simple Likes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .property-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            position: relative;
+        }
+        .heart-wrapper {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+            background: white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ddd;
+        }
+        .heart-icon {
+            width: 24px;
+            height: 24px;
+        }
+        .property-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .property-price {
+            font-size: 18px;
+            color: #2e7d32;
+            margin-bottom: 10px;
+        }
+        .property-location {
+            font-size: 16px;
+            color: #666;
+        }
+        .liked-count {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 18px;
+        }
+        .clear-btn {
+            background: #d32f2f;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        .clear-btn:hover {
+            background: #b71c1c;
+        }
+        .show-btn {
+            background: #1976d2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        .show-btn:hover {
+            background: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Simple Like System</h1>
+    
+    <div class="liked-count">
+        Liked Properties: <span id="likedCount">0</span>
+    </div>
+    
+    <button class="clear-btn" onclick="clearAllLikes()">Clear All Likes</button>
+    <button class="show-btn" onclick="showLikedIds()">Show Liked IDs</button>
+    
+    <div id="propertyContainer">
+        <!-- Property cards will be here -->
+    </div>
+
+    <script src="js/simple-likes.js"></script>
+    <script>
+        // Sample properties
+        const properties = [
+            { id: 491, name: "La Cala Plot", price: 300000, location: "La Cala de Mijas, Málaga" },
+            { id: 492, name: "Marbella Villa", price: 850000, location: "Marbella, Málaga" },
+            { id: 493, name: "Estepona Apartment", price: 450000, location: "Estepona, Málaga" },
+            { id: 494, name: "Benahavis Penthouse", price: 1200000, location: "Benahavis, Málaga" }
+        ];
+
+        // Create property cards
+        function createPropertyCards() {
+            const container = document.getElementById('propertyContainer');
+            container.innerHTML = '';
+
+            properties.forEach(property => {
+                const card = document.createElement('div');
+                card.className = 'property-card';
+                card.setAttribute('data-property-id', property.id);
+
+                card.innerHTML = `
+                    <div class="heart-wrapper">
+                        <svg class="heart-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="property-title">${property.name}</div>
+                    <div class="property-price">€${property.price.toLocaleString()}</div>
+                    <div class="property-location">${property.location}</div>
+                `;
+
+                container.appendChild(card);
+            });
+
+            // Setup like buttons
+            if (window.setupLikeButtons) {
+                window.setupLikeButtons();
+            }
+            updateLikedCount();
+        }
+
+        // Update liked count
+        function updateLikedCount() {
+            if (window.isLiked) {
+                const count = properties.filter(p => window.isLiked(p.id)).length;
+                document.getElementById('likedCount').textContent = count;
+            }
+        }
+
+        // Clear all likes
+        function clearAllLikes() {
+            if (window.clearAllLikes) {
+                window.clearAllLikes();
+            }
+            updateLikedCount();
+        }
+
+        // Show liked IDs
+        function showLikedIds() {
+            if (window.isLiked) {
+                const likedIds = properties.filter(p => window.isLiked(p.id)).map(p => p.id);
+                alert(`Liked Property IDs: ${likedIds.join(', ')}`);
+            }
+        }
+
+        // Listen for like events
+        document.addEventListener('DOMContentLoaded', function() {
+            createPropertyCards();
+        });
+
+        // Update count every second
+        setInterval(updateLikedCount, 1000);
+    </script>
+</body>
+</html>
+

@@ -1694,7 +1694,7 @@
 
         const navItems = [
             { text: "Home", url: `${language && "/" + language}/` },
-            { text: "New building", url: `${language && "/" + language}/new-buildings?page=1&visible=Off+plan` },
+            { text: "New building", url: `${language && "/" + language}/new-buildings?visible=Off+plan` },
             {
                 text: "Secondary",
                 url: `${language && "/" + language}/secondaries?page=1&visible=Secondary`,

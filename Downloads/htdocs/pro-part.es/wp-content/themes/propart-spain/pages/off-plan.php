@@ -199,23 +199,7 @@
                         <div class="adapriveFilters__main-btn" id="secondaryAdaptiveBtnOffPlan">
                             Secondary
                         </div>
-                        <div class="adapriveFilters__main-btn" id="rentAdaptiveBtnOffPlan">
-                            Rent
-                        </div>
                     </div>
-                    
-                    <!-- Rent Type Filter -->
-                    <div class="adapriveFilters__rent-type-mobile" id="offPlanRentTypeMobile" style="display: none; margin-top: 16px;">
-                        <div class="adapriveFilters__main-buttons">
-                            <div class="adapriveFilters__main-btn active" id="rentLongTermOffPlanBtn" data-rent-type="long">
-                                Long term
-                            </div>
-                            <div class="adapriveFilters__main-btn" id="rentShortTermOffPlanBtn" data-rent-type="short">
-                                Short term
-                            </div>
-                        </div>
-                    </div>
-                    
                     <div class="adapriveFilters__main-dropdowns">
                         <div>
                             <div id="offPlanLocationFilterMobile" class="filterPropertiesWrapper__dropDown">
@@ -334,7 +318,6 @@
             </div>
         </div>
     </section>
-    <section id="feedbackBlock"></section>
 </main>
 
 <script>
@@ -504,11 +487,7 @@
             fixedMenue.prepend(fixedBtn);
             header.appendChild(fixedMenue);
 
-            // Використовуємо існуючий мобільний фільтр для планшета
-            const adaptiveFiltersContainer = document.getElementById("offPlanAdaptiveFilters");
-            
-            // Закоментували створення окремого header фільтра
-            /*const adaptiveFiltersContainer = document.createElement("div");
+            const adaptiveFiltersContainer = document.createElement("div");
             adaptiveFiltersContainer.className = "adapriveFilters__bg";
             adaptiveFiltersContainer.id = "headerAdaptiveFilters";
             adaptiveFiltersContainer.innerHTML = `
@@ -542,23 +521,7 @@
                             <div class="adapriveFilters__main-btn" id="secondaryAdaptiveBtnHeader">
                                 Secondary
                             </div>
-                            <div class="adapriveFilters__main-btn" id="rentAdaptiveBtnHeader">
-                                Rent
-                            </div>
                         </div>
-                        
-                        <!-- Rent Type Filter for Header -->
-                        <div class="adapriveFilters__rent-type-mobile" id="headerRentTypeMobile" style="display: none; margin-top: 16px;">
-                            <div class="adapriveFilters__main-buttons">
-                                <div class="adapriveFilters__main-btn active" id="rentLongTermHeaderBtn" data-rent-type="long">
-                                    Long term
-                                </div>
-                                <div class="adapriveFilters__main-btn" id="rentShortTermHeaderBtn" data-rent-type="short">
-                                    Short term
-                                </div>
-                            </div>
-                        </div>
-                        
                         <div class="adapriveFilters__main-dropdowns">
                             <div>
                                 <div
@@ -830,78 +793,61 @@
                 </div>
             </div>
             `;
-            // header.appendChild(adaptiveFiltersContainer); // Не потрібно для мобільного фільтра
-            */
+            header.appendChild(adaptiveFiltersContainer);
 
-            // Функція для управління адаптивним меню (відкриття/закриття) - ТІЛЬКИ для мобільних (<768px)
+            // Функция для управления адаптивным меню (открытие/закрытие)
             const adaptiveMenuHandler = () => {
+                // Убедимся, что элементы добавлены в DOM
                 const openFilterButton = header.querySelector("#headerOpenFilterBtn");
-                const closeButton = adaptiveFiltersContainer ? adaptiveFiltersContainer.querySelector(".adapriveFilters__header-btnClose") : null;
+                const closeButton =
+                    adaptiveFiltersContainer.querySelector("#btnCloseHeader");
 
-                if (!openFilterButton || !adaptiveFiltersContainer) {
-                    console.log("[TABLET FILTER] Waiting for elements...");
+                if (!openFilterButton || !adaptiveFiltersContainer || !closeButton) {
+                    console.warn(
+                        "Some elements are missing, please check the HTML structure."
+                    );
                     return;
                 }
 
-                // Відкриття меню ТІЛЬКИ для мобільних (<768px), планшет ВИМКНЕНО
+                // Открытие меню
                 const openAdaptiveMenu = () => {
-                    if (window.innerWidth < 768) {
+                    if (window.innerWidth < 767) {
                         adaptiveFiltersContainer.classList.add("active");
                         document.body.style.overflow = "hidden";
-                        console.log("[MOBILE FILTER] Filter opened");
-                    } else {
-                        console.log("[TABLET FILTER] Filter disabled for tablet");
                     }
                 };
 
-                // Закриття меню
+                // Закрытие меню
                 const closeAdaptiveMenu = () => {
                     adaptiveFiltersContainer.classList.remove("active");
                     document.body.style.overflow = "";
-                    console.log("[TABLET FILTER] Filter closed");
                 };
 
-                // Додаємо обробник тільки один раз
-                if (!openFilterButton.hasAttribute("data-listener-added")) {
-                    openFilterButton.addEventListener("click", openAdaptiveMenu);
-                    openFilterButton.setAttribute("data-listener-added", "true");
-                    console.log("[TABLET FILTER] Open button listener added");
-                }
+                // Добавление обработчиков событий
+                openFilterButton.addEventListener("click", openAdaptiveMenu);
+                closeButton.addEventListener("click", closeAdaptiveMenu);
 
-                // Закриття кнопкою
-                if (closeButton && !closeButton.hasAttribute("data-listener-added")) {
-                    closeButton.addEventListener("click", closeAdaptiveMenu);
-                    closeButton.setAttribute("data-listener-added", "true");
-                    console.log("[TABLET FILTER] Close button listener added");
-                }
+                // Закрытие при клике вне области меню
+                adaptiveFiltersContainer.addEventListener("click", (e) => {
+                    if (e.target === adaptiveFiltersContainer) {
+                        closeAdaptiveMenu();
+                    }
+                });
 
-                // Закриття при кліку поза областю меню
-                if (!adaptiveFiltersContainer.hasAttribute("data-listener-added")) {
-                    adaptiveFiltersContainer.addEventListener("click", (e) => {
-                        if (e.target === adaptiveFiltersContainer) {
-                            closeAdaptiveMenu();
-                        }
-                    });
-                    adaptiveFiltersContainer.setAttribute("data-listener-added", "true");
-                    console.log("[TABLET FILTER] Background click listener added");
-                }
-
-                return { closeAdaptiveMenu };
+                // Возвращаем функцию закрытия для использования в других частях кода
+                return {
+                    closeAdaptiveMenu
+                };
             };
-            
-            // Викликаємо періодично, поки елементи не з'являться
-            const tabletFilterInterval = setInterval(() => {
-                const result = adaptiveMenuHandler();
-                if (result) {
-                    clearInterval(tabletFilterInterval);
-                    console.log("[TABLET FILTER] Setup complete");
-                }
-            }, 500);
+            const {
+                closeAdaptiveMenu
+            } = adaptiveMenuHandler();
+            setTimeout(adaptiveMenuHandler, 0);
 
             const headerMapImport = document.getElementById("headerMapImport");
 
             function updateHeaderMap() {
-                const isMobile = window.innerWidth < 768;
+                const isMobile = window.innerWidth < 767;
                 if (isMobile && headerMapImport) {
                     headerMapImport.style.height = "0";
                     headerMapImport.style.overflow = "hidden";
@@ -913,18 +859,11 @@
             }
 
             function updateFixedMenueVisibility() {
-                const isMobile = window.innerWidth < 768;
-                const isTablet = window.innerWidth >= 768 && window.innerWidth <= 1366;
-                
+                const isMobile = window.innerWidth < 767;
                 if (isMobile) {
                     // Show filter button on mobile devices regardless of scroll position
                     fixedMenue.style.opacity = 1;
                     fixedMenue.style.visibility = "visible";
-                } else if (isTablet) {
-                    // Hide on tablet - фільтр вимкнено для планшета
-                    fixedMenue.style.opacity = 0;
-                    fixedMenue.style.visibility = "hidden";
-                    fixedMenue.style.display = "none";
                 } else {
                     // Hide on desktop
                     fixedMenue.style.opacity = 0;
@@ -932,179 +871,53 @@
                 }
             }
 
-            // Видалено header filter functions - використовуємо мобільний фільтр для планшета
-            /*
-            let headerFilterListenersAdded = false;
             const headerSetupFilterButtons = () => {
                 const offPlanButton = document.getElementById("offPlanAdaptiveBtnHeader");
                 const secondaryButton = document.getElementById("secondaryAdaptiveBtnHeader");
-                const rentButton = document.getElementById("rentAdaptiveBtnHeader");
-                const rentTypeMobile = document.getElementById("headerRentTypeMobile");
-
-                console.log("[HEADER FILTER] Buttons found:", {
-                    offPlanButton: !!offPlanButton,
-                    secondaryButton: !!secondaryButton,
-                    rentButton: !!rentButton,
-                    rentTypeMobile: !!rentTypeMobile
-                });
 
                 if (!offPlanButton || !secondaryButton) {
+                    console.warn("Filter buttons are missing, please check the HTML structure.");
                     return;
                 }
 
                 // Устанавливаем стили кнопок в зависимости от значения visible в redirectData
                 const initialValue = redirectData.visible;
-                console.log("[HEADER FILTER] Initial value:", initialValue);
 
                 offPlanButton.classList.remove("active");
                 secondaryButton.classList.remove("active");
-                if (rentButton) rentButton.classList.remove("active");
 
                 if (initialValue === "Off plan") {
                     offPlanButton.classList.add("active");
-                    if (rentTypeMobile) rentTypeMobile.style.display = "none";
                 } else if (initialValue === "Secondary") {
                     secondaryButton.classList.add("active");
-                    if (rentTypeMobile) rentTypeMobile.style.display = "none";
-                } else if (initialValue === "Rent" && rentButton) {
-                    rentButton.classList.add("active");
-                    if (rentTypeMobile) rentTypeMobile.style.display = "block";
                 }
 
                 const updateVisibleFilter = (selectedValue) => {
-                    console.log("[HEADER FILTER] updateVisibleFilter called with:", selectedValue);
-                    
                     // Обновляем значение visible в redirectData
                     redirectData.visible = selectedValue;
-                    
-                    // Якщо вибрано Rent і немає rent_type, додаємо за замовчуванням
-                    if (selectedValue === "Rent" && !redirectData.rent_type) {
-                        redirectData.rent_type = "long";
-                        console.log("[HEADER FILTER] Set default rent_type to long");
-                    }
-                    
-                    // Якщо переключаємося з Rent, видаляємо rent_type
-                    if (selectedValue !== "Rent") {
-                        delete redirectData.rent_type;
-                        console.log("[HEADER FILTER] Removed rent_type");
-                    }
 
                     // Обновляем стили кнопок
                     if (selectedValue === "Off plan") {
                         offPlanButton.classList.add("active");
                         secondaryButton.classList.remove("active");
-                        if (rentButton) rentButton.classList.remove("active");
-                        if (rentTypeMobile) rentTypeMobile.style.display = "none";
                     } else if (selectedValue === "Secondary") {
                         secondaryButton.classList.add("active");
                         offPlanButton.classList.remove("active");
-                        if (rentButton) rentButton.classList.remove("active");
-                        if (rentTypeMobile) rentTypeMobile.style.display = "none";
-                    } else if (selectedValue === "Rent") {
-                        if (rentButton) rentButton.classList.add("active");
-                        offPlanButton.classList.remove("active");
-                        secondaryButton.classList.remove("active");
-                        if (rentTypeMobile) {
-                            rentTypeMobile.style.display = "block";
-                            console.log("[HEADER FILTER] Showing rent type buttons");
-                        }
                     }
 
-                    console.log("[HEADER FILTER] redirectData:", redirectData);
+                    console.log(redirectData);
                 };
 
-                // Добавляем обработчики событий только один раз
-                if (!headerFilterListenersAdded) {
-                    console.log("[HEADER FILTER] Adding event listeners...");
-                    
-                    offPlanButton.addEventListener("click", () => {
-                        console.log("[HEADER FILTER] Off plan clicked");
-                        updateVisibleFilter("Off plan");
-                    });
+                // Добавляем обработчики событий
+                offPlanButton.addEventListener("click", () => {
+                    updateVisibleFilter("Off plan");
+                });
 
-                    secondaryButton.addEventListener("click", () => {
-                        console.log("[HEADER FILTER] Secondary clicked");
-                        updateVisibleFilter("Secondary");
-                    });
-                    
-                    if (rentButton) {
-                        rentButton.addEventListener("click", () => {
-                            console.log("[HEADER FILTER] Rent clicked!");
-                            updateVisibleFilter("Rent");
-                        });
-                        console.log("[HEADER FILTER] Rent button listener added successfully");
-                    } else {
-                        console.log("[HEADER FILTER] WARNING: Rent button not found, listener not added");
-                    }
-                    headerFilterListenersAdded = true;
-                    console.log("[HEADER FILTER] All listeners added, flag set to true");
-                } else {
-                    console.log("[HEADER FILTER] Listeners already added, skipping");
-                }
+                secondaryButton.addEventListener("click", () => {
+                    updateVisibleFilter("Secondary");
+                });
             };
             setInterval(headerSetupFilterButtons, 500);
-
-            // Handle Rent Type buttons (Long/Short term) for Header modal
-            let headerRentTypeListenersAdded = false;
-            function headerSetupRentTypeButtons() {
-                const longTermBtn = document.getElementById("rentLongTermHeaderBtn");
-                const shortTermBtn = document.getElementById("rentShortTermHeaderBtn");
-                
-                console.log("[HEADER RENT TYPE] Buttons found:", {
-                    longTermBtn: !!longTermBtn,
-                    shortTermBtn: !!shortTermBtn
-                });
-                
-                if (!longTermBtn || !shortTermBtn) return;
-                
-                const updateRentType = (rentType) => {
-                    console.log("[HEADER RENT TYPE] updateRentType called with:", rentType);
-                    
-                    // Обновляем значение rent_type в redirectData
-                    redirectData.rent_type = rentType;
-                    redirectData.page = 0;
-                    
-                    // Update button styles
-                    if (rentType === "long") {
-                        longTermBtn.classList.add("active");
-                        shortTermBtn.classList.remove("active");
-                    } else {
-                        shortTermBtn.classList.add("active");
-                        longTermBtn.classList.remove("active");
-                    }
-                    
-                    console.log("[HEADER RENT TYPE] redirectData:", redirectData);
-                };
-                
-                // Додаємо listeners тільки один раз
-                if (!headerRentTypeListenersAdded) {
-                    console.log("[HEADER RENT TYPE] Adding event listeners...");
-                    longTermBtn.addEventListener("click", () => {
-                        console.log("[HEADER RENT TYPE] Long term clicked!");
-                        updateRentType("long");
-                    });
-                    shortTermBtn.addEventListener("click", () => {
-                        console.log("[HEADER RENT TYPE] Short term clicked!");
-                        updateRentType("short");
-                    });
-                    headerRentTypeListenersAdded = true;
-                    console.log("[HEADER RENT TYPE] Listeners added successfully");
-                } else {
-                    console.log("[HEADER RENT TYPE] Listeners already added, skipping");
-                }
-                
-                // Set initial state
-                const rentType = redirectData.rent_type;
-                console.log("[HEADER RENT TYPE] Setting initial state, rent_type:", rentType);
-                if (rentType === "short") {
-                    shortTermBtn.classList.add("active");
-                    longTermBtn.classList.remove("active");
-                } else {
-                    longTermBtn.classList.add("active");
-                    shortTermBtn.classList.remove("active");
-                }
-            }
-            setInterval(headerSetupRentTypeButtons, 500);
 
             function headerDropDownBeddroomsMobile() {
                 const dropdownContainer = document.getElementById("headerBedroomsFilterMobile");
@@ -2215,15 +2028,11 @@
                 },
                 {
                     text: "New building",
-                    url: `${language && "/" + language}/new-buildings?page=1&visible=Off+plan`
+                    url: `${language && "/" + language}/new-buildings?visible=Off+plan`
                 },
                 {
                     text: "Secondary",
                     url: `${language && "/" + language}/secondaries?page=1&visible=Secondary`,
-                },
-                {
-                    text: "Rent",
-                    url: `${language && "/" + language}/rent?page=1&rent_type=long`,
                 },
                 {
                     text: "Map",
@@ -4649,9 +4458,10 @@
 
             const card = document.createElement("a");
             card.className = "card";
-            card.href = `${language && "/" + language}/new-building?projectid=${id}`;
             card.addEventListener('click', function(event) {
                 const clickedElement = event.target;
+                // Assuming your new-building page uses 'projectid'
+                card.href = `${language && "/" + language}/new-building?projectid=${id}`;
             });
 
             // Use simple like system if available
@@ -7935,41 +7745,16 @@
         }
         handleBtnRedirectOffPlan();
         window.addEventListener("popstate", handleBtnRedirectOffPlan);
-        
-        */ // Кінець закоментованих header функцій
 
         function offPlanSetupFilterButtons() {
             const offPlanButton = document.getElementById("offPlanAdaptiveBtnOffPlan");
             const secondaryButton = document.getElementById("secondaryAdaptiveBtnOffPlan");
-            const rentButton = document.getElementById("rentAdaptiveBtnOffPlan");
-            const rentTypeMobile = document.getElementById("offPlanRentTypeMobile");
-
-            console.log("[OFF PLAN FILTER] Buttons found:", {
-                offPlanButton: !!offPlanButton,
-                secondaryButton: !!secondaryButton,
-                rentButton: !!rentButton,
-                rentTypeMobile: !!rentTypeMobile
-            });
 
             const updateVisibleFilter = (selectedValue) => {
-                console.log("[OFF PLAN FILTER] updateVisibleFilter called with:", selectedValue);
-                
                 const currentUrl = window.location.href.split("?")[0]; // Get the base URL without any query parameters
                 const urlParams = new URLSearchParams(window.location.search); // Use search instead of hash
 
                 urlParams.set("visible", selectedValue); // Update the visible parameter
-                
-                // Якщо вибрано Rent і немає rent_type, додаємо за замовчуванням
-                if (selectedValue === "Rent" && !urlParams.has("rent_type")) {
-                    urlParams.set("rent_type", "long");
-                    console.log("[OFF PLAN FILTER] Set default rent_type to long");
-                }
-                
-                // Якщо переключаємося з Rent, видаляємо rent_type
-                if (selectedValue !== "Rent") {
-                    urlParams.delete("rent_type");
-                    console.log("[OFF PLAN FILTER] Removed rent_type");
-                }
 
                 // Construct the new URL
                 const newUrl = `${currentUrl}?${urlParams.toString()}`;
@@ -7985,60 +7770,23 @@
                     offPlanHandoverFilter.style.display = "flex";
                     offPlanButton.classList.add("active");
                     secondaryButton.classList.remove("active");
-                    if (rentButton) rentButton.classList.remove("active");
-                    if (rentTypeMobile) rentTypeMobile.style.display = "none";
                 } else if (selectedValue === "Secondary") {
                     parentDiv.style.display = "none"; // Приховуємо батьківський div
                     offPlanHandoverFilter.style.display = "none";
                     secondaryButton.classList.add("active");
                     offPlanButton.classList.remove("active");
-                    if (rentButton) rentButton.classList.remove("active");
-                    if (rentTypeMobile) rentTypeMobile.style.display = "none";
-                } else if (selectedValue === "Rent") {
-                    parentDiv.style.display = "none";
-                    offPlanHandoverFilter.style.display = "none";
-                    if (rentButton) rentButton.classList.add("active");
-                    offPlanButton.classList.remove("active");
-                    secondaryButton.classList.remove("active");
-                    if (rentTypeMobile) {
-                        rentTypeMobile.style.display = "block";
-                        console.log("[OFF PLAN FILTER] Showing rent type buttons");
-                    }
                 }
 
-                console.log("[OFF PLAN FILTER] New URL:", newUrl);
 
                 // Fetch projects based on the updated filter
                 fetchOffPlanProjects()
-                    .then(() => {
-                        console.log("[OFF PLAN FILTER] Projects fetched successfully");
-                    })
-                    .catch(() => {
-                        console.log("[OFF PLAN FILTER] Error fetching projects");
-                    });
+                    .then(() => {})
+                    .catch(() => {});
             };
 
             if (offPlanButton && secondaryButton) {
-                console.log("[OFF PLAN FILTER] Adding event listeners...");
-                offPlanButton.addEventListener("click", () => {
-                    console.log("[OFF PLAN FILTER] Off plan clicked");
-                    updateVisibleFilter("Off plan");
-                });
-                secondaryButton.addEventListener("click", () => {
-                    console.log("[OFF PLAN FILTER] Secondary clicked");
-                    updateVisibleFilter("Secondary");
-                });
-                console.log("[OFF PLAN FILTER] Off plan and Secondary listeners added");
-            }
-            
-            if (rentButton) {
-                rentButton.addEventListener("click", () => {
-                    console.log("[OFF PLAN FILTER] Rent clicked!");
-                    updateVisibleFilter("Rent");
-                });
-                console.log("[OFF PLAN FILTER] Rent button listener added successfully");
-            } else {
-                console.log("[OFF PLAN FILTER] WARNING: Rent button not found");
+                offPlanButton.addEventListener("click", () => updateVisibleFilter("Off plan"));
+                secondaryButton.addEventListener("click", () => updateVisibleFilter("Secondary"));
             }
 
             const urlParams = new URLSearchParams(window.location.search); // Use search instead of hash
@@ -8047,100 +7795,16 @@
             // Clear active classes
             offPlanButton.classList.remove("active");
             secondaryButton.classList.remove("active");
-            if (rentButton) rentButton.classList.remove("active");
 
             // Set initial button state based on URL parameter
             if (initialValue === "Off plan") {
                 offPlanButton.classList.add("active");
-                if (rentTypeMobile) rentTypeMobile.style.display = "none";
             } else if (initialValue === "Secondary") {
                 secondaryButton.classList.add("active");
-                if (rentTypeMobile) rentTypeMobile.style.display = "none";
-            } else if (initialValue === "Rent" && rentButton) {
-                rentButton.classList.add("active");
-                if (rentTypeMobile) rentTypeMobile.style.display = "block";
             }
         }
         offPlanSetupFilterButtons();
         window.addEventListener("popstate", offPlanSetupFilterButtons);
-
-        // Handle Rent Type buttons (Long/Short term) for Off Plan modal
-        let offPlanRentTypeListenersAdded = false;
-        function offPlanSetupRentTypeButtons() {
-            const longTermBtn = document.getElementById("rentLongTermOffPlanBtn");
-            const shortTermBtn = document.getElementById("rentShortTermOffPlanBtn");
-            
-            console.log("[OFF PLAN RENT TYPE] Buttons found:", {
-                longTermBtn: !!longTermBtn,
-                shortTermBtn: !!shortTermBtn
-            });
-            
-            if (!longTermBtn || !shortTermBtn) return;
-            
-            const updateRentType = (rentType) => {
-                console.log("[OFF PLAN RENT TYPE] updateRentType called with:", rentType);
-                
-                const currentUrl = window.location.href.split("?")[0];
-                const urlParams = new URLSearchParams(window.location.search);
-                
-                urlParams.set("rent_type", rentType);
-                urlParams.set("page", "0");
-                
-                const newUrl = `${currentUrl}?${urlParams.toString()}`;
-                window.history.replaceState({}, "", newUrl);
-                
-                console.log("[OFF PLAN RENT TYPE] New URL:", newUrl);
-                
-                // Update button styles
-                if (rentType === "long") {
-                    longTermBtn.classList.add("active");
-                    shortTermBtn.classList.remove("active");
-                } else {
-                    shortTermBtn.classList.add("active");
-                    longTermBtn.classList.remove("active");
-                }
-                
-                // Fetch projects based on the updated filter
-                fetchOffPlanProjects()
-                    .then(() => {
-                        console.log("[OFF PLAN RENT TYPE] Projects fetched successfully");
-                    })
-                    .catch(() => {
-                        console.log("[OFF PLAN RENT TYPE] Error fetching projects");
-                    });
-            };
-            
-            // Додаємо listeners тільки один раз
-            if (!offPlanRentTypeListenersAdded) {
-                console.log("[OFF PLAN RENT TYPE] Adding event listeners...");
-                longTermBtn.addEventListener("click", () => {
-                    console.log("[OFF PLAN RENT TYPE] Long term clicked!");
-                    updateRentType("long");
-                });
-                shortTermBtn.addEventListener("click", () => {
-                    console.log("[OFF PLAN RENT TYPE] Short term clicked!");
-                    updateRentType("short");
-                });
-                offPlanRentTypeListenersAdded = true;
-                console.log("[OFF PLAN RENT TYPE] Listeners added successfully");
-            } else {
-                console.log("[OFF PLAN RENT TYPE] Listeners already added, skipping");
-            }
-            
-            // Set initial state
-            const urlParams = new URLSearchParams(window.location.search);
-            const rentType = urlParams.get("rent_type");
-            console.log("[OFF PLAN RENT TYPE] Setting initial state, rent_type:", rentType);
-            if (rentType === "short") {
-                shortTermBtn.classList.add("active");
-                longTermBtn.classList.remove("active");
-            } else {
-                longTermBtn.classList.add("active");
-                shortTermBtn.classList.remove("active");
-            }
-        }
-        offPlanSetupRentTypeButtons();
-        setInterval(offPlanSetupRentTypeButtons, 500);
 
         function offPlanDropDownSortMobile() {
             const dropdownContainer = document.getElementById("offPlanSortFilterMobile");
@@ -8737,4 +8401,3 @@
 </script>
 
 <?php get_footer(); ?>
-
