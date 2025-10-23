@@ -2035,6 +2035,10 @@
                     url: `${language && "/" + language}/secondaries?page=1&visible=Secondary`,
                 },
                 {
+                    text: "Rent",
+                    url: `${language && "/" + language}/rent?page=1&visible=Rent`
+                },
+                {
                     text: "Map",
                     url: `${language && "/" + language}/map?visible=Off+plan`
                 },

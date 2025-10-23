@@ -2224,6 +2224,7 @@ window.addEventListener("DOMContentLoaded", () => {
       text: "Secondary",
       url: `${language && "/" + language}/secondaries?page=0&visible=Secondary`,
     },
+    { text: "Rent", url: `${language && "/" + language}/rent?page=1&visible=Rent` },
     { text: "Map", url: `${language && "/" + language}/map?visible=Off+plan` },
     { text: "Areas", url: `${language && "/" + language}/areas` },
     { text: "Consulting", url: `${language && "/" + language}/consulting` },

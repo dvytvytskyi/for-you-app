@@ -11049,6 +11049,10 @@ p {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+		flex: 1;
+		overflow-y: auto;
+		overflow-x: hidden;
+		-webkit-overflow-scrolling: touch;
 	}
 	
 	.mapListProjects__card {
