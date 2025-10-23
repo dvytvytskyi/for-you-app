@@ -20,42 +20,44 @@ function VideoCasesSection({ isVisible, onBackClick }) {
     { id: 'podcast', name: 'Podcast' }
   ]
 
-  // Локальні відео
+  // Відео з S3
+  const S3_URL = 'https://roomy-ae.s3.eu-west-3.amazonaws.com/fenix-showcase'
+  
   const videoCases = {
     gambling: [
-      { id: 1, title: 'Casino Win', url: '/videos/gambling/gambling_1.mp4', views: '2.5K' },
-      { id: 3, title: 'Slots Win', url: '/videos/gambling/gambling_3.mp4', views: '1.8K' },
-      { id: 4, title: 'Jackpot', url: '/videos/gambling/gambling_4.mp4', views: '2.2K' },
-      { id: 6, title: 'Casino Bonus', url: '/videos/gambling/gambling_6.mp4', views: '1.9K' },
-      { id: 7, title: 'Roulette Win', url: '/videos/gambling/gambling_7.mp4', views: '2.4K' },
-      { id: 8, title: 'Slots Strategy', url: '/videos/gambling/gambling_8.mp4', views: '2.1K' },
-      { id: 9, title: 'Big Payout', url: '/videos/gambling/gambling_9.mp4', views: '3.0K' },
-      { id: 11, title: 'Mega Win', url: '/videos/gambling/gambling_11.mp4', views: '2.6K' }
+      { id: 1, title: 'Casino Win', url: `${S3_URL}/videos/gambling/gambling_1.mp4`, views: '2.5K' },
+      { id: 3, title: 'Slots Win', url: `${S3_URL}/videos/gambling/gambling_3.mp4`, views: '1.8K' },
+      { id: 4, title: 'Jackpot', url: `${S3_URL}/videos/gambling/gambling_4.mp4`, views: '2.2K' },
+      { id: 6, title: 'Casino Bonus', url: `${S3_URL}/videos/gambling/gambling_6.mp4`, views: '1.9K' },
+      { id: 7, title: 'Roulette Win', url: `${S3_URL}/videos/gambling/gambling_7.mp4`, views: '2.4K' },
+      { id: 8, title: 'Slots Strategy', url: `${S3_URL}/videos/gambling/gambling_8.mp4`, views: '2.1K' },
+      { id: 9, title: 'Big Payout', url: `${S3_URL}/videos/gambling/gambling_9.mp4`, views: '3.0K' },
+      { id: 11, title: 'Mega Win', url: `${S3_URL}/videos/gambling/gambling_11.mp4`, views: '2.6K' }
     ],
     betting: [
-      { id: 21, title: 'Sports Betting Tips', url: '/videos/betting/betting_1.mp4', views: '1.9K' },
-      { id: 22, title: 'Live Betting', url: '/videos/betting/betting_2.mp4', views: '2.4K' },
-      { id: 23, title: 'Odds Explained', url: '/videos/betting/betting_3.mp4', views: '1.5K' },
-      { id: 24, title: 'Betting Strategy', url: '/videos/betting/betting_4.mp4', views: '2.8K' },
-      { id: 25, title: 'Win Analysis', url: '/videos/betting/betting_5.mp4', views: '2.2K' },
-      { id: 26, title: 'Betting Guide', url: '/videos/betting/betting_6.mp4', views: '3.1K' }
+      { id: 21, title: 'Sports Betting Tips', url: `${S3_URL}/videos/betting/betting_1.mp4`, views: '1.9K' },
+      { id: 22, title: 'Live Betting', url: `${S3_URL}/videos/betting/betting_2.mp4`, views: '2.4K' },
+      { id: 23, title: 'Odds Explained', url: `${S3_URL}/videos/betting/betting_3.mp4`, views: '1.5K' },
+      { id: 24, title: 'Betting Strategy', url: `${S3_URL}/videos/betting/betting_4.mp4`, views: '2.8K' },
+      { id: 25, title: 'Win Analysis', url: `${S3_URL}/videos/betting/betting_5.mp4`, views: '2.2K' },
+      { id: 26, title: 'Betting Guide', url: `${S3_URL}/videos/betting/betting_6.mp4`, views: '3.1K' }
     ],
     'e-com': [
-      { id: 31, title: 'Product Review', url: '/videos/e-com/ecom_1.mp4', views: '3.2K' },
-      { id: 32, title: 'Unboxing', url: '/videos/e-com/ecom_2.mp4', views: '2.8K' },
-      { id: 33, title: 'Product Demo', url: '/videos/e-com/ecom_3.mp4', views: '2.1K' },
-      { id: 34, title: 'Shopping Haul', url: '/videos/e-com/ecom_4.mp4', views: '2.5K' },
-      { id: 35, title: 'Product Test', url: '/videos/e-com/ecom_5.mp4', views: '1.9K' },
-      { id: 36, title: 'Best Finds', url: '/videos/e-com/ecom_6.mp4', views: '3.4K' },
-      { id: 37, title: 'Shopping Tips', url: '/videos/e-com/ecom_7.mp4', views: '2.7K' }
+      { id: 31, title: 'Product Review', url: `${S3_URL}/videos/e-com/ecom_1.mp4`, views: '3.2K' },
+      { id: 32, title: 'Unboxing', url: `${S3_URL}/videos/e-com/ecom_2.mp4`, views: '2.8K' },
+      { id: 33, title: 'Product Demo', url: `${S3_URL}/videos/e-com/ecom_3.mp4`, views: '2.1K' },
+      { id: 34, title: 'Shopping Haul', url: `${S3_URL}/videos/e-com/ecom_4.mp4`, views: '2.5K' },
+      { id: 35, title: 'Product Test', url: `${S3_URL}/videos/e-com/ecom_5.mp4`, views: '1.9K' },
+      { id: 36, title: 'Best Finds', url: `${S3_URL}/videos/e-com/ecom_6.mp4`, views: '3.4K' },
+      { id: 37, title: 'Shopping Tips', url: `${S3_URL}/videos/e-com/ecom_7.mp4`, views: '2.7K' }
     ],
     podcast: [
-      { id: 41, title: 'Interview Highlights', url: '/videos/podcast/podcast_1.mp4', views: '4.2K' },
-      { id: 42, title: 'Expert Talk', url: '/videos/podcast/podcast_2.mp4', views: '3.8K' },
-      { id: 43, title: 'Business Insights', url: '/videos/podcast/podcast_3.mp4', views: '3.5K' },
-      { id: 44, title: 'Industry Trends', url: '/videos/podcast/podcast_4.mp4', views: '4.0K' },
-      { id: 45, title: 'Success Stories', url: '/videos/podcast/podcast_5.mp4', views: '3.9K' },
-      { id: 46, title: 'Q&A Session', url: '/videos/podcast/podcast_6.mp4', views: '4.5K' }
+      { id: 41, title: 'Interview Highlights', url: `${S3_URL}/videos/podcast/podcast_1.mp4`, views: '4.2K' },
+      { id: 42, title: 'Expert Talk', url: `${S3_URL}/videos/podcast/podcast_2.mp4`, views: '3.8K' },
+      { id: 43, title: 'Business Insights', url: `${S3_URL}/videos/podcast/podcast_3.mp4`, views: '3.5K' },
+      { id: 44, title: 'Industry Trends', url: `${S3_URL}/videos/podcast/podcast_4.mp4`, views: '4.0K' },
+      { id: 45, title: 'Success Stories', url: `${S3_URL}/videos/podcast/podcast_5.mp4`, views: '3.9K' },
+      { id: 46, title: 'Q&A Session', url: `${S3_URL}/videos/podcast/podcast_6.mp4`, views: '4.5K' }
     ]
   }
 
