@@ -1,0 +1,136 @@
+<offers>
+    <complex-id>1438</complex-id>
+    <type>residential_complex</type>
+    <logo>https://files.alnair.ae/uploads/2023/7/ce/fd/cefd8bcddfd0f3df7b3eee7079960bcc.png</logo>
+    <photo>https://files.alnair.ae/uploads/2023/7/9a/4f/9a4f91c8463ca06a84facf160dfb3298.png</photo>
+
+    <title>
+      <ru>Vita Grande</ru>
+      <en>Vita Grande</en>
+      <ar>فيتا غراندي</ar>
+    </title>
+    <description>
+      <ru><![CDATA[<p>От сверкающего фасада из стекла и нержавеющей стали до похожего на оазис спокойствия входа - каждый уровень этой современной башни отличается качеством без компромиссов. Современное сооружение, построенное с использованием современных материалов, ориентировано на исключительные виды, создавая идеальные условия для внутреннего и наружного комфорта, которые определяют стандарты городской жизни. Замечательные закаты, которые окрашивают парки и деревню, согреют резиденции в Vita Grande by METEORA</p>]]></ru>
+      <en><![CDATA[<p>From its shimmering exterior of glass and stainless steel to the oasis-like calm of its entrance, every level of this modern tower conveys quality without compromise. A modern structure advanced using contemporary materials, the building angles toward exceptional views creating the perfect setting for the indoor-outdoor comforts that define the standards of urban living. The remarkable sunsets that color the parks and the village will warm the residences at Vita Grande by METEORA</p>]]></en>
+      <ar><![CDATA[<p> من الخارج المتلألئ المصنوع من الزجاج والفولاذ المقاوم للصدأ إلى الهدوء الذي يشبه الواحة عند مدخله ، ينقل كل مستوى من هذا البرج الحديث الجودة دون المساومة. هيكل حديث متطور باستخدام مواد معاصرة ، زوايا المبنى نحو مناظر استثنائية مما يخلق بيئة مثالية لوسائل الراحة الداخلية والخارجية التي تحدد معايير الحياة الحضرية. ستعمل غروب الشمس الرائع الذي يلون المنتزهات والقرية على تدفئة المساكن في Vita Grande by METEORA </p>]]></ar>
+    </description>
+    <status>
+      <ru>Строится</ru>
+      <en>Under construction</en>
+      <ar>تحت التشيد</ar>
+    </status>
+    <construction_start_at>2023-04-14T00:00:00+04:00</construction_start_at>
+    <construction_progress/>
+    <planned_completion_at>2024-12-30T00:00:00+04:00</planned_completion_at>
+    <predicted_completion_at>2024-12-30T00:00:00+04:00</predicted_completion_at>
+    <amenities>
+      <amenity>
+        <ru>Общий бассейн</ru>
+        <en>Shared Pool</en>
+        <ar>بركة مشتركه</ar>
+      </amenity>
+      <amenity>
+        <ru>Консьерж-сервис</ru>
+        <en>Concierge Service</en>
+        <ar>خدمة الكونسيرج</ar>
+      </amenity>
+      <amenity>
+        <ru>Широкополосный Интернет</ru>
+        <en>Broadband Internet</en>
+        <ar>الإنترنت ذات النطاق العريض</ar>
+      </amenity>
+      <amenity>
+        <ru>Детская игровая площадка</ru>
+        <en>Kids Play Area</en>
+        <ar>منطقة لعب الأطفال</ar>
+      </amenity>
+      <amenity>
+        <ru>Лобби</ru>
+        <en>Lobby</en>
+        <ar>ردهة</ar>
+      </amenity>
+      <amenity>
+        <ru>Детский бассейн</ru>
+        <en>Children’s pool</en>
+        <ar>حمام سباحة للأطفال</ar>
+      </amenity>
+      <amenity>
+        <ru>Крытый паркинг</ru>
+        <en>Covered Parking</en>
+        <ar>مواقف مغطاة للسيارات</ar>
+      </amenity>
+    </amenities>
+    <developer>
+      <title>
+        <ru>Meteora</ru>
+        <en>Meteora</en>
+        <ar>ميتيورا</ar>
+      </title>
+      <logo>https://files.alnair.ae/uploads/2023/7/24/1a/241a3a11c0c9127c7c19da9d9a287adc.png</logo>
+    </developer>
+    <districts>
+      <district>Jumeirah Village Circle (JVC)</district>
+      <district>Al Barsha South Fourth</district>
+    </districts>
+    <address>JVC, Dubai</address>
+    <latitude>25.06009279</latitude>
+    <longitude>55.21818638</longitude>
+    <album>
+      <image>https://files.alnair.ae/uploads/2023/7/42/49/4249028fc09738704885a43f0af1be75.png</image>
+      <image>https://files.alnair.ae/uploads/2023/7/73/2b/732b3e9df1320dacceaa8c599a01eec0.png</image>
+      <image>https://files.alnair.ae/uploads/2023/7/24/fe/24fed46b378001a5b5e58fd11258b6ef.png</image>
+    </album>
+    <buildings_count>1</buildings_count>
+    <for_sale_count>22</for_sale_count>
+    <price>
+      <min>816000</min>
+      <max>1117000</max>
+      <currency>AED</currency>
+    </price>
+    <br_prices>
+      <key>rooms_1</key>
+      <count>22</count>
+      <min_price>816000</min_price>
+      <max_price>1117000</max_price>
+      <min_price_m2>11482</min_price_m2>
+      <max_price_m2>14426</max_price_m2>
+      <currency>AED</currency>
+      <min_area>
+        <m2>59.83</m2>
+        <ft2>644.00</ft2>
+      </min_area>
+      <max_area>
+        <m2>91.97</m2>
+        <ft2>989.96</ft2>
+      </max_area>
+    </br_prices>
+    <updated_at>2023-07-26T08:18:13+04:00</updated_at>
+    <is_sold_out>0</is_sold_out>
+    <payment_plans>
+      <payment_plan>
+        <id>350</id>
+        <title>
+          <ru>План оплаты</ru>
+          <en>Payment Plan</en>
+          <ar>خطة الدفع</ar>
+        </title>
+        <on_booking_percent>5</on_booking_percent>
+        <on_booking_fix/>
+        <on_construction_percent>45</on_construction_percent>
+        <on_construction_fix/>
+        <on_handover_percent>10</on_handover_percent>
+        <on_handover_fix/>
+        <post_handover_percent>1</post_handover_percent>
+        <post_handover_fix/>
+        <roi_percent/>
+        <roi_fix/>
+        <currency>AED</currency>
+      </payment_plan>
+    </payment_plans>
+    <sales_status>
+      <ru>Предварительный старт</ru>
+      <en>Prelaunch</en>
+      <ar>ما قبل الإطلاق</ar>
+    </sales_status>
+    </offers>
+
