@@ -15,6 +15,7 @@ import { DataSyncModule } from './integrations/data-sync/data-sync.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ActivityLogModule } from './activity-log/activity-log.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { DocumentsModule } from './documents/documents.module';
 import { databaseConfig } from './config/database.config';
 import { redisConfig } from './config/redis.config';
 
@@ -76,6 +77,9 @@ import { redisConfig } from './config/redis.config';
 
     // Analytics
     AnalyticsModule,
+
+    // Documents
+    DocumentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

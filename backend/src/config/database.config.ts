@@ -21,6 +21,7 @@ import { NotificationSettings } from '../database/entities/notification-settings
 import { NotificationHistory } from '../database/entities/notification-history.entity';
 import { SyncLog } from '../database/entities/sync-log.entity';
 import { ActivityLog } from '../database/entities/activity-log.entity';
+import { Document } from '../database/entities/document.entity';
 
 export const databaseConfig = registerAs(
   'database',
@@ -31,7 +32,7 @@ export const databaseConfig = registerAs(
     username: process.env.DB_USERNAME || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
     database: process.env.DB_DATABASE || 'for_you_real_estate',
-      entities: [User, Property, PropertyImage, PropertyAmenity, PaymentPlan, Developer, Favorite, Lead, BrokerClient, AmoToken, AmoPipeline, AmoStage, AmoUser, AmoRole, AmoContact, AmoTask, UserDevice, NotificationSettings, NotificationHistory, SyncLog, ActivityLog], // Явно вказуємо entities для NestJS
+      entities: [User, Property, PropertyImage, PropertyAmenity, PaymentPlan, Developer, Favorite, Lead, BrokerClient, AmoToken, AmoPipeline, AmoStage, AmoUser, AmoRole, AmoContact, AmoTask, UserDevice, NotificationSettings, NotificationHistory, SyncLog, ActivityLog, Document], // Явно вказуємо entities для NestJS
     migrations: [__dirname + '/../database/migrations/**/*{.ts,.js}'],
     synchronize: false, // ВАЖЛИВО: завжди false
     logging: process.env.NODE_ENV === 'development',
