@@ -5,6 +5,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { PropertiesModule } from './properties/properties.module';
 import { databaseConfig } from './config/database.config';
 import { redisConfig } from './config/redis.config';
 
@@ -42,6 +43,9 @@ import { redisConfig } from './config/redis.config';
 
     // Auth Module
     AuthModule,
+
+    // Properties Module
+    PropertiesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
