@@ -19,8 +19,13 @@ import { redisConfig } from './config/redis.config';
     // TypeORM з PostgreSQL + PostGIS
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) =>
-        configService.get('database'),
+      useFactory: (configService: ConfigService) => {
+        const dbConfig = configService.get('database');
+        if (!dbConfig) {
+          throw new Error('Database configuration is not defined');
+        }
+        return dbConfig;
+      },
     }),
 
     // Rate limiting
