@@ -16,11 +16,19 @@ export class AmoCrmController {
   @ApiOperation({ summary: 'OAuth2 callback для отримання токенів' })
   @ApiResponse({ status: 200, description: 'Токени успішно отримані' })
   async handleCallback(@Query('code') code: string) {
-    await this.amoCrmService.exchangeCode(code);
-    return {
-      message: 'AMO CRM successfully connected',
-      status: 'success',
-    };
+    try {
+      await this.amoCrmService.exchangeCode(code);
+      return {
+        message: 'AMO CRM successfully connected',
+        status: 'success',
+      };
+    } catch (error) {
+      return {
+        statusCode: error.status || 400,
+        message: error.message || 'Failed to exchange authorization code',
+        details: error.response?.data || error.message,
+      };
+    }
   }
 
   /**
@@ -31,25 +39,12 @@ export class AmoCrmController {
   @ApiOperation({ summary: 'Webhook для синхронізації з AMO CRM' })
   @ApiResponse({ status: 200, description: 'Webhook оброблено' })
   async handleWebhook(@Body() payload: AmoWebhookDto) {
-    console.log('📥 AMO CRM Webhook received:', JSON.stringify(payload, null, 2));
-
-    // TODO: Обробка різних типів подій
-    if (payload.leads?.status) {
-      // Оновлення статусу lead
-      console.log('Lead status changed:', payload.leads.status);
-    }
-
-    if (payload.leads?.add) {
-      // Новий lead додано в AMO
-      console.log('New lead added:', payload.leads.add);
-    }
-
-    if (payload.leads?.update) {
-      // Lead оновлено в AMO
-      console.log('Lead updated:', payload.leads.update);
-    }
-
-    return { status: 'ok' };
+    const result = await this.amoCrmService.processWebhook(payload);
+    return {
+      status: 'ok',
+      processed: result.processed,
+      errors: result.errors,
+    };
   }
 
   /**
@@ -62,6 +57,48 @@ export class AmoCrmController {
     return {
       message: 'AMO CRM integration is ready',
       status: 'ok',
+    };
+  }
+
+  /**
+   * Ручне встановлення токенів (для development)
+   */
+  @Post('set-tokens')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Ручне збереження токенів (тільки для development)' })
+  @ApiResponse({ status: 200, description: 'Токени збережені' })
+  async setTokensManually(
+    @Body() body: { access_token: string; refresh_token: string; expires_in?: number },
+  ) {
+    await this.amoCrmService.setTokensManually(
+      body.access_token,
+      body.refresh_token,
+      body.expires_in || 86400,
+    );
+    return {
+      message: 'AMO CRM токени успішно збережені',
+      status: 'success',
+    };
+  }
+
+  /**
+   * Тестування створення lead в AMO CRM (для development)
+   */
+  @Post('test-lead')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Тестування створення lead в AMO CRM' })
+  @ApiResponse({ status: 200, description: 'Lead створено' })
+  async testCreateLead() {
+    const testLead = {
+      name: 'Тестовий lead з API',
+      price: 100000,
+    };
+
+    const leadId = await this.amoCrmService.createLead(testLead);
+    return {
+      message: 'Lead успішно створено в AMO CRM',
+      amoLeadId: leadId,
+      status: 'success',
     };
   }
 }

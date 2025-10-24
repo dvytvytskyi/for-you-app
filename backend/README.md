@@ -58,6 +58,8 @@ src/
 ├── users/                  # Модуль користувачів
 ├── properties/             # Модуль нерухомості
 ├── leads/                  # Модуль заявок
+├── integrations/           # Зовнішні інтеграції
+│   └── amo-crm/            # AMO CRM інтеграція
 ├── common/                 # Спільні utilities
 │   ├── decorators/         # Custom decorators
 │   ├── filters/            # Exception filters
@@ -165,7 +167,17 @@ REDIS_PORT=6379
 # JWT
 JWT_SECRET=your-secret-key
 JWT_EXPIRATION=7d
+
+# AMO CRM Integration
+AMO_DOMAIN=your-subdomain.amocrm.ru
+AMO_CLIENT_ID=your-client-id
+AMO_CLIENT_SECRET=your-client-secret
+AMO_REDIRECT_URI=http://localhost:3000/api/v1/integrations/amo-crm/callback
+AMO_ACCOUNT_ID=your-account-id
+AMO_API_DOMAIN=api-b.amocrm.ru
 ```
+
+📖 **[Детальна інструкція по налаштуванню AMO CRM](./docs/AMO_CRM_SETUP.md)**
 
 ---
 

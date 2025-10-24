@@ -33,8 +33,9 @@ export class AmoCrmService {
     this.accountId = this.configService.get<string>('AMO_ACCOUNT_ID') || '';
     this.apiDomain = this.configService.get<string>('AMO_API_DOMAIN') || '';
 
+    // Використовуємо subdomain аккаунта для API запитів
     this.axiosInstance = axios.create({
-      baseURL: `https://${this.apiDomain}`,
+      baseURL: `https://${this.domain}`,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -46,6 +47,10 @@ export class AmoCrmService {
    */
   async exchangeCode(code: string): Promise<void> {
     try {
+      this.logger.log(`Starting OAuth exchange with domain: ${this.domain}`);
+      this.logger.log(`Client ID: ${this.clientId}`);
+      this.logger.log(`Redirect URI: ${this.redirectUri}`);
+      
       const response = await axios.post<AmoAuthResponse>(
         `https://${this.domain}/oauth2/access_token`,
         {
@@ -60,7 +65,7 @@ export class AmoCrmService {
       await this.saveTokens(response.data);
       this.logger.log('AMO CRM токени успішно отримані та збережені');
     } catch (error) {
-      this.logger.error('Помилка обміну authorization code:', error.response?.data || error.message);
+      this.logger.error('Помилка обміну authorization code:', JSON.stringify(error.response?.data || error.message));
       throw new HttpException(
         'Failed to exchange authorization code',
         HttpStatus.BAD_REQUEST,
@@ -130,6 +135,34 @@ export class AmoCrmService {
   }
 
   /**
+   * Ручне збереження токенів (для development)
+   */
+  async setTokensManually(accessToken: string, refreshToken: string, expiresIn: number = 86400): Promise<void> {
+    const expiresAt = Date.now() + expiresIn * 1000;
+
+    let tokenEntity = await this.amoTokenRepository.findOne({
+      where: { accountId: this.accountId },
+    });
+
+    if (tokenEntity) {
+      tokenEntity.accessToken = accessToken;
+      tokenEntity.refreshToken = refreshToken;
+      tokenEntity.expiresAt = expiresAt;
+    } else {
+      tokenEntity = this.amoTokenRepository.create({
+        accountId: this.accountId,
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        expiresAt,
+        baseDomain: this.domain,
+      });
+    }
+
+    await this.amoTokenRepository.save(tokenEntity);
+    this.logger.log('AMO CRM токени вручну збережені в БД');
+  }
+
+  /**
    * Отримання валідного access token
    */
   private async getAccessToken(): Promise<string> {
@@ -159,6 +192,8 @@ export class AmoCrmService {
     try {
       const accessToken = await this.getAccessToken();
 
+      this.logger.log('Створення lead в AMO CRM з даними:', JSON.stringify(leadData, null, 2));
+
       const response = await this.axiosInstance.post(
         '/api/v4/leads',
         [leadData],
@@ -174,7 +209,7 @@ export class AmoCrmService {
 
       return leadId;
     } catch (error) {
-      this.logger.error('Помилка створення lead в AMO CRM:', error.response?.data || error.message);
+      this.logger.error('Помилка створення lead в AMO CRM:', JSON.stringify(error.response?.data || error.message, null, 2));
       throw new HttpException(
         'Failed to create lead in AMO CRM',
         HttpStatus.BAD_REQUEST,
@@ -266,19 +301,20 @@ export class AmoCrmService {
    * Форматування Lead для відправки в AMO CRM
    */
   formatLeadForAmo(lead: any, contactId?: number): Partial<AmoLead> {
+    // Формуємо назву lead
+    let leadName = 'Заявка з сайту';
+    if (lead.guestName) {
+      leadName = `${lead.guestName}`;
+    }
+    if (lead.property?.title) {
+      leadName += ` - ${lead.property.title}`;
+    }
+
     const amoLead: Partial<AmoLead> = {
-      name: `Lead #${lead.id} - ${lead.property?.title || 'Property'}`,
+      name: leadName,
       price: lead.property?.price || 0,
-      custom_fields_values: [
-        {
-          field_id: 0, // Замінити на реальний ID поля "Телефон"
-          values: [{ value: lead.guestPhone || lead.client?.phone }],
-        },
-        {
-          field_id: 0, // Замінити на реальний ID поля "Email"
-          values: [{ value: lead.guestEmail || lead.client?.email }],
-        },
-      ],
+      // Поки не передаємо custom_fields_values, оскільки не знаємо ID полів
+      // TODO: Додати custom_fields_values після налаштування полів в AMO CRM
     };
 
     if (contactId) {
@@ -288,6 +324,61 @@ export class AmoCrmService {
     }
 
     return amoLead;
+  }
+
+  /**
+   * Обробка webhook подій з AMO CRM
+   */
+  async processWebhook(payload: any): Promise<{ processed: number; errors: number }> {
+    let processed = 0;
+    let errors = 0;
+
+    this.logger.log('📥 Обробка webhook з AMO CRM:', JSON.stringify(payload, null, 2));
+
+    // Обробка оновлень статусів leads
+    if (payload.leads?.status) {
+      for (const statusUpdate of payload.leads.status) {
+        try {
+          this.logger.log(`Lead ID ${statusUpdate.id} змінив статус на ${statusUpdate.status_id}`);
+          // TODO: Оновити статус в нашій БД через LeadsService
+          processed++;
+        } catch (error) {
+          this.logger.error(`Помилка обробки status update для lead ${statusUpdate.id}:`, error.message);
+          errors++;
+        }
+      }
+    }
+
+    // Обробка оновлень leads
+    if (payload.leads?.update) {
+      for (const leadUpdate of payload.leads.update) {
+        try {
+          this.logger.log(`Lead ID ${leadUpdate.id} оновлено в AMO CRM`);
+          // TODO: Синхронізувати зміни в нашу БД
+          processed++;
+        } catch (error) {
+          this.logger.error(`Помилка обробки update для lead ${leadUpdate.id}:`, error.message);
+          errors++;
+        }
+      }
+    }
+
+    // Обробка нових leads (створених в AMO CRM)
+    if (payload.leads?.add) {
+      for (const newLead of payload.leads.add) {
+        try {
+          this.logger.log(`Новий lead ID ${newLead.id} створено в AMO CRM`);
+          // TODO: Створити відповідний lead в нашій БД
+          processed++;
+        } catch (error) {
+          this.logger.error(`Помилка обробки нового lead ${newLead.id}:`, error.message);
+          errors++;
+        }
+      }
+    }
+
+    this.logger.log(`Webhook оброблено: ${processed} успішно, ${errors} помилок`);
+    return { processed, errors };
   }
 }
 
