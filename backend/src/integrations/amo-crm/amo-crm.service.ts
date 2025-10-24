@@ -26,12 +26,12 @@ export class AmoCrmService {
     private readonly amoTokenRepository: Repository<AmoToken>,
     private readonly configService: ConfigService,
   ) {
-    this.domain = this.configService.get<string>('AMO_DOMAIN');
-    this.clientId = this.configService.get<string>('AMO_CLIENT_ID');
-    this.clientSecret = this.configService.get<string>('AMO_CLIENT_SECRET');
-    this.redirectUri = this.configService.get<string>('AMO_REDIRECT_URI');
-    this.accountId = this.configService.get<string>('AMO_ACCOUNT_ID');
-    this.apiDomain = this.configService.get<string>('AMO_API_DOMAIN');
+    this.domain = this.configService.get<string>('AMO_DOMAIN') || '';
+    this.clientId = this.configService.get<string>('AMO_CLIENT_ID') || '';
+    this.clientSecret = this.configService.get<string>('AMO_CLIENT_SECRET') || '';
+    this.redirectUri = this.configService.get<string>('AMO_REDIRECT_URI') || '';
+    this.accountId = this.configService.get<string>('AMO_ACCOUNT_ID') || '';
+    this.apiDomain = this.configService.get<string>('AMO_API_DOMAIN') || '';
 
     this.axiosInstance = axios.create({
       baseURL: `https://${this.apiDomain}`,

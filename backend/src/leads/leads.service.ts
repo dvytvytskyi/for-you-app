@@ -28,7 +28,7 @@ export class LeadsService {
 
     const lead = this.leadRepository.create({
       ...rest,
-      clientId: userId || null,
+      clientId: userId || undefined,
       status: LeadStatus.NEW,
     });
 

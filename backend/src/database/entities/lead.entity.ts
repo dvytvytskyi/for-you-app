@@ -101,8 +101,8 @@ export class Lead {
   contactTime: ContactTime;
 
   // AMO CRM integration
-  @Column({ name: 'amo_deal_id', type: 'bigint', nullable: true })
-  amoDealId: string;
+  @Column({ name: 'amo_lead_id', type: 'int', nullable: true })
+  amoLeadId: number;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
