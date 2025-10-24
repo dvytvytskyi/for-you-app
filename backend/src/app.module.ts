@@ -7,6 +7,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { PropertiesModule } from './properties/properties.module';
 import { LeadsModule } from './leads/leads.module';
+import { AmoCrmModule } from './integrations/amo-crm/amo-crm.module';
 import { databaseConfig } from './config/database.config';
 import { redisConfig } from './config/redis.config';
 
@@ -50,6 +51,9 @@ import { redisConfig } from './config/redis.config';
 
     // Leads Module
     LeadsModule,
+
+    // Integrations
+    AmoCrmModule,
   ],
   controllers: [AppController],
   providers: [AppService],

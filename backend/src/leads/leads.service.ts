@@ -1,29 +1,64 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Lead, LeadStatus } from '../database/entities/lead.entity';
 import { User, UserRole } from '../database/entities/user.entity';
+import { Property } from '../database/entities/property.entity';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { UpdateLeadDto } from './dto/update-lead.dto';
 import { LeadFiltersDto } from './dto/lead-filters.dto';
+import { AmoCrmService } from '../integrations/amo-crm/amo-crm.service';
 
 @Injectable()
 export class LeadsService {
+  private readonly logger = new Logger(LeadsService.name);
+
   constructor(
     @InjectRepository(Lead)
     private readonly leadRepository: Repository<Lead>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Property)
+    private readonly propertyRepository: Repository<Property>,
+    private readonly amoCrmService: AmoCrmService,
   ) {}
 
   async create(createLeadDto: CreateLeadDto, userId?: string): Promise<Lead> {
+    const { propertyId, ...rest } = createLeadDto;
+
     const lead = this.leadRepository.create({
-      ...createLeadDto,
+      ...rest,
       clientId: userId || null,
       status: LeadStatus.NEW,
     });
 
-    return this.leadRepository.save(lead);
+    // Додаємо property якщо вказано
+    if (propertyId) {
+      const property = await this.propertyRepository.findOne({ where: { id: propertyId } });
+      if (!property) {
+        throw new NotFoundException(`Property with ID ${propertyId} not found`);
+      }
+      lead.property = property;
+    }
+
+    const savedLead = await this.leadRepository.save(lead);
+
+    // 🔥 Синхронізація з AMO CRM
+    try {
+      const amoLeadData = this.amoCrmService.formatLeadForAmo(savedLead);
+      const amoLeadId = await this.amoCrmService.createLead(amoLeadData);
+      
+      // Зберігаємо AMO ID для майбутньої синхронізації
+      savedLead.amoLeadId = amoLeadId;
+      await this.leadRepository.save(savedLead);
+      
+      this.logger.log(`Lead ${savedLead.id} синхронізовано з AMO CRM (AMO ID: ${amoLeadId})`);
+    } catch (error) {
+      // Не блокуємо створення lead при помилці синхронізації
+      this.logger.error(`Помилка синхронізації Lead ${savedLead.id} з AMO CRM:`, error.message);
+    }
+
+    return savedLead;
   }
 
   async findAll(filters: LeadFiltersDto, user?: User): Promise<{ data: Lead[]; total: number; page: number; limit: number; totalPages: number }> {
@@ -109,7 +144,20 @@ export class LeadsService {
     }
 
     Object.assign(lead, updateLeadDto);
-    return this.leadRepository.save(lead);
+    const updatedLead = await this.leadRepository.save(lead);
+
+    // 🔥 Синхронізація з AMO CRM при оновленні статусу
+    if (updatedLead.amoLeadId && updateLeadDto.status) {
+      try {
+        const amoLeadData = this.amoCrmService.formatLeadForAmo(updatedLead);
+        await this.amoCrmService.updateLead(updatedLead.amoLeadId, amoLeadData);
+        this.logger.log(`Lead ${updatedLead.id} оновлено в AMO CRM (AMO ID: ${updatedLead.amoLeadId})`);
+      } catch (error) {
+        this.logger.error(`Помилка оновлення Lead ${updatedLead.id} в AMO CRM:`, error.message);
+      }
+    }
+
+    return updatedLead;
   }
 
   async assignBroker(leadId: string, brokerId: string): Promise<Lead> {

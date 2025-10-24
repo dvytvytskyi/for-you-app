@@ -7,9 +7,14 @@ import { BrokerClientsService } from './broker-clients.service';
 import { Lead } from '../database/entities/lead.entity';
 import { User } from '../database/entities/user.entity';
 import { BrokerClient } from '../database/entities/broker-client.entity';
+import { Property } from '../database/entities/property.entity';
+import { AmoCrmModule } from '../integrations/amo-crm/amo-crm.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Lead, User, BrokerClient])],
+  imports: [
+    TypeOrmModule.forFeature([Lead, User, BrokerClient, Property]),
+    AmoCrmModule,
+  ],
   controllers: [LeadsController, BrokerClientsController],
   providers: [LeadsService, BrokerClientsService],
   exports: [LeadsService, BrokerClientsService],
