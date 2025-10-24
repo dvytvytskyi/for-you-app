@@ -7,6 +7,8 @@ import { PropertyAmenity } from '../database/entities/property-amenity.entity';
 import { PaymentPlan } from '../database/entities/payment-plan.entity';
 import { Developer } from '../database/entities/developer.entity';
 import { Favorite } from '../database/entities/favorite.entity';
+import { Lead } from '../database/entities/lead.entity';
+import { BrokerClient } from '../database/entities/broker-client.entity';
 
 export const databaseConfig = registerAs(
   'database',
@@ -17,7 +19,7 @@ export const databaseConfig = registerAs(
     username: process.env.DB_USERNAME || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
     database: process.env.DB_DATABASE || 'for_you_real_estate',
-    entities: [User, Property, PropertyImage, PropertyAmenity, PaymentPlan, Developer, Favorite], // Явно вказуємо entities для NestJS
+    entities: [User, Property, PropertyImage, PropertyAmenity, PaymentPlan, Developer, Favorite, Lead, BrokerClient], // Явно вказуємо entities для NestJS
     migrations: [__dirname + '/../database/migrations/**/*{.ts,.js}'],
     synchronize: false, // ВАЖЛИВО: завжди false
     logging: process.env.NODE_ENV === 'development',

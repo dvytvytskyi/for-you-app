@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { PropertiesModule } from './properties/properties.module';
+import { LeadsModule } from './leads/leads.module';
 import { databaseConfig } from './config/database.config';
 import { redisConfig } from './config/redis.config';
 
@@ -46,6 +47,9 @@ import { redisConfig } from './config/redis.config';
 
     // Properties Module
     PropertiesModule,
+
+    // Leads Module
+    LeadsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
