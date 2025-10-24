@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Query, Param, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Query, Param, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AmoCrmService } from './amo-crm.service';
 import { AmoWebhookDto } from './dto/amo-webhook.dto';
+import { UpdateStageMappingDto } from './dto/update-stage-mapping.dto';
 
 @ApiTags('AMO CRM Integration')
 @Controller('integrations/amo-crm')
@@ -143,6 +144,69 @@ export class AmoCrmController {
     return {
       data: stages,
       count: stages.length,
+    };
+  }
+
+  /**
+   * Оновити мапінг статусу для етапу
+   */
+  @Put('stages/:stageId/mapping')
+  @ApiOperation({ summary: 'Оновити мапінг статусу для етапу AMO CRM' })
+  @ApiResponse({ status: 200, description: 'Мапінг оновлено' })
+  async updateStageMapping(
+    @Param('stageId') stageId: number,
+    @Body() dto: UpdateStageMappingDto,
+  ) {
+    const stage = await this.amoCrmService.updateStageMapping(stageId, dto.mappedStatus);
+    return {
+      message: 'Мапінг оновлено',
+      data: stage,
+    };
+  }
+
+  /**
+   * Отримати рекомендації по автоматичному мапінгу
+   */
+  @Get('mapping/suggestions')
+  @ApiOperation({ summary: 'Отримати рекомендації по автоматичному мапінгу статусів' })
+  @ApiResponse({ status: 200, description: 'Рекомендації по мапінгу' })
+  async getSuggestedMappings() {
+    const suggestions = await this.amoCrmService.getSuggestedMappings();
+    return {
+      data: suggestions,
+      count: suggestions.length,
+    };
+  }
+
+  /**
+   * Застосувати автоматичний мапінг
+   */
+  @Post('mapping/auto-apply')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Автоматично застосувати рекомендований мапінг статусів' })
+  @ApiResponse({ status: 200, description: 'Мапінг застосовано' })
+  async applyAutoMapping() {
+    const result = await this.amoCrmService.applyAutoMapping();
+    return {
+      message: 'Автоматичний мапінг застосовано',
+      ...result,
+      status: 'success',
+    };
+  }
+
+  /**
+   * Синхронізація leads з AMO CRM
+   */
+  @Post('sync-leads')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Синхронізувати leads з AMO CRM в нашу БД' })
+  @ApiResponse({ status: 200, description: 'Leads синхронізовано' })
+  async syncLeadsFromAmo(@Query('limit') limit?: number) {
+    const result = await this.amoCrmService.syncLeadsFromAmo(limit || 50);
+    return {
+      message: 'Leads синхронізовано з AMO CRM',
+      ...result,
+      status: 'success',
     };
   }
 }

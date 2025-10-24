@@ -7,6 +7,7 @@ import axios, { AxiosInstance } from 'axios';
 import { AmoToken } from '../../database/entities/amo-token.entity';
 import { AmoPipeline } from '../../database/entities/amo-pipeline.entity';
 import { AmoStage } from '../../database/entities/amo-stage.entity';
+import { Lead, LeadStatus } from '../../database/entities/lead.entity';
 import {
   AmoAuthResponse,
   AmoLead,
@@ -33,6 +34,8 @@ export class AmoCrmService {
     private readonly amoPipelineRepository: Repository<AmoPipeline>,
     @InjectRepository(AmoStage)
     private readonly amoStageRepository: Repository<AmoStage>,
+    @InjectRepository(Lead)
+    private readonly leadRepository: Repository<Lead>,
     private readonly configService: ConfigService,
   ) {
     this.domain = this.configService.get<string>('AMO_DOMAIN') || '';
@@ -349,7 +352,27 @@ export class AmoCrmService {
       for (const statusUpdate of payload.leads.status) {
         try {
           this.logger.log(`Lead ID ${statusUpdate.id} змінив статус на ${statusUpdate.status_id}`);
-          // TODO: Оновити статус в нашій БД через LeadsService
+          
+          // Знайти lead в нашій БД за amoLeadId
+          const lead = await this.leadRepository.findOne({
+            where: { amoLeadId: statusUpdate.id },
+          });
+
+          if (lead) {
+            // Отримати наш статус на основі AMO stage_id
+            const mappedStatus = await this.getOurStatusByAmoStage(statusUpdate.status_id);
+            if (mappedStatus) {
+              lead.status = mappedStatus;
+              await this.leadRepository.save(lead);
+              this.logger.log(`✅ Lead ${lead.id} оновлено: новий статус ${mappedStatus}`);
+            }
+          } else {
+            // Якщо lead не існує, імпортуємо його
+            const amoLead = await this.getLead(statusUpdate.id);
+            await this.importLeadFromAmo(amoLead);
+            this.logger.log(`✅ Lead ${statusUpdate.id} імпортовано з AMO CRM`);
+          }
+
           processed++;
         } catch (error) {
           this.logger.error(`Помилка обробки status update для lead ${statusUpdate.id}:`, error.message);
@@ -363,7 +386,12 @@ export class AmoCrmService {
       for (const leadUpdate of payload.leads.update) {
         try {
           this.logger.log(`Lead ID ${leadUpdate.id} оновлено в AMO CRM`);
-          // TODO: Синхронізувати зміни в нашу БД
+          
+          // Отримати повні дані lead з AMO CRM
+          const amoLead = await this.getLead(leadUpdate.id);
+          await this.importLeadFromAmo(amoLead);
+          this.logger.log(`✅ Lead ${leadUpdate.id} синхронізовано`);
+
           processed++;
         } catch (error) {
           this.logger.error(`Помилка обробки update для lead ${leadUpdate.id}:`, error.message);
@@ -377,7 +405,12 @@ export class AmoCrmService {
       for (const newLead of payload.leads.add) {
         try {
           this.logger.log(`Новий lead ID ${newLead.id} створено в AMO CRM`);
-          // TODO: Створити відповідний lead в нашій БД
+          
+          // Отримати повні дані lead з AMO CRM та імпортувати
+          const amoLead = await this.getLead(newLead.id);
+          await this.importLeadFromAmo(amoLead);
+          this.logger.log(`✅ Новий lead ${newLead.id} імпортовано`);
+
           processed++;
         } catch (error) {
           this.logger.error(`Помилка обробки нового lead ${newLead.id}:`, error.message);
@@ -529,13 +562,216 @@ export class AmoCrmService {
   }
 
   /**
-   * CRON job для синхронізації leads кожні 15 хвилин (буде реалізовано)
+   * CRON job для синхронізації leads кожні 30 хвилин
    */
   @Cron(CronExpression.EVERY_30_MINUTES)
   async handleLeadsSyncCron() {
     this.logger.log('⏰ Запуск автоматичної синхронізації leads...');
-    // TODO: Реалізувати pull leads з AMO CRM
-    this.logger.log('ℹ️ Синхронізація leads ще не реалізована');
+    try {
+      const result = await this.syncLeadsFromAmo();
+      this.logger.log(`✅ Автоматична синхронізація leads завершена: ${result.synced} синхронізовано, ${result.errors} помилок`);
+    } catch (error) {
+      this.logger.error('❌ Помилка автоматичної синхронізації leads:', error.message);
+    }
+  }
+
+  /**
+   * Синхронізація leads з AMO CRM в нашу БД
+   */
+  async syncLeadsFromAmo(limit: number = 50): Promise<{ synced: number; errors: number }> {
+    try {
+      const accessToken = await this.getAccessToken();
+
+      // Отримати leads з AMO CRM
+      const response = await this.axiosInstance.get<{ _embedded: { leads: AmoLead[] } }>(
+        '/api/v4/leads',
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          params: {
+            limit,
+            order: {
+              updated_at: 'desc',
+            },
+          },
+        },
+      );
+
+      const amoLeads = response.data._embedded?.leads || [];
+      let synced = 0;
+      let errors = 0;
+
+      for (const amoLead of amoLeads) {
+        try {
+          await this.importLeadFromAmo(amoLead);
+          synced++;
+        } catch (error) {
+          this.logger.error(`Помилка імпорту lead ${amoLead.id}:`, error.message);
+          errors++;
+        }
+      }
+
+      this.logger.log(`Синхронізовано ${synced} leads з AMO CRM, ${errors} помилок`);
+      return { synced, errors };
+    } catch (error) {
+      this.logger.error('Помилка синхронізації leads з AMO CRM:', error.response?.data || error.message);
+      throw new HttpException('Failed to sync leads from AMO CRM', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  /**
+   * Імпорт одного lead з AMO CRM в нашу БД
+   */
+  private async importLeadFromAmo(amoLead: AmoLead): Promise<Lead> {
+    // Перевірити чи вже існує lead з таким amoLeadId
+    let lead = await this.leadRepository.findOne({
+      where: { amoLeadId: amoLead.id },
+    });
+
+    // Отримати наш статус на основі AMO stage_id
+    let ourStatus = LeadStatus.NEW;
+    if (amoLead.status_id) {
+      const mappedStatus = await this.getOurStatusByAmoStage(amoLead.status_id);
+      if (mappedStatus) {
+        ourStatus = mappedStatus;
+      }
+    }
+
+    if (lead) {
+      // Оновити існуючий lead
+      lead.status = ourStatus;
+      lead.guestName = amoLead.name || lead.guestName;
+      // Не перезаписуємо інші поля, якщо вони вже заповнені
+    } else {
+      // Створити новий lead
+      lead = this.leadRepository.create({
+        amoLeadId: amoLead.id,
+        guestName: amoLead.name || 'Lead з AMO CRM',
+        status: ourStatus,
+        // Інші поля будуть null, оскільки в AMO CRM може не бути цих даних
+      });
+    }
+
+    await this.leadRepository.save(lead);
+    this.logger.debug(`Lead ${amoLead.id} імпортовано/оновлено`);
+    
+    return lead;
+  }
+
+  /**
+   * Оновити мапінг статусу для етапу AMO CRM
+   */
+  async updateStageMapping(stageId: number, mappedStatus: LeadStatus | null): Promise<AmoStage> {
+    const stage = await this.amoStageRepository.findOne({ where: { id: stageId } });
+
+    if (!stage) {
+      throw new HttpException(`Stage with ID ${stageId} not found`, HttpStatus.NOT_FOUND);
+    }
+
+    stage.mappedStatus = mappedStatus;
+    await this.amoStageRepository.save(stage);
+
+    this.logger.log(`Мапінг оновлено: Stage ${stageId} → ${mappedStatus || 'null'}`);
+    return stage;
+  }
+
+  /**
+   * Отримати наш статус по AMO stage ID
+   */
+  async getOurStatusByAmoStage(stageId: number): Promise<LeadStatus | null> {
+    const stage = await this.amoStageRepository.findOne({ 
+      where: { id: stageId },
+      select: ['mappedStatus'],
+    });
+
+    return stage?.mappedStatus || null;
+  }
+
+  /**
+   * Отримати AMO stage ID по нашому статусу
+   */
+  async getAmoStageByOurStatus(status: LeadStatus, pipelineId?: number): Promise<number | null> {
+    const where: any = { mappedStatus: status };
+    if (pipelineId) {
+      where.pipelineId = pipelineId;
+    }
+
+    const stage = await this.amoStageRepository.findOne({ 
+      where,
+      select: ['id'],
+    });
+
+    return stage?.id || null;
+  }
+
+  /**
+   * Отримати рекомендації по автоматичному мапінгу
+   */
+  async getSuggestedMappings(): Promise<Array<{ stageId: number; stageName: string; suggestedStatus: LeadStatus | null; reason: string }>> {
+    const stages = await this.amoStageRepository.find({
+      where: { mappedStatus: null as any },
+      relations: ['pipeline'],
+    });
+
+    const suggestions: Array<{ stageId: number; stageName: string; suggestedStatus: LeadStatus | null; reason: string }> = [];
+
+    for (const stage of stages) {
+      const nameLower = stage.name.toLowerCase();
+      let suggestedStatus: LeadStatus | null = null;
+      let reason = '';
+
+      // Логіка автоматичного визначення статусу за назвою
+      if (nameLower.includes('неразобран') || nameLower.includes('unsorted')) {
+        suggestedStatus = LeadStatus.NEW;
+        reason = 'Етап "Неразобранное" зазвичай відповідає новим лідам';
+      } else if (nameLower.includes('нов') || nameLower.includes('new') || nameLower.includes('заявка')) {
+        suggestedStatus = LeadStatus.NEW;
+        reason = 'Назва містить слова "новий" або "заявка"';
+      } else if (nameLower.includes('работ') || nameLower.includes('progress') || nameLower.includes('квал') || nameLower.includes('презент') || nameLower.includes('показ')) {
+        suggestedStatus = LeadStatus.IN_PROGRESS;
+        reason = 'Етап активної роботи з лідом';
+      } else if (nameLower.includes('won') || nameLower.includes('успешн') || nameLower.includes('документы подписаны') || nameLower.includes('закрыт') || nameLower.includes('post sales')) {
+        suggestedStatus = LeadStatus.CLOSED;
+        reason = 'Етап успішного завершення угоди';
+      } else if (nameLower.includes('lost') || nameLower.includes('отказ') || nameLower.includes('холодн')) {
+        suggestedStatus = LeadStatus.CLOSED;
+        reason = 'Етап закриття (відмова або холодний лід)';
+      }
+
+      if (suggestedStatus) {
+        suggestions.push({
+          stageId: stage.id,
+          stageName: stage.name,
+          suggestedStatus,
+          reason,
+        });
+      }
+    }
+
+    return suggestions;
+  }
+
+  /**
+   * Застосувати автоматичний мапінг на основі рекомендацій
+   */
+  async applyAutoMapping(): Promise<{ updated: number; skipped: number }> {
+    const suggestions = await this.getSuggestedMappings();
+    let updated = 0;
+    let skipped = 0;
+
+    for (const suggestion of suggestions) {
+      try {
+        await this.updateStageMapping(suggestion.stageId, suggestion.suggestedStatus);
+        updated++;
+      } catch (error) {
+        this.logger.error(`Помилка застосування мапінгу для stage ${suggestion.stageId}:`, error.message);
+        skipped++;
+      }
+    }
+
+    this.logger.log(`Автоматичний мапінг: ${updated} оновлено, ${skipped} пропущено`);
+    return { updated, skipped };
   }
 }
 
