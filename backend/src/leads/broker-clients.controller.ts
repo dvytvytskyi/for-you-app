@@ -11,7 +11,7 @@ import { UserRole } from '../database/entities/user.entity';
 @ApiTags('Broker Clients (CRM)')
 @Controller('broker-clients')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.BROKER)
+@Roles(UserRole.BROKER, UserRole.ADMIN)
 @ApiBearerAuth()
 export class BrokerClientsController {
   constructor(private readonly brokerClientsService: BrokerClientsService) {}
@@ -24,10 +24,10 @@ export class BrokerClientsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Отримати список клієнтів брокера' })
+  @ApiOperation({ summary: 'Отримати список клієнтів (BROKER: свої, ADMIN: всі)' })
   @ApiResponse({ status: 200, description: 'Список клієнтів' })
   async findAll(@CurrentUser() user: any) {
-    return this.brokerClientsService.findAll(user.id);
+    return this.brokerClientsService.findAll(user);
   }
 
   @Get(':id')
@@ -36,7 +36,7 @@ export class BrokerClientsController {
   @ApiResponse({ status: 404, description: 'Client not found' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async findOne(@Param('id') id: string, @CurrentUser() user: any) {
-    return this.brokerClientsService.findOne(id, user.id);
+    return this.brokerClientsService.findOne(id, user);
   }
 
   @Put(':id')
@@ -48,7 +48,7 @@ export class BrokerClientsController {
     @Body() updateDto: CreateBrokerClientDto,
     @CurrentUser() user: any,
   ) {
-    return this.brokerClientsService.update(id, user.id, updateDto);
+    return this.brokerClientsService.update(id, user, updateDto);
   }
 
   @Delete(':id')
@@ -56,7 +56,7 @@ export class BrokerClientsController {
   @ApiResponse({ status: 200, description: 'Клієнт видалений' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async remove(@Param('id') id: string, @CurrentUser() user: any) {
-    await this.brokerClientsService.remove(id, user.id);
+    await this.brokerClientsService.remove(id, user);
     return { message: 'Client removed successfully' };
   }
 }
