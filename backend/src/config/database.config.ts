@@ -14,6 +14,7 @@ import { AmoPipeline } from '../database/entities/amo-pipeline.entity';
 import { AmoStage } from '../database/entities/amo-stage.entity';
 import { AmoUser } from '../database/entities/amo-user.entity';
 import { AmoRole } from '../database/entities/amo-role.entity';
+import { AmoContact } from '../database/entities/amo-contact.entity';
 
 export const databaseConfig = registerAs(
   'database',
@@ -24,7 +25,7 @@ export const databaseConfig = registerAs(
     username: process.env.DB_USERNAME || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
     database: process.env.DB_DATABASE || 'for_you_real_estate',
-      entities: [User, Property, PropertyImage, PropertyAmenity, PaymentPlan, Developer, Favorite, Lead, BrokerClient, AmoToken, AmoPipeline, AmoStage, AmoUser, AmoRole], // Явно вказуємо entities для NestJS
+      entities: [User, Property, PropertyImage, PropertyAmenity, PaymentPlan, Developer, Favorite, Lead, BrokerClient, AmoToken, AmoPipeline, AmoStage, AmoUser, AmoRole, AmoContact], // Явно вказуємо entities для NestJS
     migrations: [__dirname + '/../database/migrations/**/*{.ts,.js}'],
     synchronize: false, // ВАЖЛИВО: завжди false
     logging: process.env.NODE_ENV === 'development',

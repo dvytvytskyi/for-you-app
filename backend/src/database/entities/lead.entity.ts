@@ -11,6 +11,7 @@ import {
 import { User } from './user.entity';
 import { Property } from './property.entity';
 import { AmoUser } from './amo-user.entity';
+import { AmoContact } from './amo-contact.entity';
 
 export enum LeadStatus {
   NEW = 'NEW',
@@ -104,6 +105,13 @@ export class Lead {
   // AMO CRM integration
   @Column({ name: 'amo_lead_id', type: 'int', nullable: true })
   amoLeadId: number;
+
+  @Column({ name: 'amo_contact_id', type: 'int', nullable: true })
+  amoContactId: number;
+
+  @ManyToOne(() => AmoContact, (contact) => contact.leads, { nullable: true })
+  @JoinColumn({ name: 'amo_contact_id' })
+  amoContact: AmoContact;
 
   @Column({ name: 'responsible_user_id', type: 'int', nullable: true })
   responsibleUserId: number;

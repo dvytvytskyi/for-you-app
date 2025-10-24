@@ -45,14 +45,23 @@ export class LeadsService {
 
     // 🔥 Синхронізація з AMO CRM
     try {
-      const amoLeadData = this.amoCrmService.formatLeadForAmo(savedLead);
+      // 1. Спочатку створюємо контакт в AMO CRM
+      const amoContactId = await this.amoCrmService.createContact({
+        name: savedLead.guestName,
+        email: savedLead.guestEmail,
+        phone: savedLead.guestPhone,
+      });
+
+      // 2. Створюємо lead з прив'язкою до контакту
+      const amoLeadData = this.amoCrmService.formatLeadForAmo(savedLead, amoContactId);
       const amoLeadId = await this.amoCrmService.createLead(amoLeadData);
       
-      // Зберігаємо AMO ID для майбутньої синхронізації
+      // 3. Зберігаємо AMO ID для майбутньої синхронізації
       savedLead.amoLeadId = amoLeadId;
+      savedLead.amoContactId = amoContactId;
       await this.leadRepository.save(savedLead);
       
-      this.logger.log(`Lead ${savedLead.id} синхронізовано з AMO CRM (AMO ID: ${amoLeadId})`);
+      this.logger.log(`Lead ${savedLead.id} синхронізовано з AMO CRM (Lead ID: ${amoLeadId}, Contact ID: ${amoContactId})`);
     } catch (error) {
       // Не блокуємо створення lead при помилці синхронізації
       this.logger.error(`Помилка синхронізації Lead ${savedLead.id} з AMO CRM:`, error.message);

@@ -27,12 +27,21 @@ export interface AmoContact {
   first_name?: string;
   last_name?: string;
   responsible_user_id?: number;
+  created_at?: number;
+  updated_at?: number;
   custom_fields_values?: AmoCustomField[];
+  _embedded?: {
+    leads?: Array<{ id: number }>;
+    companies?: Array<{ id: number }>;
+    tags?: Array<{ id: number; name: string }>;
+  };
 }
 
 export interface AmoCustomField {
   field_id: number;
   field_name?: string;
+  field_code?: string;
+  field_type?: string;
   values: Array<{
     value: string | number;
     enum_id?: number;

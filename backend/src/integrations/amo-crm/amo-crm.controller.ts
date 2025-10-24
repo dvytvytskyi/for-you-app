@@ -269,5 +269,35 @@ export class AmoCrmController {
       count: users.length,
     };
   }
+
+  /**
+   * Синхронізація контактів з AMO CRM
+   */
+  @Post('sync-contacts')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Синхронізувати контакти з AMO CRM' })
+  @ApiResponse({ status: 200, description: 'Контакти синхронізовано' })
+  async syncContacts(@Query('limit') limit?: number) {
+    const result = await this.amoCrmService.syncContacts(limit || 50);
+    return {
+      message: 'Контакти синхронізовано з AMO CRM',
+      ...result,
+      status: 'success',
+    };
+  }
+
+  /**
+   * Отримати список контактів
+   */
+  @Get('contacts')
+  @ApiOperation({ summary: 'Отримати список контактів AMO CRM' })
+  @ApiResponse({ status: 200, description: 'Список контактів' })
+  async getContacts() {
+    const contacts = await this.amoCrmService.getContacts();
+    return {
+      data: contacts,
+      count: contacts.length,
+    };
+  }
 }
 

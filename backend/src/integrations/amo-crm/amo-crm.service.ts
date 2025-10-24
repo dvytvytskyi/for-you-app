@@ -9,6 +9,7 @@ import { AmoPipeline } from '../../database/entities/amo-pipeline.entity';
 import { AmoStage } from '../../database/entities/amo-stage.entity';
 import { AmoUser } from '../../database/entities/amo-user.entity';
 import { AmoRole } from '../../database/entities/amo-role.entity';
+import { AmoContact as AmoContactEntity } from '../../database/entities/amo-contact.entity';
 import { Lead, LeadStatus } from '../../database/entities/lead.entity';
 import {
   AmoAuthResponse,
@@ -40,6 +41,8 @@ export class AmoCrmService {
     private readonly amoUserRepository: Repository<AmoUser>,
     @InjectRepository(AmoRole)
     private readonly amoRoleRepository: Repository<AmoRole>,
+    @InjectRepository(AmoContactEntity)
+    private readonly amoContactRepository: Repository<AmoContactEntity>,
     @InjectRepository(Lead)
     private readonly leadRepository: Repository<Lead>,
     private readonly configService: ConfigService,
@@ -280,36 +283,6 @@ export class AmoCrmService {
       this.logger.error('Помилка отримання lead з AMO CRM:', error.response?.data || error.message);
       throw new HttpException(
         'Failed to get lead from AMO CRM',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  /**
-   * Створення Contact в AMO CRM
-   */
-  async createContact(contactData: Partial<AmoContact>): Promise<number> {
-    try {
-      const accessToken = await this.getAccessToken();
-
-      const response = await this.axiosInstance.post(
-        '/api/v4/contacts',
-        [contactData],
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
-      );
-
-      const contactId = response.data._embedded.contacts[0].id;
-      this.logger.log(`Contact створено в AMO CRM: ${contactId}`);
-
-      return contactId;
-    } catch (error) {
-      this.logger.error('Помилка створення contact в AMO CRM:', error.response?.data || error.message);
-      throw new HttpException(
-        'Failed to create contact in AMO CRM',
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -691,6 +664,214 @@ export class AmoCrmService {
    */
   async getRoles(): Promise<AmoRole[]> {
     return this.amoRoleRepository.find({
+      order: { name: 'ASC' },
+    });
+  }
+
+  /**
+   * Синхронізація контактів з AMO CRM
+   */
+  async syncContacts(limit: number = 50): Promise<{ synced: number; errors: number }> {
+    try {
+      const accessToken = await this.getAccessToken();
+
+      const response = await this.axiosInstance.get<{ _embedded: { contacts: AmoContact[] } }>(
+        '/api/v4/contacts',
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          params: {
+            limit,
+            order: {
+              updated_at: 'desc',
+            },
+          },
+        },
+      );
+
+      const amoContacts = response.data._embedded?.contacts || [];
+      let synced = 0;
+      let errors = 0;
+
+      for (const amoContact of amoContacts) {
+        try {
+          await this.importContactFromAmo(amoContact);
+          synced++;
+        } catch (error) {
+          this.logger.error(`Помилка імпорту contact ${amoContact.id}:`, error.message);
+          errors++;
+        }
+      }
+
+      this.logger.log(`Синхронізовано ${synced} контактів з AMO CRM, ${errors} помилок`);
+      return { synced, errors };
+    } catch (error) {
+      this.logger.error('Помилка синхронізації contacts з AMO CRM:', error.response?.data || error.message);
+      throw new HttpException('Failed to sync contacts from AMO CRM', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  /**
+   * Імпорт одного контакту з AMO CRM в нашу БД
+   */
+  private async importContactFromAmo(amoContact: AmoContact): Promise<AmoContactEntity> {
+    let contact = await this.amoContactRepository.findOne({
+      where: { id: amoContact.id },
+    });
+
+    // Витягуємо email та телефон з custom_fields_values
+    let email: string | null = null;
+    let phone: string | null = null;
+
+    if (amoContact.custom_fields_values) {
+      for (const field of amoContact.custom_fields_values) {
+        if (field.field_code === 'EMAIL' && field.values && field.values.length > 0) {
+          email = String(field.values[0].value);
+        }
+        if (field.field_code === 'PHONE' && field.values && field.values.length > 0) {
+          phone = String(field.values[0].value);
+        }
+      }
+    }
+
+    if (contact) {
+      // Оновити існуючий контакт
+      contact.name = amoContact.name;
+      contact.firstName = amoContact.first_name || null;
+      contact.lastName = amoContact.last_name || null;
+      contact.email = email;
+      contact.phone = phone;
+      contact.responsibleUserId = amoContact.responsible_user_id || null;
+      contact.amoCreatedAt = amoContact.created_at || null;
+      contact.amoUpdatedAt = amoContact.updated_at || null;
+    } else {
+      // Створити новий контакт
+      contact = this.amoContactRepository.create({
+        id: amoContact.id,
+        name: amoContact.name,
+        firstName: amoContact.first_name || null,
+        lastName: amoContact.last_name || null,
+        email,
+        phone,
+        responsibleUserId: amoContact.responsible_user_id || null,
+        amoCreatedAt: amoContact.created_at || null,
+        amoUpdatedAt: amoContact.updated_at || null,
+        accountId: this.accountId,
+      });
+    }
+
+    await this.amoContactRepository.save(contact);
+    this.logger.debug(`Contact ${amoContact.id} імпортовано/оновлено (${contact.name})`);
+
+    return contact;
+  }
+
+  /**
+   * Створити контакт в AMO CRM
+   */
+  async createContact(contactData: {
+    name?: string;
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    phone?: string;
+    responsible_user_id?: number;
+  }): Promise<number> {
+    try {
+      const accessToken = await this.getAccessToken();
+
+      const customFields: any[] = [];
+
+      if (contactData.email) {
+        customFields.push({
+          field_code: 'EMAIL',
+          values: [
+            {
+              value: contactData.email,
+              enum_code: 'WORK',
+            },
+          ],
+        });
+      }
+
+      if (contactData.phone) {
+        customFields.push({
+          field_code: 'PHONE',
+          values: [
+            {
+              value: contactData.phone,
+              enum_code: 'WORK',
+            },
+          ],
+        });
+      }
+
+      const amoContact: AmoContact = {
+        name: contactData.name || `${contactData.first_name || ''} ${contactData.last_name || ''}`.trim() || 'Контакт',
+        first_name: contactData.first_name,
+        last_name: contactData.last_name,
+        responsible_user_id: contactData.responsible_user_id,
+      };
+
+      if (customFields.length > 0) {
+        amoContact.custom_fields_values = customFields;
+      }
+
+      const response = await this.axiosInstance.post<{ _embedded: { contacts: Array<{ id: number }> } }>(
+        '/api/v4/contacts',
+        [amoContact],
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      const createdContactId = response.data._embedded.contacts[0].id;
+      this.logger.log(`Контакт створено в AMO CRM з ID: ${createdContactId}`);
+
+      // Імпортуємо створений контакт в нашу БД
+      const fullContact = await this.getContact(createdContactId);
+      await this.importContactFromAmo(fullContact);
+
+      return createdContactId;
+    } catch (error) {
+      this.logger.error('Помилка створення контакту в AMO CRM:', error.response?.data || error.message);
+      throw new HttpException('Failed to create contact in AMO CRM', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  /**
+   * Отримати контакт з AMO CRM по ID
+   */
+  async getContact(contactId: number): Promise<AmoContact> {
+    try {
+      const accessToken = await this.getAccessToken();
+
+      const response = await this.axiosInstance.get<AmoContact>(
+        `/api/v4/contacts/${contactId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      this.logger.error(`Помилка отримання контакту ${contactId}:`, error.response?.data || error.message);
+      throw new HttpException('Failed to get contact from AMO CRM', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  /**
+   * Отримати контакти з БД
+   */
+  async getContacts(): Promise<AmoContactEntity[]> {
+    return this.amoContactRepository.find({
+      relations: ['responsibleUser'],
       order: { name: 'ASC' },
     });
   }
