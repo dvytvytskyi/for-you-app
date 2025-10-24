@@ -1,0 +1,21 @@
+# Cursor AI should have access to all planning documents
+# Do not ignore:
+!DEVELOPMENT-PLAN.md
+!PROGRESS-TRACKER.md
+!back-end.md
+!back-end-extended.md
+!app-req.md
+!README.md
+!ARCHITECTURE.md
+!CONTRIBUTING.md
+
+# But ignore:
+node_modules/
+.next/
+dist/
+build/
+coverage/
+.env
+.env.local
+*.log
+
