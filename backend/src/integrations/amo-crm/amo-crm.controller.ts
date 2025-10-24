@@ -209,5 +209,65 @@ export class AmoCrmController {
       status: 'success',
     };
   }
+
+  /**
+   * Синхронізація ролей з AMO CRM
+   */
+  @Post('sync-roles')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Синхронізувати ролі з AMO CRM' })
+  @ApiResponse({ status: 200, description: 'Ролі синхронізовано' })
+  async syncRoles() {
+    const result = await this.amoCrmService.syncRoles();
+    return {
+      message: 'Ролі синхронізовано з AMO CRM',
+      ...result,
+      status: 'success',
+    };
+  }
+
+  /**
+   * Синхронізація користувачів з AMO CRM
+   */
+  @Post('sync-users')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Синхронізувати користувачів з AMO CRM' })
+  @ApiResponse({ status: 200, description: 'Користувачів синхронізовано' })
+  async syncUsers() {
+    const result = await this.amoCrmService.syncUsers();
+    return {
+      message: 'Користувачів синхронізовано з AMO CRM',
+      ...result,
+      status: 'success',
+    };
+  }
+
+  /**
+   * Отримати список ролей
+   */
+  @Get('roles')
+  @ApiOperation({ summary: 'Отримати список ролей AMO CRM' })
+  @ApiResponse({ status: 200, description: 'Список ролей' })
+  async getRoles() {
+    const roles = await this.amoCrmService.getRoles();
+    return {
+      data: roles,
+      count: roles.length,
+    };
+  }
+
+  /**
+   * Отримати список користувачів
+   */
+  @Get('users')
+  @ApiOperation({ summary: 'Отримати список користувачів AMO CRM' })
+  @ApiResponse({ status: 200, description: 'Список користувачів' })
+  async getUsers() {
+    const users = await this.amoCrmService.getUsers();
+    return {
+      data: users,
+      count: users.length,
+    };
+  }
 }
 

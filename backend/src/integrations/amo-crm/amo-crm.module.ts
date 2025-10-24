@@ -5,10 +5,12 @@ import { AmoCrmController } from './amo-crm.controller';
 import { AmoToken } from '../../database/entities/amo-token.entity';
 import { AmoPipeline } from '../../database/entities/amo-pipeline.entity';
 import { AmoStage } from '../../database/entities/amo-stage.entity';
+import { AmoUser } from '../../database/entities/amo-user.entity';
+import { AmoRole } from '../../database/entities/amo-role.entity';
 import { Lead } from '../../database/entities/lead.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([AmoToken, AmoPipeline, AmoStage, Lead])],
+  imports: [TypeOrmModule.forFeature([AmoToken, AmoPipeline, AmoStage, AmoUser, AmoRole, Lead])],
   controllers: [AmoCrmController],
   providers: [AmoCrmService],
   exports: [AmoCrmService],

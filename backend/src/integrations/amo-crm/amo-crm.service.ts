@@ -7,6 +7,8 @@ import axios, { AxiosInstance } from 'axios';
 import { AmoToken } from '../../database/entities/amo-token.entity';
 import { AmoPipeline } from '../../database/entities/amo-pipeline.entity';
 import { AmoStage } from '../../database/entities/amo-stage.entity';
+import { AmoUser } from '../../database/entities/amo-user.entity';
+import { AmoRole } from '../../database/entities/amo-role.entity';
 import { Lead, LeadStatus } from '../../database/entities/lead.entity';
 import {
   AmoAuthResponse,
@@ -34,6 +36,10 @@ export class AmoCrmService {
     private readonly amoPipelineRepository: Repository<AmoPipeline>,
     @InjectRepository(AmoStage)
     private readonly amoStageRepository: Repository<AmoStage>,
+    @InjectRepository(AmoUser)
+    private readonly amoUserRepository: Repository<AmoUser>,
+    @InjectRepository(AmoRole)
+    private readonly amoRoleRepository: Repository<AmoRole>,
     @InjectRepository(Lead)
     private readonly leadRepository: Repository<Lead>,
     private readonly configService: ConfigService,
@@ -548,6 +554,148 @@ export class AmoCrmService {
   }
 
   /**
+   * Синхронізація ролей з AMO CRM
+   */
+  async syncRoles(): Promise<{ synced: number; errors: number }> {
+    try {
+      const accessToken = await this.getAccessToken();
+
+      const response = await this.axiosInstance.get<{ _embedded: { roles: any[] } }>(
+        '/api/v4/roles',
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          params: {
+            limit: 250,
+          },
+        },
+      );
+
+      const amoRoles = response.data._embedded?.roles || [];
+      let synced = 0;
+      let errors = 0;
+
+      for (const amoRole of amoRoles) {
+        try {
+          let role = await this.amoRoleRepository.findOne({ where: { id: amoRole.id } });
+
+          if (role) {
+            role.name = amoRole.name;
+            role.rights = amoRole.rights;
+          } else {
+            role = this.amoRoleRepository.create({
+              id: amoRole.id,
+              name: amoRole.name,
+              rights: amoRole.rights,
+              accountId: this.accountId,
+            });
+          }
+
+          await this.amoRoleRepository.save(role);
+          synced++;
+        } catch (error) {
+          this.logger.error(`Помилка синхронізації role ${amoRole.id}:`, error.message);
+          errors++;
+        }
+      }
+
+      this.logger.log(`Синхронізовано ${synced} ролей, ${errors} помилок`);
+      return { synced, errors };
+    } catch (error) {
+      this.logger.error('Помилка синхронізації roles:', error.response?.data || error.message);
+      throw new HttpException('Failed to sync roles', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  /**
+   * Синхронізація користувачів з AMO CRM
+   */
+  async syncUsers(): Promise<{ synced: number; errors: number }> {
+    try {
+      const accessToken = await this.getAccessToken();
+
+      const response = await this.axiosInstance.get<{ _embedded: { users: any[] } }>(
+        '/api/v4/users',
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          params: {
+            limit: 250,
+            with: 'role',
+          },
+        },
+      );
+
+      const amoUsers = response.data._embedded?.users || [];
+      let synced = 0;
+      let errors = 0;
+
+      for (const amoUser of amoUsers) {
+        try {
+          let user = await this.amoUserRepository.findOne({ where: { id: amoUser.id } });
+
+          if (user) {
+            user.name = amoUser.name;
+            user.email = amoUser.email;
+            user.lang = amoUser.lang;
+            user.isAdmin = amoUser.rights?.is_admin || false;
+            user.isFree = amoUser.rights?.is_free || false;
+            user.isActive = amoUser.rights?.is_active || true;
+            user.roleId = amoUser.rights?.role_id || null;
+            user.groupId = amoUser.rights?.group_id || null;
+          } else {
+            user = this.amoUserRepository.create({
+              id: amoUser.id,
+              name: amoUser.name,
+              email: amoUser.email,
+              lang: amoUser.lang,
+              isAdmin: amoUser.rights?.is_admin || false,
+              isFree: amoUser.rights?.is_free || false,
+              isActive: amoUser.rights?.is_active || true,
+              roleId: amoUser.rights?.role_id || null,
+              groupId: amoUser.rights?.group_id || null,
+              accountId: this.accountId,
+            });
+          }
+
+          await this.amoUserRepository.save(user);
+          synced++;
+        } catch (error) {
+          this.logger.error(`Помилка синхронізації user ${amoUser.id}:`, error.message);
+          errors++;
+        }
+      }
+
+      this.logger.log(`Синхронізовано ${synced} користувачів, ${errors} помилок`);
+      return { synced, errors };
+    } catch (error) {
+      this.logger.error('Помилка синхронізації users:', error.response?.data || error.message);
+      throw new HttpException('Failed to sync users', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  /**
+   * Отримати користувачів з БД
+   */
+  async getUsers(): Promise<AmoUser[]> {
+    return this.amoUserRepository.find({
+      relations: ['role'],
+      order: { name: 'ASC' },
+    });
+  }
+
+  /**
+   * Отримати ролі з БД
+   */
+  async getRoles(): Promise<AmoRole[]> {
+    return this.amoRoleRepository.find({
+      order: { name: 'ASC' },
+    });
+  }
+
+  /**
    * CRON job для автоматичної синхронізації pipelines кожні 6 годин
    */
   @Cron(CronExpression.EVERY_6_HOURS)
@@ -604,6 +752,7 @@ export class AmoCrmService {
 
       for (const amoLead of amoLeads) {
         try {
+          this.logger.debug(`AMO Lead data: id=${amoLead.id}, responsible=${amoLead.responsible_user_id}, status=${amoLead.status_id}`);
           await this.importLeadFromAmo(amoLead);
           synced++;
         } catch (error) {
@@ -642,6 +791,7 @@ export class AmoCrmService {
       // Оновити існуючий lead
       lead.status = ourStatus;
       lead.guestName = amoLead.name || lead.guestName;
+      lead.responsibleUserId = amoLead.responsible_user_id || null;
       // Не перезаписуємо інші поля, якщо вони вже заповнені
     } else {
       // Створити новий lead
@@ -649,12 +799,13 @@ export class AmoCrmService {
         amoLeadId: amoLead.id,
         guestName: amoLead.name || 'Lead з AMO CRM',
         status: ourStatus,
+        responsibleUserId: amoLead.responsible_user_id || null,
         // Інші поля будуть null, оскільки в AMO CRM може не бути цих даних
       });
     }
 
     await this.leadRepository.save(lead);
-    this.logger.debug(`Lead ${amoLead.id} імпортовано/оновлено`);
+    this.logger.debug(`Lead ${amoLead.id} імпортовано/оновлено (responsible: ${lead.responsibleUserId})`);
     
     return lead;
   }

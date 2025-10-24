@@ -91,3 +91,39 @@ export interface AmoStatus {
   account_id: number;
 }
 
+export interface AmoUser {
+  id: number;
+  name: string;
+  email: string;
+  lang: string;
+  rights: any;
+  _links?: {
+    self: {
+      href: string;
+    };
+  };
+  _embedded?: {
+    roles?: AmoUserRole[];
+    groups?: AmoUserGroup[];
+  };
+}
+
+export interface AmoUserRole {
+  id: number;
+  name: string;
+  rights?: any;
+  _links?: {
+    self: {
+      href: string;
+    };
+  };
+  _embedded?: {
+    users?: number[];
+  };
+}
+
+export interface AmoUserGroup {
+  id: number;
+  name: string;
+}
+
