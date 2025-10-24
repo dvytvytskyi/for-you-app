@@ -25,18 +25,19 @@ export class LeadsController {
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.BROKER, UserRole.ADMIN, UserRole.CLIENT)
+  @Roles(UserRole.BROKER, UserRole.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Отримати список заявок (role-based)' })
+  @ApiOperation({ summary: 'Отримати список заявок (BROKER/ADMIN only)' })
   @ApiResponse({ status: 200, description: 'Список заявок' })
   async findAll(@Query() filters: LeadFiltersDto, @CurrentUser() user: any) {
     return this.leadsService.findAll(filters, user);
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.BROKER, UserRole.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Отримати деталі заявки' })
+  @ApiOperation({ summary: 'Отримати деталі заявки (BROKER/ADMIN only)' })
   @ApiResponse({ status: 200, description: 'Деталі заявки' })
   @ApiResponse({ status: 404, description: 'Lead not found' })
   @ApiResponse({ status: 403, description: 'Forbidden' })

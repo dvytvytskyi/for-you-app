@@ -43,11 +43,9 @@ export class LeadsService {
           userId: user.id,
           newStatus: LeadStatus.NEW,
         });
-      } else if (user.role === UserRole.CLIENT) {
-        // Client бачить тільки свої заявки
-        queryBuilder.where('lead.clientId = :userId', { userId: user.id });
       }
       // ADMIN бачить все
+      // CLIENT не має доступу до списку leads
     }
 
     // Additional filters
@@ -92,12 +90,10 @@ export class LeadsService {
     }
 
     // Check access rights
-    if (user && user.role === UserRole.CLIENT && lead.clientId !== user.id) {
-      throw new ForbiddenException('You can only view your own leads');
-    }
     if (user && user.role === UserRole.BROKER && lead.brokerId !== user.id && lead.status !== LeadStatus.NEW) {
       throw new ForbiddenException('You can only view your assigned leads or new leads');
     }
+    // CLIENT не має доступу до перегляду leads
 
     return lead;
   }
@@ -107,9 +103,6 @@ export class LeadsService {
 
     // Check if user can update
     if (user) {
-      if (user.role === UserRole.CLIENT) {
-        throw new ForbiddenException('Clients cannot update leads');
-      }
       if (user.role === UserRole.BROKER && lead.brokerId && lead.brokerId !== user.id) {
         throw new ForbiddenException('You can only update your assigned leads');
       }
