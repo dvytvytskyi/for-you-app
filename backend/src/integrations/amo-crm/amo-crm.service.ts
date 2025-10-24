@@ -10,6 +10,7 @@ import { AmoStage } from '../../database/entities/amo-stage.entity';
 import { AmoUser } from '../../database/entities/amo-user.entity';
 import { AmoRole } from '../../database/entities/amo-role.entity';
 import { AmoContact as AmoContactEntity } from '../../database/entities/amo-contact.entity';
+import { AmoTask as AmoTaskEntity } from '../../database/entities/amo-task.entity';
 import { Lead, LeadStatus } from '../../database/entities/lead.entity';
 import {
   AmoAuthResponse,
@@ -17,6 +18,7 @@ import {
   AmoContact,
   AmoPipeline as IAmoPipeline,
   AmoStatus,
+  AmoTask,
 } from './interfaces/amo-crm.interface';
 
 @Injectable()
@@ -43,6 +45,8 @@ export class AmoCrmService {
     private readonly amoRoleRepository: Repository<AmoRole>,
     @InjectRepository(AmoContactEntity)
     private readonly amoContactRepository: Repository<AmoContactEntity>,
+    @InjectRepository(AmoTaskEntity)
+    private readonly amoTaskRepository: Repository<AmoTaskEntity>,
     @InjectRepository(Lead)
     private readonly leadRepository: Repository<Lead>,
     private readonly configService: ConfigService,
@@ -393,6 +397,62 @@ export class AmoCrmService {
           processed++;
         } catch (error) {
           this.logger.error(`Помилка обробки нового lead ${newLead.id}:`, error.message);
+          errors++;
+        }
+      }
+    }
+
+    // Обробка нових задач (створених в AMO CRM)
+    if (payload.tasks?.add) {
+      for (const newTask of payload.tasks.add) {
+        try {
+          this.logger.log(`Нова задача ID ${newTask.id} створена в AMO CRM`);
+          
+          // Отримати повні дані задачі з AMO CRM та імпортувати
+          const amoTask = await this.getTask(newTask.id);
+          await this.importTaskFromAmo(amoTask);
+          this.logger.log(`✅ Нову задачу ${newTask.id} імпортовано`);
+
+          processed++;
+        } catch (error) {
+          this.logger.error(`Помилка обробки нової задачі ${newTask.id}:`, error.message);
+          errors++;
+        }
+      }
+    }
+
+    // Обробка оновлених задач
+    if (payload.tasks?.update) {
+      for (const taskUpdate of payload.tasks.update) {
+        try {
+          this.logger.log(`Задача ID ${taskUpdate.id} оновлена в AMO CRM`);
+          
+          // Отримати повні дані задачі з AMO CRM
+          const amoTask = await this.getTask(taskUpdate.id);
+          await this.importTaskFromAmo(amoTask);
+          this.logger.log(`✅ Задачу ${taskUpdate.id} синхронізовано`);
+
+          processed++;
+        } catch (error) {
+          this.logger.error(`Помилка обробки оновлення задачі ${taskUpdate.id}:`, error.message);
+          errors++;
+        }
+      }
+    }
+
+    // Обробка видалених задач
+    if (payload.tasks?.delete) {
+      for (const deletedTask of payload.tasks.delete) {
+        try {
+          this.logger.log(`Задача ID ${deletedTask.id} видалена в AMO CRM`);
+          
+          // Видаляємо задачу з нашої БД
+          await this.amoTaskRepository.delete({ id: deletedTask.id });
+          this.logger.log(`✅ Задачу ${deletedTask.id} видалено`);
+
+          processed++;
+        } catch (error) {
+          this.logger.error(`Помилка видалення задачі ${deletedTask.id}:`, error.message);
           errors++;
         }
       }
@@ -875,6 +935,301 @@ export class AmoCrmService {
       order: { name: 'ASC' },
     });
   }
+
+  /**
+   * ========================================
+   * TASKS METHODS
+   * ========================================
+   */
+
+  /**
+   * Синхронізація задач з AMO CRM
+   */
+  async syncTasks(filters?: {
+    responsible_user_id?: number;
+    is_completed?: boolean;
+    entity_type?: string;
+    entity_id?: number;
+    limit?: number;
+  }): Promise<{ synced: number; errors: number }> {
+    try {
+      const accessToken = await this.getAccessToken();
+
+      const params: any = {
+        limit: filters?.limit || 50,
+      };
+
+      if (filters?.responsible_user_id) {
+        params['filter[responsible_user_id]'] = filters.responsible_user_id;
+      }
+      if (filters?.is_completed !== undefined) {
+        params['filter[is_completed]'] = filters.is_completed ? 1 : 0;
+      }
+      if (filters?.entity_type) {
+        params['filter[entity_type]'] = filters.entity_type;
+      }
+      if (filters?.entity_id) {
+        params['filter[entity_id]'] = filters.entity_id;
+      }
+
+      const response = await this.axiosInstance.get<{ _embedded: { tasks: AmoTask[] } }>(
+        '/api/v4/tasks',
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          params,
+        },
+      );
+
+      const amoTasks = response.data._embedded?.tasks || [];
+      let synced = 0;
+      let errors = 0;
+
+      for (const amoTask of amoTasks) {
+        try {
+          await this.importTaskFromAmo(amoTask);
+          synced++;
+        } catch (error) {
+          this.logger.error(`Помилка імпорту task ${amoTask.id}:`, error.message);
+          errors++;
+        }
+      }
+
+      this.logger.log(`Синхронізовано ${synced} задач з AMO CRM, ${errors} помилок`);
+      return { synced, errors };
+    } catch (error) {
+      this.logger.error('Помилка синхронізації tasks з AMO CRM:', error.response?.data || error.message);
+      throw new HttpException('Failed to sync tasks from AMO CRM', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  /**
+   * Імпорт однієї задачі з AMO CRM в нашу БД
+   */
+  private async importTaskFromAmo(amoTask: AmoTask): Promise<AmoTaskEntity> {
+    let task = await this.amoTaskRepository.findOne({
+      where: { id: amoTask.id },
+    });
+
+    if (task) {
+      // Оновити існуючу задачу
+      task.text = amoTask.text;
+      task.taskTypeId = amoTask.task_type_id || 1;
+      task.completeTill = amoTask.complete_till;
+      task.isCompleted = amoTask.is_completed || false;
+      task.responsibleUserId = amoTask.responsible_user_id;
+      task.entityId = amoTask.entity_id || null;
+      task.entityType = amoTask.entity_type || null;
+      task.duration = amoTask.duration || null;
+      task.resultText = amoTask.result?.text || null;
+      task.createdBy = amoTask.created_by || null;
+      task.updatedBy = amoTask.updated_by || null;
+      task.amoCreatedAt = amoTask.created_at || null;
+      task.amoUpdatedAt = amoTask.updated_at || null;
+    } else {
+      // Створити нову задачу
+      task = this.amoTaskRepository.create({
+        id: amoTask.id,
+        text: amoTask.text,
+        taskTypeId: amoTask.task_type_id || 1,
+        completeTill: amoTask.complete_till,
+        isCompleted: amoTask.is_completed || false,
+        responsibleUserId: amoTask.responsible_user_id,
+        entityId: amoTask.entity_id || null,
+        entityType: amoTask.entity_type || null,
+        duration: amoTask.duration || null,
+        resultText: amoTask.result?.text || null,
+        createdBy: amoTask.created_by || null,
+        updatedBy: amoTask.updated_by || null,
+        amoCreatedAt: amoTask.created_at || null,
+        amoUpdatedAt: amoTask.updated_at || null,
+        accountId: this.accountId,
+      });
+    }
+
+    await this.amoTaskRepository.save(task);
+    this.logger.debug(`Task ${amoTask.id} імпортовано/оновлено (${task.text})`);
+
+    return task;
+  }
+
+  /**
+   * Створити задачу в AMO CRM
+   */
+  async createTask(taskData: {
+    text: string;
+    complete_till: number;
+    task_type_id?: number;
+    responsible_user_id?: number;
+    entity_id?: number;
+    entity_type?: string;
+  }): Promise<number> {
+    try {
+      const accessToken = await this.getAccessToken();
+
+      const amoTask: AmoTask = {
+        text: taskData.text,
+        complete_till: taskData.complete_till,
+        task_type_id: taskData.task_type_id || 1, // 1 - дзвінок
+        responsible_user_id: taskData.responsible_user_id,
+        entity_id: taskData.entity_id,
+        entity_type: taskData.entity_type,
+      };
+
+      const response = await this.axiosInstance.post<{ _embedded: { tasks: Array<{ id: number }> } }>(
+        '/api/v4/tasks',
+        [amoTask],
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      const createdTaskId = response.data._embedded.tasks[0].id;
+      this.logger.log(`Задачу створено в AMO CRM з ID: ${createdTaskId}`);
+
+      // Імпортуємо створену задачу в нашу БД
+      const fullTask = await this.getTask(createdTaskId);
+      await this.importTaskFromAmo(fullTask);
+
+      return createdTaskId;
+    } catch (error) {
+      this.logger.error('Помилка створення задачі в AMO CRM:', error.response?.data || error.message);
+      throw new HttpException('Failed to create task in AMO CRM', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  /**
+   * Оновити задачу в AMO CRM
+   */
+  async updateTask(taskId: number, taskData: Partial<AmoTask>): Promise<void> {
+    try {
+      const accessToken = await this.getAccessToken();
+
+      await this.axiosInstance.patch(
+        '/api/v4/tasks',
+        [{ id: taskId, ...taskData }],
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      this.logger.log(`Задачу ${taskId} оновлено в AMO CRM`);
+
+      // Оновлюємо в нашій БД
+      const fullTask = await this.getTask(taskId);
+      await this.importTaskFromAmo(fullTask);
+    } catch (error) {
+      this.logger.error(`Помилка оновлення задачі ${taskId} в AMO CRM:`, error.response?.data || error.message);
+      throw new HttpException('Failed to update task in AMO CRM', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  /**
+   * Виконати задачу
+   */
+  async completeTask(taskId: number, resultText?: string): Promise<void> {
+    try {
+      const accessToken = await this.getAccessToken();
+
+      const updateData: any = {
+        id: taskId,
+        is_completed: true,
+      };
+
+      if (resultText) {
+        updateData.result = {
+          text: resultText,
+        };
+      }
+
+      await this.axiosInstance.patch(
+        `/api/v4/tasks/${taskId}`,
+        updateData,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      this.logger.log(`Задачу ${taskId} виконано в AMO CRM`);
+
+      // Оновлюємо в нашій БД
+      const fullTask = await this.getTask(taskId);
+      await this.importTaskFromAmo(fullTask);
+    } catch (error) {
+      this.logger.error(`Помилка виконання задачі ${taskId} в AMO CRM:`, error.response?.data || error.message);
+      throw new HttpException('Failed to complete task in AMO CRM', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  /**
+   * Отримати задачу з AMO CRM по ID
+   */
+  async getTask(taskId: number): Promise<AmoTask> {
+    try {
+      const accessToken = await this.getAccessToken();
+
+      const response = await this.axiosInstance.get<AmoTask>(
+        `/api/v4/tasks/${taskId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      this.logger.error(`Помилка отримання задачі ${taskId}:`, error.response?.data || error.message);
+      throw new HttpException('Failed to get task from AMO CRM', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  /**
+   * Отримати задачі з БД
+   */
+  async getTasks(filters?: {
+    responsible_user_id?: number;
+    is_completed?: boolean;
+    entity_type?: string;
+    entity_id?: number;
+  }): Promise<AmoTaskEntity[]> {
+    const where: any = {};
+
+    if (filters?.responsible_user_id) {
+      where.responsibleUserId = filters.responsible_user_id;
+    }
+    if (filters?.is_completed !== undefined) {
+      where.isCompleted = filters.is_completed;
+    }
+    if (filters?.entity_type) {
+      where.entityType = filters.entity_type;
+    }
+    if (filters?.entity_id) {
+      where.entityId = filters.entity_id;
+    }
+
+    return this.amoTaskRepository.find({
+      where: Object.keys(where).length > 0 ? where : undefined,
+      relations: ['responsibleUser'],
+      order: { completeTill: 'ASC' },
+    });
+  }
+
+  /**
+   * ========================================
+   * CRON JOBS
+   * ========================================
+   */
 
   /**
    * CRON job для автоматичної синхронізації pipelines кожні 6 годин

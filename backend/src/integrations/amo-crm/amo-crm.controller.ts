@@ -299,5 +299,68 @@ export class AmoCrmController {
       count: contacts.length,
     };
   }
+
+  /**
+   * Синхронізація задач з AMO CRM
+   */
+  @Post('sync-tasks')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Синхронізувати задачі з AMO CRM' })
+  @ApiResponse({ status: 200, description: 'Задачі синхронізовано' })
+  async syncTasks(
+    @Query('limit') limit?: number,
+    @Query('is_completed') isCompleted?: boolean,
+    @Query('entity_type') entityType?: string,
+  ) {
+    const result = await this.amoCrmService.syncTasks({
+      limit: limit || 50,
+      is_completed: isCompleted,
+      entity_type: entityType,
+    });
+    return {
+      message: 'Задачі синхронізовано з AMO CRM',
+      ...result,
+      status: 'success',
+    };
+  }
+
+  /**
+   * Отримати список задач
+   */
+  @Get('tasks')
+  @ApiOperation({ summary: 'Отримати список задач AMO CRM' })
+  @ApiResponse({ status: 200, description: 'Список задач' })
+  async getTasks(
+    @Query('is_completed') isCompleted?: boolean,
+    @Query('entity_type') entityType?: string,
+    @Query('entity_id') entityId?: number,
+  ) {
+    const tasks = await this.amoCrmService.getTasks({
+      is_completed: isCompleted,
+      entity_type: entityType,
+      entity_id: entityId ? Number(entityId) : undefined,
+    });
+    return {
+      data: tasks,
+      count: tasks.length,
+    };
+  }
+
+  /**
+   * Виконати задачу
+   */
+  @Patch('tasks/:id/complete')
+  @ApiOperation({ summary: 'Виконати задачу в AMO CRM' })
+  @ApiResponse({ status: 200, description: 'Задачу виконано' })
+  async completeTask(
+    @Param('id') taskId: string,
+    @Body('result_text') resultText?: string,
+  ) {
+    await this.amoCrmService.completeTask(Number(taskId), resultText);
+    return {
+      message: `Задачу ${taskId} виконано`,
+      status: 'success',
+    };
+  }
 }
 

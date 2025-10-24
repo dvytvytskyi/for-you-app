@@ -61,6 +61,21 @@ export class LeadsService {
       savedLead.amoContactId = amoContactId;
       await this.leadRepository.save(savedLead);
       
+      // 4. Автоматично створюємо задачу "Зателефонувати клієнту" (через 1 годину)
+      try {
+        const taskDeadline = Math.floor(Date.now() / 1000) + 3600; // +1 година
+        await this.amoCrmService.createTask({
+          text: `Зателефонувати клієнту: ${savedLead.guestName}`,
+          complete_till: taskDeadline,
+          task_type_id: 1, // 1 - дзвінок
+          entity_id: amoLeadId,
+          entity_type: 'leads',
+        });
+        this.logger.log(`Задача створена для Lead ${savedLead.id}`);
+      } catch (taskError) {
+        this.logger.error(`Помилка створення задачі для Lead ${savedLead.id}:`, taskError.message);
+      }
+      
       this.logger.log(`Lead ${savedLead.id} синхронізовано з AMO CRM (Lead ID: ${amoLeadId}, Contact ID: ${amoContactId})`);
     } catch (error) {
       // Не блокуємо створення lead при помилці синхронізації

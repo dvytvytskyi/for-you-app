@@ -8,10 +8,11 @@ import { AmoStage } from '../../database/entities/amo-stage.entity';
 import { AmoUser } from '../../database/entities/amo-user.entity';
 import { AmoRole } from '../../database/entities/amo-role.entity';
 import { AmoContact } from '../../database/entities/amo-contact.entity';
+import { AmoTask } from '../../database/entities/amo-task.entity';
 import { Lead } from '../../database/entities/lead.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([AmoToken, AmoPipeline, AmoStage, AmoUser, AmoRole, AmoContact, Lead])],
+  imports: [TypeOrmModule.forFeature([AmoToken, AmoPipeline, AmoStage, AmoUser, AmoRole, AmoContact, AmoTask, Lead])],
   controllers: [AmoCrmController],
   providers: [AmoCrmService],
   exports: [AmoCrmService],

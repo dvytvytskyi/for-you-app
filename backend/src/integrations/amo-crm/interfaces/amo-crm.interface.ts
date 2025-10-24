@@ -65,6 +65,11 @@ export interface AmoWebhookPayload {
     add?: Array<{ id: number }>;
     update?: Array<{ id: number }>;
   };
+  tasks?: {
+    add?: Array<{ id: number }>;
+    update?: Array<{ id: number }>;
+    delete?: Array<{ id: number }>;
+  };
   account?: {
     id: string;
     subdomain: string;
@@ -134,5 +139,26 @@ export interface AmoUserRole {
 export interface AmoUserGroup {
   id: number;
   name: string;
+}
+
+export interface AmoTask {
+  id?: number;
+  text: string;
+  task_type_id?: number;
+  complete_till: number;
+  is_completed?: boolean;
+  responsible_user_id?: number;
+  entity_id?: number;
+  entity_type?: string;
+  duration?: number;
+  result?: {
+    text?: string;
+  };
+  created_by?: number;
+  updated_by?: number;
+  created_at?: number;
+  updated_at?: number;
+  group_id?: number;
+  account_id?: number;
 }
 
