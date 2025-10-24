@@ -2,12 +2,17 @@ import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import axios, { AxiosInstance } from 'axios';
 import { AmoToken } from '../../database/entities/amo-token.entity';
+import { AmoPipeline } from '../../database/entities/amo-pipeline.entity';
+import { AmoStage } from '../../database/entities/amo-stage.entity';
 import {
   AmoAuthResponse,
   AmoLead,
   AmoContact,
+  AmoPipeline as IAmoPipeline,
+  AmoStatus,
 } from './interfaces/amo-crm.interface';
 
 @Injectable()
@@ -24,6 +29,10 @@ export class AmoCrmService {
   constructor(
     @InjectRepository(AmoToken)
     private readonly amoTokenRepository: Repository<AmoToken>,
+    @InjectRepository(AmoPipeline)
+    private readonly amoPipelineRepository: Repository<AmoPipeline>,
+    @InjectRepository(AmoStage)
+    private readonly amoStageRepository: Repository<AmoStage>,
     private readonly configService: ConfigService,
   ) {
     this.domain = this.configService.get<string>('AMO_DOMAIN') || '';
@@ -379,6 +388,154 @@ export class AmoCrmService {
 
     this.logger.log(`Webhook оброблено: ${processed} успішно, ${errors} помилок`);
     return { processed, errors };
+  }
+
+  /**
+   * Синхронізація воронок (pipelines) з AMO CRM
+   */
+  async syncPipelines(): Promise<{ synced: number; errors: number }> {
+    try {
+      const accessToken = await this.getAccessToken();
+
+      // Отримати всі pipelines з AMO CRM
+      const response = await this.axiosInstance.get<{ _embedded: { pipelines: IAmoPipeline[] } }>(
+        '/api/v4/leads/pipelines',
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+
+      const pipelines = response.data._embedded?.pipelines || [];
+      let synced = 0;
+      let errors = 0;
+
+      for (const amoPipeline of pipelines) {
+        try {
+          // Знайти або створити pipeline в нашій БД
+          let pipeline = await this.amoPipelineRepository.findOne({ where: { id: amoPipeline.id } });
+
+          if (pipeline) {
+            // Оновити існуючий
+            pipeline.name = amoPipeline.name;
+            pipeline.sort = amoPipeline.sort;
+            pipeline.isMain = amoPipeline.is_main;
+            pipeline.isUnsortedOn = amoPipeline.is_unsorted_on;
+          } else {
+            // Створити новий
+            pipeline = this.amoPipelineRepository.create({
+              id: amoPipeline.id,
+              name: amoPipeline.name,
+              sort: amoPipeline.sort,
+              isMain: amoPipeline.is_main,
+              isUnsortedOn: amoPipeline.is_unsorted_on,
+              accountId: this.accountId,
+            });
+          }
+
+          await this.amoPipelineRepository.save(pipeline);
+          synced++;
+
+          // Синхронізувати stages цієї воронки
+          if (amoPipeline._embedded?.statuses) {
+            await this.syncStages(amoPipeline.id, amoPipeline._embedded.statuses);
+          }
+        } catch (error) {
+          this.logger.error(`Помилка синхронізації pipeline ${amoPipeline.id}:`, error.message);
+          errors++;
+        }
+      }
+
+      this.logger.log(`Синхронізовано ${synced} pipelines, ${errors} помилок`);
+      return { synced, errors };
+    } catch (error) {
+      this.logger.error('Помилка синхронізації pipelines:', error.response?.data || error.message);
+      throw new HttpException('Failed to sync pipelines', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  /**
+   * Синхронізація етапів (stages) воронки з AMO CRM
+   */
+  private async syncStages(pipelineId: number, statuses: AmoStatus[]): Promise<void> {
+    for (const amoStatus of statuses) {
+      try {
+        let stage = await this.amoStageRepository.findOne({ where: { id: amoStatus.id } });
+
+        if (stage) {
+          // Оновити існуючий
+          stage.name = amoStatus.name;
+          stage.sort = amoStatus.sort;
+          stage.isEditable = amoStatus.is_editable;
+          stage.color = amoStatus.color;
+        } else {
+          // Створити новий
+          stage = this.amoStageRepository.create({
+            id: amoStatus.id,
+            pipelineId: pipelineId,
+            name: amoStatus.name,
+            sort: amoStatus.sort,
+            isEditable: amoStatus.is_editable,
+            color: amoStatus.color,
+            mappedStatus: null, // Буде налаштовано пізніше
+          });
+        }
+
+        await this.amoStageRepository.save(stage);
+      } catch (error) {
+        this.logger.error(`Помилка синхронізації stage ${amoStatus.id}:`, error.message);
+      }
+    }
+  }
+
+  /**
+   * Отримати всі pipelines з нашої БД
+   */
+  async getPipelines(): Promise<AmoPipeline[]> {
+    return this.amoPipelineRepository.find({
+      relations: ['stages'],
+      order: {
+        sort: 'ASC',
+        stages: {
+          sort: 'ASC',
+        },
+      },
+    });
+  }
+
+  /**
+   * Отримати stages конкретної воронки
+   */
+  async getStages(pipelineId: number): Promise<AmoStage[]> {
+    return this.amoStageRepository.find({
+      where: { pipelineId },
+      order: { sort: 'ASC' },
+    });
+  }
+
+  /**
+   * CRON job для автоматичної синхронізації pipelines кожні 6 годин
+   */
+  @Cron(CronExpression.EVERY_6_HOURS)
+  async handlePipelinesSyncCron() {
+    this.logger.log('⏰ Запуск автоматичної синхронізації pipelines...');
+    try {
+      const result = await this.syncPipelines();
+      this.logger.log(`✅ Автоматична синхронізація pipelines завершена: ${result.synced} синхронізовано, ${result.errors} помилок`);
+    } catch (error) {
+      this.logger.error('❌ Помилка автоматичної синхронізації pipelines:', error.message);
+    }
+  }
+
+  /**
+   * CRON job для синхронізації leads кожні 15 хвилин (буде реалізовано)
+   */
+  @Cron(CronExpression.EVERY_30_MINUTES)
+  async handleLeadsSyncCron() {
+    this.logger.log('⏰ Запуск автоматичної синхронізації leads...');
+    // TODO: Реалізувати pull leads з AMO CRM
+    this.logger.log('ℹ️ Синхронізація leads ще не реалізована');
   }
 }
 

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -19,6 +20,9 @@ import { redisConfig } from './config/redis.config';
       envFilePath: '.env',
       load: [databaseConfig, redisConfig],
     }),
+
+    // Scheduler для CRON jobs
+    ScheduleModule.forRoot(),
 
     // TypeORM з PostgreSQL + PostGIS
     TypeOrmModule.forRootAsync({

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Param, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AmoCrmService } from './amo-crm.service';
 import { AmoWebhookDto } from './dto/amo-webhook.dto';
@@ -99,6 +99,50 @@ export class AmoCrmController {
       message: 'Lead успішно створено в AMO CRM',
       amoLeadId: leadId,
       status: 'success',
+    };
+  }
+
+  /**
+   * Синхронізація pipelines і stages з AMO CRM
+   */
+  @Post('sync-pipelines')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Синхронізація воронок та етапів з AMO CRM' })
+  @ApiResponse({ status: 200, description: 'Pipelines синхронізовано' })
+  async syncPipelines() {
+    const result = await this.amoCrmService.syncPipelines();
+    return {
+      message: 'Pipelines синхронізовано',
+      ...result,
+      status: 'success',
+    };
+  }
+
+  /**
+   * Отримати всі pipelines
+   */
+  @Get('pipelines')
+  @ApiOperation({ summary: 'Отримати список воронок з БД' })
+  @ApiResponse({ status: 200, description: 'Список воронок' })
+  async getPipelines() {
+    const pipelines = await this.amoCrmService.getPipelines();
+    return {
+      data: pipelines,
+      count: pipelines.length,
+    };
+  }
+
+  /**
+   * Отримати stages конкретної воронки
+   */
+  @Get('pipelines/:pipelineId/stages')
+  @ApiOperation({ summary: 'Отримати етапи конкретної воронки' })
+  @ApiResponse({ status: 200, description: 'Список етапів' })
+  async getStages(@Param('pipelineId') pipelineId: number) {
+    const stages = await this.amoCrmService.getStages(pipelineId);
+    return {
+      data: stages,
+      count: stages.length,
     };
   }
 }

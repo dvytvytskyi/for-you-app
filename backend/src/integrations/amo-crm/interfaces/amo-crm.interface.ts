@@ -62,3 +62,32 @@ export interface AmoWebhookPayload {
   };
 }
 
+export interface AmoPipeline {
+  id: number;
+  name: string;
+  sort: number;
+  is_main: boolean;
+  is_unsorted_on: boolean;
+  is_archive: boolean;
+  account_id: number;
+  _links?: {
+    self: {
+      href: string;
+    };
+  };
+  _embedded?: {
+    statuses?: AmoStatus[];
+  };
+}
+
+export interface AmoStatus {
+  id: number;
+  name: string;
+  sort: number;
+  is_editable: boolean;
+  pipeline_id: number;
+  color: string | null;
+  type: number;
+  account_id: number;
+}
+
