@@ -9,11 +9,13 @@ import { User } from '../database/entities/user.entity';
 import { BrokerClient } from '../database/entities/broker-client.entity';
 import { Property } from '../database/entities/property.entity';
 import { AmoCrmModule } from '../integrations/amo-crm/amo-crm.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Lead, User, BrokerClient, Property]),
     AmoCrmModule,
+    NotificationsModule,
   ],
   controllers: [LeadsController, BrokerClientsController],
   providers: [LeadsService, BrokerClientsService],

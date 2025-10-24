@@ -13,7 +13,25 @@ export class PropertiesService {
   ) {}
 
   async findAll(filters: PropertyFiltersDto): Promise<PaginatedPropertiesResponseDto> {
-    const { page = 1, limit = 10, search, type, minPrice, maxPrice, isExclusive, districts, sort, latitude, longitude, radius } = filters;
+    const { 
+      page = 1, 
+      limit = 10, 
+      search, 
+      type, 
+      minPrice, 
+      maxPrice, 
+      isExclusive, 
+      isSoldOut,
+      developerId,
+      minBuildings,
+      completionDateFrom,
+      completionDateTo,
+      districts, 
+      sort, 
+      latitude, 
+      longitude, 
+      radius 
+    } = filters;
 
     const queryBuilder = this.propertyRepository
       .createQueryBuilder('property')
@@ -53,6 +71,33 @@ export class PropertiesService {
       queryBuilder.andWhere('property.isExclusive = :isExclusive', { isExclusive });
     }
 
+    // Sold out filter
+    if (isSoldOut !== undefined) {
+      queryBuilder.andWhere('property.isSoldOut = :isSoldOut', { isSoldOut });
+    }
+
+    // Developer filter
+    if (developerId) {
+      queryBuilder.andWhere('property.developerId = :developerId', { developerId });
+    }
+
+    // Buildings count filter
+    if (minBuildings !== undefined) {
+      queryBuilder.andWhere('property.buildingsCount >= :minBuildings', { minBuildings });
+    }
+
+    // Completion date filter
+    if (completionDateFrom) {
+      queryBuilder.andWhere('property.plannedCompletionAt >= :completionDateFrom', { 
+        completionDateFrom: new Date(completionDateFrom) 
+      });
+    }
+    if (completionDateTo) {
+      queryBuilder.andWhere('property.plannedCompletionAt <= :completionDateTo', { 
+        completionDateTo: new Date(completionDateTo) 
+      });
+    }
+
     // Districts filter
     if (districts && districts.length > 0) {
       queryBuilder.andWhere('property.districts && :districts', { districts });
@@ -80,6 +125,21 @@ export class PropertiesService {
         break;
       case 'created_asc':
         queryBuilder.orderBy('property.createdAt', 'ASC');
+        break;
+      case 'popular':
+        // Сортування по кількості favorites (популярності)
+        queryBuilder
+          .leftJoin('property.favorites', 'favorites')
+          .addSelect('COUNT(favorites.id)', 'favoritesCount')
+          .groupBy('property.id')
+          .addGroupBy('developer.id')
+          .orderBy('favoritesCount', 'DESC');
+        break;
+      case 'completion_asc':
+        queryBuilder.orderBy('property.plannedCompletionAt', 'ASC', 'NULLS LAST');
+        break;
+      case 'completion_desc':
+        queryBuilder.orderBy('property.plannedCompletionAt', 'DESC', 'NULLS LAST');
         break;
       case 'created_desc':
       default:

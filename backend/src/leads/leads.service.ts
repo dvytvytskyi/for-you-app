@@ -8,6 +8,8 @@ import { CreateLeadDto } from './dto/create-lead.dto';
 import { UpdateLeadDto } from './dto/update-lead.dto';
 import { LeadFiltersDto } from './dto/lead-filters.dto';
 import { AmoCrmService } from '../integrations/amo-crm/amo-crm.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../database/entities/notification-history.entity';
 
 @Injectable()
 export class LeadsService {
@@ -21,6 +23,7 @@ export class LeadsService {
     @InjectRepository(Property)
     private readonly propertyRepository: Repository<Property>,
     private readonly amoCrmService: AmoCrmService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(createLeadDto: CreateLeadDto, userId?: string): Promise<Lead> {
@@ -80,6 +83,25 @@ export class LeadsService {
     } catch (error) {
       // Не блокуємо створення lead при помилці синхронізації
       this.logger.error(`Помилка синхронізації Lead ${savedLead.id} з AMO CRM:`, error.message);
+    }
+
+    // 🔔 Відправляємо push-сповіщення клієнту (якщо він авторизований)
+    if (userId) {
+      try {
+        await this.notificationsService.sendNotification({
+          userIds: [userId],
+          type: NotificationType.LEAD_CREATED,
+          title: 'Заявку створено ✅',
+          body: `Ваша заявка #${savedLead.id} успішно створена. Скоро з вами зв'яжеться брокер.`,
+          data: {
+            leadId: savedLead.id,
+            propertyId: propertyId || '',
+          },
+        });
+        this.logger.log(`Push-сповіщення відправлено клієнту ${userId}`);
+      } catch (pushError) {
+        this.logger.error(`Помилка відправки push-сповіщення:`, pushError.message);
+      }
     }
 
     return savedLead;
@@ -195,7 +217,44 @@ export class LeadsService {
     lead.brokerId = brokerId;
     lead.status = LeadStatus.IN_PROGRESS;
 
-    return this.leadRepository.save(lead);
+    const updatedLead = await this.leadRepository.save(lead);
+
+    // 🔔 Відправляємо push-сповіщення брокеру та клієнту
+    try {
+      const notifications: Promise<void>[] = [];
+
+      // Push брокеру
+      notifications.push(
+        this.notificationsService.sendNotification({
+          userIds: [brokerId],
+          type: NotificationType.LEAD_ASSIGNED,
+          title: 'Нова заявка в роботі 📋',
+          body: `Заявка #${leadId} призначена вам. Зв'яжіться з клієнтом.`,
+          data: { leadId },
+        }),
+      );
+
+      // Push клієнту (якщо є clientId)
+      if (updatedLead.clientId) {
+        const brokerName = `${broker.firstName} ${broker.lastName}`.trim() || 'брокер';
+        notifications.push(
+          this.notificationsService.sendNotification({
+            userIds: [updatedLead.clientId],
+            type: NotificationType.LEAD_ASSIGNED,
+            title: 'Брокер прийняв заявку ✅',
+            body: `Ваша заявка #${leadId} прийнята в роботу. Скоро з вами зв'яжеться ${brokerName}.`,
+            data: { leadId, brokerId },
+          }),
+        );
+      }
+
+      await Promise.all(notifications);
+      this.logger.log(`Push-сповіщення відправлено для Lead ${leadId}`);
+    } catch (pushError) {
+      this.logger.error(`Помилка відправки push-сповіщення:`, pushError.message);
+    }
+
+    return updatedLead;
   }
 
   async takeLead(leadId: string, brokerId: string): Promise<Lead> {

@@ -40,6 +40,10 @@ lerna-debug.log*
 .env.test.local
 .env.production.local
 
+# Firebase credentials (sensitive!)
+config/firebase-service-account.json
+config/*firebase*.json
+
 # Temp
 /tmp
 /temp

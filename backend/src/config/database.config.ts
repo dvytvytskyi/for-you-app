@@ -16,6 +16,11 @@ import { AmoUser } from '../database/entities/amo-user.entity';
 import { AmoRole } from '../database/entities/amo-role.entity';
 import { AmoContact } from '../database/entities/amo-contact.entity';
 import { AmoTask } from '../database/entities/amo-task.entity';
+import { UserDevice } from '../database/entities/user-device.entity';
+import { NotificationSettings } from '../database/entities/notification-settings.entity';
+import { NotificationHistory } from '../database/entities/notification-history.entity';
+import { SyncLog } from '../database/entities/sync-log.entity';
+import { ActivityLog } from '../database/entities/activity-log.entity';
 
 export const databaseConfig = registerAs(
   'database',
@@ -26,7 +31,7 @@ export const databaseConfig = registerAs(
     username: process.env.DB_USERNAME || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
     database: process.env.DB_DATABASE || 'for_you_real_estate',
-      entities: [User, Property, PropertyImage, PropertyAmenity, PaymentPlan, Developer, Favorite, Lead, BrokerClient, AmoToken, AmoPipeline, AmoStage, AmoUser, AmoRole, AmoContact, AmoTask], // Явно вказуємо entities для NestJS
+      entities: [User, Property, PropertyImage, PropertyAmenity, PaymentPlan, Developer, Favorite, Lead, BrokerClient, AmoToken, AmoPipeline, AmoStage, AmoUser, AmoRole, AmoContact, AmoTask, UserDevice, NotificationSettings, NotificationHistory, SyncLog, ActivityLog], // Явно вказуємо entities для NestJS
     migrations: [__dirname + '/../database/migrations/**/*{.ts,.js}'],
     synchronize: false, // ВАЖЛИВО: завжди false
     logging: process.env.NODE_ENV === 'development',

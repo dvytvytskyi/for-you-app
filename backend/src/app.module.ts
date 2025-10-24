@@ -9,6 +9,12 @@ import { AuthModule } from './auth/auth.module';
 import { PropertiesModule } from './properties/properties.module';
 import { LeadsModule } from './leads/leads.module';
 import { AmoCrmModule } from './integrations/amo-crm/amo-crm.module';
+import { FirebaseModule } from './integrations/firebase/firebase.module';
+import { MediaModule } from './integrations/media/media.module';
+import { DataSyncModule } from './integrations/data-sync/data-sync.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { ActivityLogModule } from './activity-log/activity-log.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 import { databaseConfig } from './config/database.config';
 import { redisConfig } from './config/redis.config';
 
@@ -58,6 +64,18 @@ import { redisConfig } from './config/redis.config';
 
     // Integrations
     AmoCrmModule,
+    FirebaseModule,
+    MediaModule,
+    DataSyncModule,
+
+    // Notifications
+    NotificationsModule,
+
+    // Activity Log (Global)
+    ActivityLogModule,
+
+    // Analytics
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

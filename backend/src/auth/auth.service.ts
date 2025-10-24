@@ -11,6 +11,8 @@ import * as bcrypt from 'bcrypt';
 import { User, UserRole, UserStatus } from '../database/entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ActivityLogService } from '../activity-log/activity-log.service';
+import { ActivityAction, ActivityEntity } from '../database/entities/activity-log.entity';
 
 @Injectable()
 export class AuthService {
@@ -18,6 +20,7 @@ export class AuthService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
+    private readonly activityLogService: ActivityLogService,
   ) {}
 
   async register(registerDto: RegisterDto): Promise<{ user: User; accessToken: string }> {
@@ -53,6 +56,15 @@ export class AuthService {
     });
 
     await this.userRepository.save(user);
+
+    // Логуємо реєстрацію
+    await this.activityLogService.log({
+      userId: user.id,
+      action: ActivityAction.REGISTER,
+      entityType: ActivityEntity.USER,
+      entityId: user.id,
+      description: `User registered with role ${user.role}`,
+    });
 
     // Генеруємо JWT токен
     const accessToken = this.generateToken(user);
@@ -90,6 +102,14 @@ export class AuthService {
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
+
+    // Логуємо login
+    await this.activityLogService.log({
+      userId: user.id,
+      action: ActivityAction.LOGIN,
+      entityType: ActivityEntity.SYSTEM,
+      description: `User logged in`,
+    });
 
     // Генеруємо JWT токен
     const accessToken = this.generateToken(user);

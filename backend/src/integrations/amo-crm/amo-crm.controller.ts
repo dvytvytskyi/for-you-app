@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Body, Query, Param, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Body, Query, Param, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AmoCrmService } from './amo-crm.service';
 import { AmoWebhookDto } from './dto/amo-webhook.dto';

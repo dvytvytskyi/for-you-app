@@ -798,27 +798,26 @@ export class AmoCrmService {
     if (contact) {
       // Оновити існуючий контакт
       contact.name = amoContact.name;
-      contact.firstName = amoContact.first_name || null;
-      contact.lastName = amoContact.last_name || null;
-      contact.email = email;
-      contact.phone = phone;
-      contact.responsibleUserId = amoContact.responsible_user_id || null;
-      contact.amoCreatedAt = amoContact.created_at || null;
-      contact.amoUpdatedAt = amoContact.updated_at || null;
+      if (amoContact.first_name) contact.firstName = amoContact.first_name;
+      if (amoContact.last_name) contact.lastName = amoContact.last_name;
+      if (email) contact.email = email;
+      if (phone) contact.phone = phone;
+      if (amoContact.responsible_user_id) contact.responsibleUserId = amoContact.responsible_user_id;
+      if (amoContact.created_at) contact.amoCreatedAt = amoContact.created_at;
+      if (amoContact.updated_at) contact.amoUpdatedAt = amoContact.updated_at;
     } else {
       // Створити новий контакт
-      contact = this.amoContactRepository.create({
-        id: amoContact.id,
-        name: amoContact.name,
-        firstName: amoContact.first_name || null,
-        lastName: amoContact.last_name || null,
-        email,
-        phone,
-        responsibleUserId: amoContact.responsible_user_id || null,
-        amoCreatedAt: amoContact.created_at || null,
-        amoUpdatedAt: amoContact.updated_at || null,
-        accountId: this.accountId,
-      });
+      contact = new AmoContactEntity();
+      if (amoContact.id) contact.id = amoContact.id;
+      contact.name = amoContact.name;
+      if (amoContact.first_name) contact.firstName = amoContact.first_name;
+      if (amoContact.last_name) contact.lastName = amoContact.last_name;
+      if (email) contact.email = email;
+      if (phone) contact.phone = phone;
+      if (amoContact.responsible_user_id) contact.responsibleUserId = amoContact.responsible_user_id;
+      if (amoContact.created_at) contact.amoCreatedAt = amoContact.created_at;
+      if (amoContact.updated_at) contact.amoUpdatedAt = amoContact.updated_at;
+      contact.accountId = this.accountId;
     }
 
     await this.amoContactRepository.save(contact);
@@ -1018,34 +1017,34 @@ export class AmoCrmService {
       task.taskTypeId = amoTask.task_type_id || 1;
       task.completeTill = amoTask.complete_till;
       task.isCompleted = amoTask.is_completed || false;
-      task.responsibleUserId = amoTask.responsible_user_id;
-      task.entityId = amoTask.entity_id || null;
-      task.entityType = amoTask.entity_type || null;
-      task.duration = amoTask.duration || null;
-      task.resultText = amoTask.result?.text || null;
-      task.createdBy = amoTask.created_by || null;
-      task.updatedBy = amoTask.updated_by || null;
-      task.amoCreatedAt = amoTask.created_at || null;
-      task.amoUpdatedAt = amoTask.updated_at || null;
+      if (amoTask.responsible_user_id) task.responsibleUserId = amoTask.responsible_user_id;
+      if (amoTask.entity_id) task.entityId = amoTask.entity_id;
+      if (amoTask.entity_type) task.entityType = amoTask.entity_type;
+      if (amoTask.duration) task.duration = amoTask.duration;
+      if (amoTask.result?.text) task.resultText = amoTask.result.text;
+      if (amoTask.created_by) task.createdBy = amoTask.created_by;
+      if (amoTask.updated_by) task.updatedBy = amoTask.updated_by;
+      if (amoTask.created_at) task.amoCreatedAt = amoTask.created_at;
+      if (amoTask.updated_at) task.amoUpdatedAt = amoTask.updated_at;
     } else {
       // Створити нову задачу
       task = this.amoTaskRepository.create({
-        id: amoTask.id,
         text: amoTask.text,
         taskTypeId: amoTask.task_type_id || 1,
         completeTill: amoTask.complete_till,
         isCompleted: amoTask.is_completed || false,
         responsibleUserId: amoTask.responsible_user_id,
-        entityId: amoTask.entity_id || null,
-        entityType: amoTask.entity_type || null,
-        duration: amoTask.duration || null,
-        resultText: amoTask.result?.text || null,
-        createdBy: amoTask.created_by || null,
-        updatedBy: amoTask.updated_by || null,
-        amoCreatedAt: amoTask.created_at || null,
-        amoUpdatedAt: amoTask.updated_at || null,
+        entityId: amoTask.entity_id,
+        entityType: amoTask.entity_type,
+        duration: amoTask.duration,
+        resultText: amoTask.result?.text,
+        createdBy: amoTask.created_by,
+        updatedBy: amoTask.updated_by,
+        amoCreatedAt: amoTask.created_at,
+        amoUpdatedAt: amoTask.updated_at,
         accountId: this.accountId,
       });
+      if (amoTask.id) task.id = amoTask.id; // Встановлюємо AMO CRM ID
     }
 
     await this.amoTaskRepository.save(task);
@@ -1327,17 +1326,17 @@ export class AmoCrmService {
       // Оновити існуючий lead
       lead.status = ourStatus;
       lead.guestName = amoLead.name || lead.guestName;
-      lead.responsibleUserId = amoLead.responsible_user_id || null;
+      if (amoLead.responsible_user_id) lead.responsibleUserId = amoLead.responsible_user_id;
       // Не перезаписуємо інші поля, якщо вони вже заповнені
     } else {
       // Створити новий lead
       lead = this.leadRepository.create({
-        amoLeadId: amoLead.id,
         guestName: amoLead.name || 'Lead з AMO CRM',
         status: ourStatus,
-        responsibleUserId: amoLead.responsible_user_id || null,
-        // Інші поля будуть null, оскільки в AMO CRM може не бути цих даних
+        responsibleUserId: amoLead.responsible_user_id,
+        // Інші поля будуть undefined, оскільки в AMO CRM може не бути цих даних
       });
+      if (amoLead.id) lead.amoLeadId = amoLead.id; // Встановлюємо AMO CRM ID
     }
 
     await this.leadRepository.save(lead);

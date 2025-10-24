@@ -47,16 +47,46 @@ export class PropertyFiltersDto {
   @IsBoolean()
   isExclusive?: boolean;
 
+  @ApiPropertyOptional({ description: 'Показувати продані' })
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  isSoldOut?: boolean;
+
+  @ApiPropertyOptional({ description: 'ID девелопера' })
+  @IsOptional()
+  @IsString()
+  developerId?: string;
+
+  @ApiPropertyOptional({ description: 'Мінімальна кількість будівель' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  minBuildings?: number;
+
+  @ApiPropertyOptional({ description: 'Дата завершення будівництва ВІД (YYYY-MM-DD)' })
+  @IsOptional()
+  @IsString()
+  completionDateFrom?: string;
+
+  @ApiPropertyOptional({ description: 'Дата завершення будівництва ДО (YYYY-MM-DD)' })
+  @IsOptional()
+  @IsString()
+  completionDateTo?: string;
+
   @ApiPropertyOptional({ description: 'Райони', isArray: true })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   districts?: string[];
 
-  @ApiPropertyOptional({ description: 'Сортування', enum: ['price_asc', 'price_desc', 'created_asc', 'created_desc'] })
+  @ApiPropertyOptional({ 
+    description: 'Сортування', 
+    enum: ['price_asc', 'price_desc', 'created_asc', 'created_desc', 'popular', 'completion_asc', 'completion_desc'] 
+  })
   @IsOptional()
   @IsString()
-  sort?: 'price_asc' | 'price_desc' | 'created_asc' | 'created_desc' = 'created_desc';
+  sort?: 'price_asc' | 'price_desc' | 'created_asc' | 'created_desc' | 'popular' | 'completion_asc' | 'completion_desc' = 'created_desc';
 
   @ApiPropertyOptional({ description: 'Latitude для геопошуку' })
   @IsOptional()
