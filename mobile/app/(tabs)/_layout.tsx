@@ -63,7 +63,7 @@ export default function TabsLayout() {
         }}
       />
       
-      {/* Hide client-only tabs */}
+      {/* Hide from tabs but keep accessible */}
       <Tabs.Screen
         name="map"
         options={{
@@ -74,7 +74,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          href: null,
+          href: null, // Hide from tab bar but keep accessible via navigation
         }}
       />
     </Tabs>

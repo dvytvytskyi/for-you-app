@@ -1,11 +1,12 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Header } from '@/components/ui';
 
 export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <Header title="Profile" />
       <View style={styles.content}>
-        <Text style={styles.title}>Profile</Text>
         <Text style={styles.subtitle}>Your account settings</Text>
       </View>
     </SafeAreaView>
@@ -21,7 +22,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
   },
   title: {
     fontSize: 32,

@@ -3,6 +3,9 @@ export { default as Input } from './Input';
 export { default as Dropdown } from './Dropdown';
 export { default as Toggle } from './Toggle';
 export { default as Logo } from './Logo';
+export { default as Header } from './Header';
+export { default as SearchBar } from './SearchBar';
+export { default as PropertyTypeFilter } from './PropertyTypeFilter';
 
 export type { DropdownOption } from './Dropdown';
 export type { ButtonVariant } from './Button';

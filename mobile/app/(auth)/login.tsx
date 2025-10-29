@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   },
   topSection: {
     backgroundColor: '#010312',
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
     paddingTop: 20,
     paddingBottom: 20,
   },
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   formContainer: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
     gap: 12,
   },
   forgotPasswordContainer: {
