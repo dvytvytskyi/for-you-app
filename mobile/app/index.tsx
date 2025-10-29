@@ -6,8 +6,9 @@ export default function Index() {
   // TODO: Check if user is authenticated
   // const { isAuthenticated, isLoading } = useAuth();
 
-  // For now, redirect to intro
-  return <Redirect href="/(auth)/intro" />;
+  // For now, redirect to tabs for testing
+  // Change to /(auth)/intro when ready
+  return <Redirect href="/(tabs)/home" />;
 
   // Loading state
   // if (isLoading) {

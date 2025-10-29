@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { TextInput, View, Text, Pressable, StyleSheet } from 'react-native';
+import React, { useState, forwardRef } from 'react';
+import { TextInput, View, Text, Pressable, StyleSheet, ReturnKeyTypeOptions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface InputProps {
@@ -11,9 +11,12 @@ interface InputProps {
   disabled?: boolean;
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   fullWidth?: boolean;
+  onSubmitEditing?: () => void;
+  returnKeyType?: ReturnKeyTypeOptions;
+  blurOnSubmit?: boolean;
 }
 
-export default function Input({
+const Input = forwardRef<TextInput, InputProps>(({
   placeholder,
   value,
   onChangeText,
@@ -22,7 +25,10 @@ export default function Input({
   disabled = false,
   autoCapitalize = 'none',
   fullWidth = false,
-}: InputProps) {
+  onSubmitEditing,
+  returnKeyType = 'next',
+  blurOnSubmit = false,
+}, ref) => {
   const [showPassword, setShowPassword] = useState(false);
 
   const getKeyboardType = () => {
@@ -41,6 +47,7 @@ export default function Input({
     <View style={[styles.container, fullWidth ? styles.fullWidth : styles.fixedWidth]}>
       <View style={[styles.inputContainer, error && styles.inputError]}>
         <TextInput
+          ref={ref}
           style={styles.input}
           placeholder={placeholder}
           placeholderTextColor="#94A3B8"
@@ -50,6 +57,9 @@ export default function Input({
           keyboardType={getKeyboardType()}
           autoCapitalize={autoCapitalize}
           editable={!disabled}
+          onSubmitEditing={onSubmitEditing}
+          returnKeyType={returnKeyType}
+          blurOnSubmit={blurOnSubmit}
         />
         
         {isPassword && (
@@ -71,7 +81,11 @@ export default function Input({
       )}
     </View>
   );
-}
+});
+
+Input.displayName = 'Input';
+
+export default Input;
 
 const styles = StyleSheet.create({
   container: {
@@ -84,9 +98,9 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   inputContainer: {
-    height: 48,
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+    height: 56,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
     backgroundColor: '#f4f4f4',
     borderRadius: 6,
     flexDirection: 'row',

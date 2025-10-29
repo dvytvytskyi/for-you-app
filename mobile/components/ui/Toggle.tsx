@@ -7,6 +7,7 @@ interface ToggleProps {
   onValueChange: (value: boolean) => void;
   disabled?: boolean;
   fullWidth?: boolean;
+  variant?: 'dark' | 'light';
 }
 
 export default function Toggle({
@@ -15,18 +16,21 @@ export default function Toggle({
   onValueChange,
   disabled = false,
   fullWidth = false,
+  variant = 'dark',
 }: ToggleProps) {
+  const textColor = variant === 'dark' ? 'rgba(255, 255, 255, 0.7)' : '#666666';
+  
   return (
     <View
       style={{
-        height: 32,
+        height: 40,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         width: fullWidth ? '100%' : 312,
       }}
     >
-      <Text style={{ fontSize: 16, color: '#FFFFFF', fontWeight: '500' }}>
+      <Text style={{ fontSize: 16, color: textColor, fontWeight: '400' }}>
         {label}
       </Text>
 
@@ -34,22 +38,23 @@ export default function Toggle({
         onPress={() => !disabled && onValueChange(!value)}
         disabled={disabled}
         style={{
-          width: 48,
-          height: 28,
-          borderRadius: 14,
-          backgroundColor: value ? '#FFFFFF' : '#2A2A2A',
+          width: 51,
+          height: 31,
+          borderRadius: 16,
+          backgroundColor: value ? '#010312' : '#4A4A4A',
           justifyContent: 'center',
           opacity: disabled ? 0.5 : 1,
+          padding: 2,
         }}
       >
         <View
           style={{
-            width: 20,
-            height: 20,
-            borderRadius: 10,
-            backgroundColor: '#010312',
-            marginLeft: value ? 'auto' : 4,
-            marginRight: value ? 4 : 'auto',
+            width: 27,
+            height: 27,
+            borderRadius: 14,
+            backgroundColor: '#FFFFFF',
+            marginLeft: value ? 'auto' : 0,
+            marginRight: value ? 0 : 'auto',
           }}
         />
       </Pressable>
