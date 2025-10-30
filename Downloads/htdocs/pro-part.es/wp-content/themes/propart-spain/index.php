@@ -14,6 +14,7 @@
 
 get_header();
 ?>
+<script src="<?php echo get_template_directory_uri(); ?>/js/simple-likes.js"></script>
 
 <main class="mainPage">
     <nav id="bottom-navbar" class="bottom-nav">
@@ -56,6 +57,13 @@ get_header();
                     <a href="">
                         <button class="editButton" id="mainPageBtnLinkMap"></button>
                     </a>
+                    <button class="aiButton" id="mainPageBtnAI" aria-label="AI Search">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" stroke="#313131" stroke-width="1.5"/>
+                            <path d="M18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" stroke="#313131" stroke-width="1.5"/>
+                            <path d="M16.894 20.567L16.5 22l-.394-1.433a2.25 2.25 0 00-1.423-1.423L13.25 19l1.433-.394a2.25 2.25 0 001.423-1.423L16.5 15.75l.394 1.433a2.25 2.25 0 001.423 1.423L19.75 19l-1.433.394a2.25 2.25 0 00-1.423 1.423z" stroke="#313131" stroke-width="1.5"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
         </div>
@@ -2040,6 +2048,13 @@ get_header();
         fixedMenue.innerHTML = `
   
   <a class="button mapButtonWhite" href="${language && "/" + language}/map"></a>
+  <button class="button aiButtonWhite" id="simple-ai-btn-home">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" stroke="white" stroke-width="1.5"/>
+      <path d="M18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" stroke="white" stroke-width="1.5"/>
+      <path d="M16.894 20.567L16.5 22l-.394-1.433a2.25 2.25 0 00-1.423-1.423L13.25 19l1.433-.394a2.25 2.25 0 001.423-1.423L16.5 15.75l.394 1.433a2.25 2.25 0 001.423 1.423L19.75 19l-1.433.394a2.25 2.25 0 00-1.423 1.423z" stroke="white" stroke-width="1.5"/>
+    </svg>
+  </button>
   <button class="button callUsButtonWhite" onclick="window.location.href='tel:+34695113333';"></button>
 <button class="button filterButtonWhite" id="headerOpenFilterBtn"></button>
 `;
@@ -5740,6 +5755,11 @@ get_header();
 
                     // Update localStorage
                     localStorage.setItem('favoriteProjects', JSON.stringify(savedOffPlanProjects));
+                    
+                    // Dispatch event to update badge
+                    if (window.dispatchLikesUpdateEvent) {
+                        window.dispatchLikesUpdateEvent();
+                    }
                 });
 
                 swiperWrapper.appendChild(slide);

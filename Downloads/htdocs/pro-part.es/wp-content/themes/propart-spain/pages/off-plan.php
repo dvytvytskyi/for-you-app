@@ -1,5 +1,44 @@
 <?php get_header(); ?>
 <script src="<?php echo get_template_directory_uri(); ?>/js/simple-likes.js"></script>
+<style>
+/* Skeleton loader styles */
+.image-skeleton {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+    z-index: 1;
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.frame-child {
+    opacity: 0;
+    transition: opacity 0.3s ease-in;
+    position: relative;
+    z-index: 2;
+}
+
+.frame-child.loaded {
+    opacity: 1;
+}
+
+.swiper-slide {
+    position: relative;
+    background: #f5f5f5;
+}
+</style>
 
 <main class="newbuilding">
     <nav id="bottom-navbar" class="bottom-nav">
@@ -4147,8 +4186,7 @@
 
         async function fetchOffPlanProjects(retryCount = 0) {
             const queryString = window.location.search.substring(1); // Use search instead of hash
-            if (queryString) {
-                try {
+            try {
                     // Show loading state
                     const projectsContainer = document.getElementById("projectsContainer");
                     if (projectsContainer) {
@@ -4172,6 +4210,7 @@
                     let params = new URLSearchParams({
                         perPage: "12", // Changed to match your response structure
                         curPage: apiPage.toString(), // Use 0-based page for API
+                        property_status: "New building", // Filter for off-plan projects (capital N!)
                     });
 
                     if (urlParams.has("propertyType")) {
@@ -4278,8 +4317,9 @@
                     }
 
                     // Debug: Log the URL being fetched
-                    const fullUrl = `${baseUrl}?${params.toString()}&property_status=new+building`;
-                    console.log('Attempting to fetch:', fullUrl);
+                    const fullUrl = `${baseUrl}?${params.toString()}`;
+                    console.log('🚀 Fetching off-plan projects from:', fullUrl);
+                    console.log('📋 Request params:', Object.fromEntries(params));
 
                     let response;
                     try {
@@ -4327,6 +4367,9 @@
                     }
 
                     const data = await response.json();
+                    console.log('✅ Data received:', data);
+                    console.log(`📊 Total projects: ${data.itemsTotal}, Items on page: ${data.items?.length || 0}`);
+                    
                     // populateSearchDropdown();
                     renderFiltersFromQuery();
                     updateFilterButtonStateOffPlan();
@@ -4391,9 +4434,6 @@
                         }, 3000);
                     }
                 }
-            } else {
-                console.log("No query string found in the URL");
-            }
         }
         fetchOffPlanProjects();
         window.addEventListener("popstate", fetchOffPlanProjects);
@@ -4464,8 +4504,8 @@
             card.className = "card";
             card.addEventListener('click', function(event) {
                 const clickedElement = event.target;
-                // Assuming your new-building page uses 'projectid'
-                card.href = `${language && "/" + language}/new-building?projectid=${id}`;
+                // Link to new-building detail page with 'project' parameter
+                card.href = `${language && "/" + language}/new-building?project=${id}`;
             });
 
             // Use simple like system if available
@@ -4485,7 +4525,8 @@
           <div class="swiper-wrapper">
             ${(images && Array.isArray(images) ? images.slice(0, 3) : []).map(image => `
               <div class="swiper-slide">
-                <img class="frame-child" src="${image.image_url}" alt="${development_name}" />
+                <div class="image-skeleton"></div>
+                <img class="frame-child" src="${image.image_url}" alt="${development_name}" onload="this.classList.add('loaded'); this.previousElementSibling.style.display='none';" onerror="this.previousElementSibling.style.display='none';" />
               </div>`).join('')}
           </div>
           <button class="card-buttons-swiper-btn-left">
@@ -4572,6 +4613,11 @@
                     }
 
                     localStorage.setItem('favoriteProjects', JSON.stringify(savedProjects));
+                    
+                    // Dispatch event to update badge
+                    if (window.dispatchLikesUpdateEvent) {
+                        window.dispatchLikesUpdateEvent();
+                    }
                 }
             });
 
@@ -4619,9 +4665,9 @@
                 let propertyStatus;
 
                 if (currentPath.includes('new-building') || currentPath.includes('new-buildings') || currentPath.includes('off-plan')) {
-                    propertyStatus = ["new building", "rent"];
+                    propertyStatus = ["New building", "Rent"];
                 } else {
-                    propertyStatus = ["secondary"];
+                    propertyStatus = ["Secondary"];
                 }
 
                 console.log("Property status:", propertyStatus);
@@ -8330,9 +8376,9 @@
                 let propertyStatus;
 
                 if (currentPath.includes('new-building') || currentPath.includes('new-buildings') || currentPath.includes('off-plan')) {
-                    propertyStatus = ["new building", "rent"];
+                    propertyStatus = ["New building", "Rent"];
                 } else {
-                    propertyStatus = ["secondary"];
+                    propertyStatus = ["Secondary"];
                 }
 
                 const params = new URLSearchParams({
@@ -8341,28 +8387,7 @@
                 });
 
                 // Fetch new data from the API on each input
-                searchInput.addEventListener('input', function() {
-            const queryValue = searchInput.value;
-
-            if (queryValue.length > 0) {
-                clearSearchBtn.style.display = 'block';
-
-                const currentPath = window.location.pathname;
-                let propertyStatus;
-
-                if (currentPath.includes('new-building') || currentPath.includes('new-buildings') || currentPath.includes('off-plan')) {
-                    propertyStatus = ["new building", "rent"];
-                } else {
-                    propertyStatus = ["secondary"];
-                }
-
-                const params = new URLSearchParams({
-                    query: queryValue,
-                    property_status: propertyStatus
-                });
-
-                // Fetch new data from the API on each input
-                let data = fetch(`${apiURL}?${params.toString()}`)
+                fetch(`${apiURL}?${params.toString()}`)
                     .then(response => {
                         if (!response.ok) {
                             throw new Error('Network response was not ok');
@@ -8375,20 +8400,6 @@
                     .catch(error => {
                         console.error('There was a problem with the fetch operation:', error);
                     });
-
-                if (data.length != 0) {
-                    data.forEach(item => {
-                        const item = document.createElement("div");
-                        item.id = `dropdownItem-${project._id}`; // Use project._id
-                        item.className = "filterPropertiesWrapper__dropDown_item input";
-                        item.textContent = project.development_name || "N/A"; // Use development_name
-
-                        item.addEventListener("click", function() {
-                            inputField.value = project.development_name; // Use development_name
-                        })
-                        dropdownList.appendChild(item);
-                    })
-                }
             } else {
                 dropdownList.innerHTML = ''; // Clear results if the input is empty
                 clearSearchBtn.style.display = 'none';

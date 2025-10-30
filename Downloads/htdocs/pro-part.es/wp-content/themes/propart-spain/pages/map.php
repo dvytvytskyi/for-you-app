@@ -3986,12 +3986,13 @@
 
 			// Фільтр "Off plan" / "Secondary" / "Rent"
 			if (visible === 'Off plan') {
-				requestBody.property_status = 'new building';
+				requestBody.property_status = 'New building';
 			} else if (visible === 'Secondary') {
-				requestBody.property_status = 'secondary';
+				requestBody.property_status = 'Secondary';
 			} else if (visible === 'Rent') {
-				requestBody.property_status = 'rent';
 				const rentType = queryParams.get("rent_type") || "long";
+				// Backend expects specific property_status for rent types
+				requestBody.property_status = rentType === 'short' ? 'Rent Short' : 'Rent Long';
 				requestBody.rent_type = rentType;
 			}
 
@@ -4631,9 +4632,9 @@ let allProjectsGeoJSON = null;
 							if (visible === 'Rent') {
 								redirectUrl = `/rent?project=${projectId}&rent_type=${rentType}`;
 							} else if (visible === 'Secondary') {
-								redirectUrl = `/secondary?projectid=${projectId}`;
+								redirectUrl = `/secondary?project=${projectId}`;
 							} else {
-								redirectUrl = `/new-building?projectid=${projectId}`;
+								redirectUrl = `/new-building?project=${projectId}`;
 							}
 							window.open(redirectUrl, '_blank');
 						});
@@ -4764,9 +4765,9 @@ let allProjectsGeoJSON = null;
 					 if (visible === 'Rent') {
 						 redirectUrl = `/rent?project=${projectId}&rent_type=${rentType}`;
 					 } else if (visible === 'Secondary') {
-						 redirectUrl = `/secondary?projectid=${projectId}`;
+						 redirectUrl = `/secondary?project=${projectId}`;
 					 } else {
-						 redirectUrl = `/new-building?projectid=${projectId}`;
+						 redirectUrl = `/new-building?project=${projectId}`;
 					 }
 					 window.open(redirectUrl, '_blank');
 				});
@@ -5060,7 +5061,7 @@ function createProjectCard(props) {
     // Додаємо обробник кліку
     card.addEventListener('click', () => {
         const visible = new URLSearchParams(window.location.search).get('visible') || 'Off plan';
-        const redirectUrl = `/${visible !== 'Secondary' ? `new-building?projectid=${projectId}` : `secondary?projectid=${projectId}`}`;
+        const redirectUrl = `/${visible !== 'Secondary' ? `new-building?project=${projectId}` : `secondary?project=${projectId}`}`;
         window.open(redirectUrl, '_blank');
     });
     

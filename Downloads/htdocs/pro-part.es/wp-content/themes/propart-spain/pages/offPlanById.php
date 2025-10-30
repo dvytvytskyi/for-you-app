@@ -139,7 +139,7 @@ get_header();
               <div class="project-desc-details">
                 <div class="project-desc-block">
                   <p class="project-desc-text">Rooms</p>
-                  <p class="project-desc-title" id="projectRooms">3</p>
+                  <p class="project-desc-title" id="projectRooms"></p>
                 </div>
               </div>
             </div>
@@ -3884,10 +3884,11 @@ function toggleProjectFavorite(project, storageKey) {
 function fetchProject() {
   const url = new URL(window.location.href);
   const urlParams = new URLSearchParams(url.search);
-  const projectid = urlParams.get('projectid'); // Assumes the URL parameter is still 'project'
+  const projectId = urlParams.get('project'); // Get 'project' parameter from URL
 
-  if (projectid) {
-    fetch(`https://xf9m-jkaj-lcsq.p7.xano.io/api:v5maUE6u/properties/${projectid}`)
+  if (projectId) {
+    console.log('🚀 Fetching project details for ID:', projectId);
+    fetch(`https://xf9m-jkaj-lcsq.p7.xano.io/api:v5maUE6u/properties/${projectId}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error("Network response was not ok");
@@ -3895,6 +3896,9 @@ function fetchProject() {
         return response.json();
       })
       .then((data) => {
+        console.log('✅ Project data received:', data);
+        console.log('📊 Available fields:', Object.keys(data));
+        
         // --- 1. Handle Coordinates for Map ---
         if (data.latitude && data.longitude) {
           const coordinates = {
@@ -3947,9 +3951,32 @@ function fetchProject() {
         const projectPaymentPlans = document.getElementById("projectPaymentPlans");
 
         // --- 4. Populate Page with Property Data ---
-        if (projectName) projectName.textContent = data.development_name || data.subtype || 'N/A';
-        if (projectLocation) projectLocation.textContent = `${data.town}, ${data.province}`;
-        if (projectPrice) projectPrice.textContent = `€ ${data.price.toLocaleString("en-US").replace(/,/g, " ")}`;
+        console.log('🏗️ Populating page with data...');
+        console.log('  - development_name:', data.development_name);
+        console.log('  - subtype:', data.subtype);
+        console.log('  - price:', data.price);
+        console.log('  - town:', data.town);
+        console.log('  - province:', data.province);
+        
+        if (projectName) {
+            const nameToUse = data.development_name || data.subtype || 'N/A';
+            console.log('  - Setting name to:', nameToUse);
+            projectName.textContent = nameToUse;
+        } else {
+            console.error('  ❌ projectName element not found!');
+        }
+        
+        if (projectLocation) {
+            projectLocation.textContent = `${data.town || 'Unknown'}, ${data.province || 'Unknown'}`;
+        } else {
+            console.error('  ❌ projectLocation element not found!');
+        }
+        
+        if (projectPrice && data.price) {
+            projectPrice.textContent = `€ ${data.price.toLocaleString("en-US").replace(/,/g, " ")}`;
+        } else {
+            console.error('  ❌ projectPrice element not found or price is missing!');
+        }
         
         if (projectPriceForM && data.price && data.built_area) {
             projectPriceForM.textContent = `€ ${
@@ -3957,13 +3984,29 @@ function fetchProject() {
             }`;
         }
 
+        // Debug logs for each field
+        console.log('🔍 Mapping fields:');
+        console.log('  - Type:', data.type);
+        console.log('  - Beds:', data.beds);
+        console.log('  - Levels:', data.levels);
+        console.log('  - Built area:', data.built_area);
+        console.log('  - Completion date:', data.completion_date);
+        
         if (projectType) projectType.textContent = data.type || 'N/A';
         if (projectRooms) projectRooms.textContent = data.beds || 'N/A';
         if (projectTotalFloors) projectTotalFloors.textContent = data.levels || 'N/A';
         if (projectFloor) projectFloor.textContent = data.levels || 'N/A'; // Using total levels as there's no specific floor number
-        if (projectSize) projectSize.textContent = `${data.built_area.toLocaleString("en-US").replace(/,/g, " ")} m²`;
+        if (projectSize && data.built_area) {
+            projectSize.textContent = `${data.built_area.toLocaleString("en-US").replace(/,/g, " ")} m²`;
+        } else {
+            projectSize.textContent = 'N/A';
+        }
         if (projectDeveloper) projectDeveloper.textContent = 'N/A'; // Field does not exist in the new API
-        if (projectHandover && data.completion_date) projectHandover.textContent = new Date(data.completion_date).toLocaleDateString(); // Simple date format
+        if (projectHandover && data.completion_date) {
+            projectHandover.textContent = new Date(data.completion_date).toLocaleDateString(); // Simple date format
+        } else {
+            projectHandover.textContent = 'N/A';
+        }
         if (projectDescr) projectDescr.textContent = data.description;
 
         // --- 5. Handle Image Gallery ---

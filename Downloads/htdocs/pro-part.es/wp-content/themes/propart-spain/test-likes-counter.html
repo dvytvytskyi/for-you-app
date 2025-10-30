@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Likes Counter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .likeButton {
+            position: relative;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 1px solid #ccc;
+            background: no-repeat center url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>');
+            cursor: pointer;
+        }
+        
+        .like-count-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #ff4444;
+            color: white;
+            border-radius: 10px;
+            min-width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 0 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .property-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .property-info h3 {
+            margin: 0 0 10px 0;
+        }
+        
+        .heart-icon {
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+        }
+        
+        .controls {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f0f0f0;
+            border-radius: 8px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #2196F3;
+            color: white;
+        }
+        
+        button:hover {
+            background: #1976D2;
+        }
+        
+        .stats {
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Likes Counter System</h1>
+    
+    <div class="header">
+        <h2>Header Simulation</h2>
+        <button class="likeButton" onclick="window.location.href='#liked'"></button>
+    </div>
+    
+    <div class="stats">
+        <h3>Current Stats</h3>
+        <p>Total Liked Properties: <strong id="stats-count">0</strong></p>
+        <p>LocalStorage Key: <code>likedPropertyIds</code></p>
+    </div>
+    
+    <div class="controls">
+        <h3>Test Controls</h3>
+        <button onclick="testAddLike()">➕ Add Random Like</button>
+        <button onclick="testRemoveLike()">➖ Remove Last Like</button>
+        <button onclick="testClearAll()">🗑️ Clear All Likes</button>
+        <button onclick="showLocalStorage()">📋 Show localStorage</button>
+        <button onclick="updateStats()">🔄 Update Stats</button>
+    </div>
+    
+    <h2>Test Properties</h2>
+    <div id="properties-container">
+        <div class="property-card" data-property-id="1">
+            <div class="property-info">
+                <h3>Luxury Villa in Marbella</h3>
+                <p>Price: €1,500,000</p>
+            </div>
+            <svg class="heart-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+        </div>
+        
+        <div class="property-card" data-property-id="2">
+            <div class="property-info">
+                <h3>Modern Apartment in Estepona</h3>
+                <p>Price: €450,000</p>
+            </div>
+            <svg class="heart-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+        </div>
+        
+        <div class="property-card" data-property-id="3">
+            <div class="property-info">
+                <h3>Penthouse in Puerto Banús</h3>
+                <p>Price: €2,800,000</p>
+            </div>
+            <svg class="heart-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+        </div>
+        
+        <div class="property-card" data-property-id="4">
+            <div class="property-info">
+                <h3>Beachfront Villa in Sotogrande</h3>
+                <p>Price: €5,200,000</p>
+            </div>
+            <svg class="heart-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+        </div>
+        
+        <div class="property-card" data-property-id="5">
+            <div class="property-info">
+                <h3>Cozy Studio in Fuengirola</h3>
+                <p>Price: €180,000</p>
+            </div>
+            <svg class="heart-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+        </div>
+    </div>
+    
+    <script src="js/simple-likes.js"></script>
+    <script src="js/likes-counter-helper.js"></script>
+    
+    <script>
+        // Test functions
+        function testAddLike() {
+            const randomId = Math.floor(Math.random() * 5) + 1;
+            if (window.addToLikes) {
+                window.addToLikes(randomId);
+                console.log('✅ Added like for property:', randomId);
+                updateStats();
+            } else {
+                console.error('❌ addToLikes function not found');
+            }
+        }
+        
+        function testRemoveLike() {
+            const likedIds = JSON.parse(localStorage.getItem('likedPropertyIds') || '[]');
+            if (likedIds.length > 0) {
+                const lastId = likedIds[likedIds.length - 1];
+                if (window.removeFromLikes) {
+                    window.removeFromLikes(lastId);
+                    console.log('✅ Removed like for property:', lastId);
+                    updateStats();
+                }
+            } else {
+                alert('No liked properties to remove!');
+            }
+        }
+        
+        function testClearAll() {
+            if (confirm('Clear all likes?')) {
+                if (window.clearAllLikes) {
+                    window.clearAllLikes();
+                    console.log('✅ Cleared all likes');
+                    updateStats();
+                }
+            }
+        }
+        
+        function showLocalStorage() {
+            const likedIds = JSON.parse(localStorage.getItem('likedPropertyIds') || '[]');
+            alert('Liked Property IDs:\n' + JSON.stringify(likedIds, null, 2));
+        }
+        
+        function updateStats() {
+            const count = window.getLikedCount ? window.getLikedCount() : 0;
+            document.getElementById('stats-count').textContent = count;
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Test page loaded');
+            console.log('Functions available:', {
+                addToLikes: !!window.addToLikes,
+                removeFromLikes: !!window.removeFromLikes,
+                toggleLike: !!window.toggleLike,
+                isLiked: !!window.isLiked,
+                getLikedCount: !!window.getLikedCount,
+                clearAllLikes: !!window.clearAllLikes,
+                dispatchLikesUpdateEvent: !!window.dispatchLikesUpdateEvent
+            });
+            
+            updateStats();
+            
+            // Setup heart click handlers
+            document.querySelectorAll('.heart-icon').forEach(heart => {
+                const card = heart.closest('[data-property-id]');
+                if (card) {
+                    const propertyId = parseInt(card.getAttribute('data-property-id'));
+                    
+                    // Set initial state
+                    if (window.isLiked && window.isLiked(propertyId)) {
+                        heart.setAttribute('fill', '#313131');
+                    }
+                    
+                    heart.addEventListener('click', function() {
+                        if (window.toggleLike) {
+                            const isLiked = window.toggleLike(propertyId);
+                            this.setAttribute('fill', isLiked ? '#313131' : 'none');
+                            updateStats();
+                        }
+                    });
+                }
+            });
+            
+            // Listen for likes updates
+            document.addEventListener('likesUpdated', function() {
+                console.log('📢 likesUpdated event fired!');
+                updateStats();
+            });
+        });
+        
+        // Update stats every second (to catch badge updates)
+        setInterval(updateStats, 1000);
+    </script>
+</body>
+</html>
+

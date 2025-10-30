@@ -4253,8 +4253,30 @@ hr {
     background: transparent;
 }
 
-.likeButton {
+.likeButton,
+.settingsButton {
     background: no-repeat center url(./icons/shared/icon-heart.svg);
+    position: relative;
+}
+
+.like-count-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #ff4444;
+    color: white;
+    border-radius: 10px;
+    min-width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 0 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    z-index: 1;
 }
 
 .shareButton {
@@ -5651,11 +5673,12 @@ hr {
     position: relative;
     margin-bottom: 4px;
     cursor: pointer;
+    transition: border-color 0.3s ease, opacity 0.3s ease;
 }
 
 .dropdownTrigger:hover {
-    border: 0.6px solid #cccbca;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    border-color: #cccbca;
+    opacity: 0.9;
 }
 
 .dropdownTrigger.open {
@@ -5937,7 +5960,8 @@ li .custom-checkbox label {
 }
 
 .searchButton,
-.editButton {
+.editButton,
+.aiButton {
     width: 48px;
     height: 48px;
     border-radius: 40px;
@@ -5951,6 +5975,11 @@ li .custom-checkbox label {
     color: #ececec;
     font-size: 14px;
     font-weight: 400;
+    transition: opacity 0.3s ease;
+}
+
+.searchButton:hover {
+    opacity: 0.85;
 }
 
 .searchButtonText {
@@ -5961,6 +5990,25 @@ li .custom-checkbox label {
     border: 0.6px solid #b6b4b3;
     background: no-repeat center url(./icons/shared/icon-pen.svg);
 	backdrop-filter: blur(5px);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.editButton:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-color: #9a9999;
+}
+
+.aiButton {
+    border: 0.6px solid #b6b4b3;
+    background: transparent;
+    backdrop-filter: blur(5px);
+    position: relative;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.aiButton:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-color: #9a9999;
 }
 
 .infoBlock {
@@ -6674,7 +6722,8 @@ li .custom-checkbox label {
         display: inline;
     }
 
-    .editButton {
+    .editButton,
+    .aiButton {
      backdrop-filter: blur(5px);
     }
 
@@ -11228,8 +11277,11 @@ p {
 }
 
 .wrapperMainPageVisibleProjects__btn:hover {
-    background-color: rgba(255, 255, 255, 0.20); /* Change background color on hover */
-    color: white; /* Change text color on hover */
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.wrapperMainPageVisibleProjects__btn.active {
+    background: #313131;
 }
 
 @media (max-width: 1409px) {
@@ -11250,16 +11302,6 @@ p {
         backdrop-filter: blur(5px);
         background: rgba(0, 0, 0, 0.10);
 	}
-}
-
-.wrapperMainPageVisibleProjects__btn.active {
-
-    font-family: Onest;
-    font-size: 14px;
-    font-style: normal;
-    font-weight: 400;
-    line-height: normal;
-    background: #313131;
 }
 .filterPropertiesWrapper__dropDown_subheader {
     padding-left: 15px;

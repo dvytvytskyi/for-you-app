@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Likes System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .debug-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #2196F3;
+            color: white;
+        }
+        button:hover {
+            background: #1976D2;
+        }
+        pre {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            overflow: auto;
+        }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .info { color: #2196F3; }
+    </style>
+</head>
+<body>
+    <h1>🐛 Debug Likes System</h1>
+    
+    <div class="debug-section">
+        <h2>LocalStorage Contents</h2>
+        <button onclick="showLocalStorage()">Show localStorage</button>
+        <button onclick="clearOldSystem()">Clear Old System Keys</button>
+        <button onclick="clearNewSystem()">Clear New System Keys</button>
+        <pre id="localStorage-content">Click button to show localStorage</pre>
+    </div>
+    
+    <div class="debug-section">
+        <h2>API Test</h2>
+        <input type="number" id="property-id" placeholder="Property ID" value="1">
+        <button onclick="testApiLoad()">Load Property from API</button>
+        <pre id="api-result">Enter property ID and click Load</pre>
+    </div>
+    
+    <div class="debug-section">
+        <h2>Like System Test</h2>
+        <button onclick="testAddLike()">Add Like (ID 1)</button>
+        <button onclick="testRemoveLike()">Remove Like (ID 1)</button>
+        <button onclick="testLoadLikedProperties()">Load Liked Properties</button>
+        <pre id="like-test-result">Click buttons to test</pre>
+    </div>
+    
+    <div class="debug-section">
+        <h2>Loaded Properties</h2>
+        <div id="properties-container" style="display: flex; flex-wrap: wrap; gap: 20px;">
+            <!-- Properties will be rendered here -->
+        </div>
+    </div>
+    
+    <script src="js/simple-likes.js"></script>
+    <script src="js/likes-counter-helper.js"></script>
+    
+    <script>
+        function showLocalStorage() {
+            const output = document.getElementById('localStorage-content');
+            const data = {
+                'Old System': {
+                    favoriteProjects: JSON.parse(localStorage.getItem('favoriteProjects') || '[]'),
+                    favoriteSecondaryProjects: JSON.parse(localStorage.getItem('favoriteSecondaryProjects') || '[]')
+                },
+                'New System': {
+                    likedPropertyIds: JSON.parse(localStorage.getItem('likedPropertyIds') || '[]')
+                }
+            };
+            output.textContent = JSON.stringify(data, null, 2);
+        }
+        
+        function clearOldSystem() {
+            localStorage.removeItem('favoriteProjects');
+            localStorage.removeItem('favoriteSecondaryProjects');
+            showLocalStorage();
+            console.log('Old system cleared');
+        }
+        
+        function clearNewSystem() {
+            localStorage.removeItem('likedPropertyIds');
+            showLocalStorage();
+            console.log('New system cleared');
+        }
+        
+        async function testApiLoad() {
+            const propertyId = document.getElementById('property-id').value;
+            const output = document.getElementById('api-result');
+            output.textContent = 'Loading...';
+            
+            try {
+                const response = await fetch(`https://xf9m-jkaj-lcsq.p7.xano.io/api:v5maUE6u/properties/${propertyId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    output.innerHTML = `<span class="success">✅ Success!</span>\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    output.innerHTML = `<span class="error">❌ Error: ${response.status} ${response.statusText}</span>`;
+                }
+            } catch (error) {
+                output.innerHTML = `<span class="error">❌ Error: ${error.message}</span>`;
+            }
+        }
+        
+        function testAddLike() {
+            const output = document.getElementById('like-test-result');
+            if (window.addToLikes) {
+                window.addToLikes(1);
+                output.innerHTML = '<span class="success">✅ Like added for property ID 1</span>';
+                showLocalStorage();
+            } else {
+                output.innerHTML = '<span class="error">❌ addToLikes function not found</span>';
+            }
+        }
+        
+        function testRemoveLike() {
+            const output = document.getElementById('like-test-result');
+            if (window.removeFromLikes) {
+                window.removeFromLikes(1);
+                output.innerHTML = '<span class="success">✅ Like removed for property ID 1</span>';
+                showLocalStorage();
+            } else {
+                output.innerHTML = '<span class="error">❌ removeFromLikes function not found</span>';
+            }
+        }
+        
+        async function testLoadLikedProperties() {
+            const output = document.getElementById('like-test-result');
+            const container = document.getElementById('properties-container');
+            
+            output.textContent = 'Loading liked properties...';
+            container.innerHTML = '<p style="width: 100%;">Loading...</p>';
+            
+            const likedIds = JSON.parse(localStorage.getItem('likedPropertyIds') || '[]');
+            
+            if (likedIds.length === 0) {
+                output.innerHTML = '<span class="info">ℹ️ No liked properties found</span>';
+                container.innerHTML = '<p style="width: 100%;">No liked properties</p>';
+                return;
+            }
+            
+            output.innerHTML = `<span class="info">ℹ️ Loading ${likedIds.length} properties...</span>`;
+            
+            try {
+                const properties = [];
+                
+                for (let id of likedIds) {
+                    try {
+                        const response = await fetch(`https://xf9m-jkaj-lcsq.p7.xano.io/api:v5maUE6u/properties/${id}`);
+                        if (response.ok) {
+                            const property = await response.json();
+                            properties.push(property);
+                        }
+                    } catch (error) {
+                        console.error(`Error loading property ${id}:`, error);
+                    }
+                }
+                
+                if (properties.length === 0) {
+                    output.innerHTML = '<span class="error">❌ Failed to load properties</span>';
+                    container.innerHTML = '<p style="width: 100%;">Error loading properties</p>';
+                    return;
+                }
+                
+                output.innerHTML = `<span class="success">✅ Loaded ${properties.length} properties</span>`;
+                
+                container.innerHTML = '';
+                properties.forEach(property => {
+                    const card = document.createElement('div');
+                    card.style.cssText = 'border: 1px solid #ddd; padding: 15px; border-radius: 8px; width: 300px;';
+                    card.innerHTML = `
+                        <h3>${property.development_name || property.name || 'Unknown'}</h3>
+                        <p><strong>ID:</strong> ${property.id}</p>
+                        <p><strong>Type:</strong> ${property.type || 'N/A'}</p>
+                        <p><strong>Price:</strong> €${property.price?.toLocaleString() || 'N/A'}</p>
+                        <p><strong>Location:</strong> ${property.province || 'N/A'}, ${property.town || 'N/A'}</p>
+                        <p><strong>Beds:</strong> ${property.beds || 'N/A'}</p>
+                        <p><strong>Area:</strong> ${property.built_area || 'N/A'} m²</p>
+                    `;
+                    container.appendChild(card);
+                });
+                
+            } catch (error) {
+                output.innerHTML = `<span class="error">❌ Error: ${error.message}</span>`;
+                container.innerHTML = '<p style="width: 100%;">Error loading properties</p>';
+            }
+        }
+        
+        // Auto-load localStorage on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            showLocalStorage();
+            
+            console.log('Debug page loaded. Available functions:', {
+                addToLikes: !!window.addToLikes,
+                removeFromLikes: !!window.removeFromLikes,
+                toggleLike: !!window.toggleLike,
+                isLiked: !!window.isLiked,
+                getLikedCount: !!window.getLikedCount,
+                loadLikedProperties: !!window.loadLikedProperties
+            });
+        });
+    </script>
+</body>
+</html>
+

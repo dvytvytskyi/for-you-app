@@ -1,5 +1,44 @@
 <?php get_header(); ?>
 <script src="<?php echo get_template_directory_uri(); ?>/js/simple-likes.js"></script>
+<style>
+/* Skeleton loader styles */
+.image-skeleton {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+    z-index: 1;
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.frame-child {
+    opacity: 0;
+    transition: opacity 0.3s ease-in;
+    position: relative;
+    z-index: 2;
+}
+
+.frame-child.loaded {
+    opacity: 1;
+}
+
+.swiper-slide {
+    position: relative;
+    background: #f5f5f5;
+}
+</style>
 
 <main class="newbuilding secondary-newbuilding rent-properties">
     <nav id="bottom-navbar" class="bottom-nav">
@@ -2111,6 +2150,15 @@
                 const handoverContainer = document.getElementById("selectValueHeaderHandover");
                 const locationContainer = document.getElementById("selectValueHeaderFilterLocation");
 
+                // Функция очистки всех значений фильтров
+                function clearFilterValues() {
+                    if (bedroomsContainer) bedroomsContainer.innerHTML = "";
+                    if (priceContainer) priceContainer.innerHTML = "";
+                    if (sizeContainer) sizeContainer.innerHTML = "";
+                    if (handoverContainer) handoverContainer.innerHTML = "";
+                    if (locationContainer) locationContainer.innerHTML = "";
+                }
+
                 // Очистка элементов перед обновлением
                 clearFilterValues();
 
@@ -2187,15 +2235,6 @@
 
                     filterItem.appendChild(filterTitle);
                     container.appendChild(filterItem);
-                }
-
-                // Функция очистки всех значений фильтров
-                function clearFilterValues() {
-                    if (bedroomsContainer) bedroomsContainer.innerHTML = "";
-                    if (priceContainer) priceContainer.innerHTML = "";
-                    if (sizeContainer) sizeContainer.innerHTML = "";
-                    if (handoverContainer) handoverContainer.innerHTML = "";
-                    if (locationContainer) locationContainer.innerHTML = "";
                 }
 
                 // Функция форматирования цены
@@ -4481,8 +4520,7 @@
                 async function fetchSecondaryProjects() {
             const queryString = window.location.search;
 
-            if (queryString) {
-                try {
+            try {
                     const queryParams = new URLSearchParams(queryString);
                     const page = Number(queryParams.get("page")) || 1; // Default to page 1
                     // Send 1-based page directly to backend (no conversion needed)
@@ -4495,10 +4533,12 @@
                     const baseUrl = 'https://xf9m-jkaj-lcsq.p7.xano.io/api:v5maUE6u/properties';
 
                     // Parameters for the Xano API
+                    // Backend expects property_status to be specific to rent type
+                    const mappedPropertyStatus = rentType === 'short' ? 'Rent Short' : 'Rent Long';
                     let params = new URLSearchParams({
                         perPage: "32",
                         curPage: apiPage.toString(),
-                        property_status: "rent",
+                        property_status: mappedPropertyStatus,
                         rent_type: rentType
                     });
 
@@ -4628,10 +4668,15 @@ if (queryParams.has("subAreas")) {
     });
 }
 
+                    // Debug: Log the URL being fetched
+                    const fullUrl = `${baseUrl}?${params.toString()}`;
+                    console.log('🚀 Fetching rent projects from:', fullUrl);
+                    console.log('📋 Request params:', Object.fromEntries(params));
+
                     let response;
                     try {
                         response = await fetch(
-                            `${baseUrl}?${params.toString()}`,
+                            fullUrl,
                             {
                                 method: "GET",
                                 headers: {
@@ -4661,7 +4706,8 @@ if (queryParams.has("subAreas")) {
                     }
 
                     const projectData = await response.json();
-                    console.log(projectData)
+                    console.log('✅ Data received:', projectData);
+                    console.log(`📊 Total projects: ${projectData.itemsTotal}, Items on page: ${projectData.items?.length || 0}`);
 
                     renderFiltersFromQuerySecondary();
                     updateFilterButtonState();
@@ -4713,9 +4759,6 @@ if (queryParams.has("subAreas")) {
                         `;
                     }
                 }
-            } else {
-                console.log("No query string found in the URL");
-            }
         }
 
         fetchSecondaryProjects();
@@ -4741,11 +4784,11 @@ async function populateSearchDropdownSecondary() {
     let propertyStatus;
     
     if (currentPath.includes('rent')) {
-        propertyStatus = ["rent"];
+        propertyStatus = [rentType === 'short' ? 'Rent Short' : 'Rent Long'];
     } else if (currentPath.includes('new-building') || currentPath.includes('new-buildings') || currentPath.includes('off-plan')) {
-        propertyStatus = ["new building"];
+        propertyStatus = ["New building"];
     } else {
-        propertyStatus = ["secondary"];
+        propertyStatus = ["Secondary"];
     }
     
     console.log("Property status:", propertyStatus);
@@ -4956,7 +4999,7 @@ function createSecondaryProjectCard(project) { // Renamed function for clarity
 
     const card = document.createElement("a");
     card.className = "card";
-    card.href = `${language && "/" + language}/secondary?projectid=${id}`;
+    card.href = `${language && "/" + language}/rent?project=${id}`;
     card.addEventListener('click', function (event) {
         const clickedElement = event.target;
     });
@@ -4979,7 +5022,8 @@ function createSecondaryProjectCard(project) { // Renamed function for clarity
           <div class="swiper-wrapper">
             ${images?.slice(0, 3).map(image => `
               <div class="swiper-slide">
-                <img class="frame-child" src="${image.image_url}" alt="${development_name}" />
+                <div class="image-skeleton"></div>
+                <img class="frame-child" src="${image.image_url}" alt="${development_name}" onload="this.classList.add('loaded'); this.previousElementSibling.style.display='none';" onerror="this.previousElementSibling.style.display='none';" />
               </div>`).join('')}
           </div>
           <!-- Swiper Navigation -->
@@ -5071,6 +5115,11 @@ function createSecondaryProjectCard(project) { // Renamed function for clarity
             }
 
             localStorage.setItem('favoriteSecondaryProjects', JSON.stringify(savedSecondaryProjects));
+            
+            // Dispatch event to update badge
+            if (window.dispatchLikesUpdateEvent) {
+                window.dispatchLikesUpdateEvent();
+            }
         }
     });
 
@@ -7626,6 +7675,22 @@ function createSecondaryProjectCard(project) { // Renamed function for clarity
         window.addEventListener("popstate", updateFilterButtonState);
 
         function renderValueFilterFromQuerySecondary() {
+            // IDs для отображения фильтров
+            const bedroomsContainer = document.getElementById("selectValueSecondaryBedrooms");
+            const priceContainer = document.getElementById("selectValueSecondaryPrice");
+            const sizeContainer = document.getElementById("selectValueSecondarySize");
+            const handoverContainer = document.getElementById("selectValueSecondaryHandover");
+            const locationContainer = document.getElementById("selectValueSecondaryFilterLocation");
+
+            // Функция очистки всех значений фильтров
+            function clearFilterValues() {
+                if (bedroomsContainer) bedroomsContainer.innerHTML = "";
+                if (priceContainer) priceContainer.innerHTML = "";
+                if (sizeContainer) sizeContainer.innerHTML = "";
+                if (handoverContainer) handoverContainer.innerHTML = "";
+                if (locationContainer) locationContainer.innerHTML = "";
+            }
+
             const queryString = window.location.search.substring(1);
             if (!queryString) {
                 // Очищаем элементы, если queryString пустая
@@ -7634,13 +7699,6 @@ function createSecondaryProjectCard(project) { // Renamed function for clarity
             }
 
             const queryParams = new URLSearchParams(queryString);
-
-            // IDs для отображения фильтров
-            const bedroomsContainer = document.getElementById("selectValueSecondaryBedrooms");
-            const priceContainer = document.getElementById("selectValueSecondaryPrice");
-            const sizeContainer = document.getElementById("selectValueSecondarySize");
-            const handoverContainer = document.getElementById("selectValueSecondaryHandover");
-            const locationContainer = document.getElementById("selectValueSecondaryFilterLocation");
 
             // Очистка элементов перед обновлением
             clearFilterValues();
@@ -7726,15 +7784,6 @@ function createSecondaryProjectCard(project) { // Renamed function for clarity
 
                 filterItem.appendChild(filterTitle);
                 container.appendChild(filterItem);
-            }
-
-            // Функция очистки всех значений фильтров
-            function clearFilterValues() {
-                if (bedroomsContainer) bedroomsContainer.innerHTML = "";
-                if (priceContainer) priceContainer.innerHTML = "";
-                if (sizeContainer) sizeContainer.innerHTML = "";
-                if (handoverContainer) handoverContainer.innerHTML = "";
-                if (locationContainer) locationContainer.innerHTML = "";
             }
 
             // Функция форматирования цены

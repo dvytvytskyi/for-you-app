@@ -5405,10 +5405,10 @@ function updateSwimmingPoolStatus(amenities, id, key) {
 function fetchProjectSecondary() {
   const url = new URL(window.location.href);
   const urlParams = new URLSearchParams(url.search);
-  // Using 'id' as the parameter name, but you can change it back to 'project' if needed.
-  const projectId = urlParams.get('projectid'); 
+  const projectId = urlParams.get('project'); // Changed from 'projectid' to 'project'
 
   if (projectId) {
+    console.log('🚀 Fetching secondary project details for ID:', projectId);
     fetch(`https://xf9m-jkaj-lcsq.p7.xano.io/api:v5maUE6u/properties/${projectId}`)
       .then((response) => {
         if (!response.ok) {
@@ -5417,6 +5417,9 @@ function fetchProjectSecondary() {
         return response.json();
       })
       .then((data) => {
+        console.log('✅ Secondary project data received:', data);
+        console.log('📊 Available fields:', Object.keys(data));
+        
         // --- 1. Handle Coordinates and Map ---
         if (data.latitude && data.longitude) {
           const coordinates = {

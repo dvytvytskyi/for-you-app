@@ -9,6 +9,11 @@ function addToLikes(propertyId) {
         localStorage.setItem('likedPropertyIds', JSON.stringify(likedIds));
     }
     updateLikeButton(propertyId, true);
+    
+    // Update badge counter
+    if (window.dispatchLikesUpdateEvent) {
+        window.dispatchLikesUpdateEvent();
+    }
 }
 
 // Функция для удаления из лайков
@@ -17,6 +22,11 @@ function removeFromLikes(propertyId) {
     likedIds = likedIds.filter(id => id !== propertyId);
     localStorage.setItem('likedPropertyIds', JSON.stringify(likedIds));
     updateLikeButton(propertyId, false);
+    
+    // Update badge counter
+    if (window.dispatchLikesUpdateEvent) {
+        window.dispatchLikesUpdateEvent();
+    }
 }
 
 // Функция для переключения лайка
@@ -35,6 +45,12 @@ function toggleLike(propertyId) {
 function isLiked(propertyId) {
     let likedIds = JSON.parse(localStorage.getItem('likedPropertyIds') || '[]');
     return likedIds.includes(propertyId);
+}
+
+// Функция для получения количества лайкнутых свойств
+function getLikedCount() {
+    let likedIds = JSON.parse(localStorage.getItem('likedPropertyIds') || '[]');
+    return likedIds.length;
 }
 
 // Функция для обновления кнопки лайка
@@ -83,11 +99,11 @@ async function loadLikedProperties() {
     const likedIds = JSON.parse(localStorage.getItem('likedPropertyIds') || '[]');
     
     if (likedIds.length === 0) {
-        container.innerHTML = '<p>No favourite projects found</p>';
+        container.innerHTML = '<p>There are no favorite projects</p>';
         return;
     }
     
-    container.innerHTML = '<p>Lodaing your liked projects...</p>';
+    container.innerHTML = '<div style="text-align: center; padding: 40px;"><p>Loading your liked projects...</p></div>';
     
     try {
         const properties = [];
@@ -106,20 +122,35 @@ async function loadLikedProperties() {
         }
         
         if (properties.length === 0) {
-            container.innerHTML = '<p>Ошибка загрузки свойств</p>';
+            container.innerHTML = '<p>There are no favorite projects</p>';
             return;
         }
         
         // Показываем свойства
         container.innerHTML = '';
         properties.forEach(property => {
-            const card = createPropertyCard(property);
+            // Try to use the page's createProjectCard or createSecondaryProjectCard if available
+            let card;
+            
+            // Determine if it's Off plan or Secondary based on property structure
+            const isOffPlan = property.visible === 'Off plan' || 
+                             property.generalInfo || 
+                             property.development_name;
+            
+            if (isOffPlan && window.createProjectCardForLiked) {
+                card = window.createProjectCardForLiked(property);
+            } else if (window.createSecondaryProjectCardForLiked) {
+                card = window.createSecondaryProjectCardForLiked(property);
+            } else {
+                // Fallback to simple card
+                card = createPropertyCard(property);
+            }
             container.appendChild(card);
         });
         
     } catch (error) {
         console.error('Ошибка загрузки:', error);
-        container.innerHTML = '<p>Ошибка загрузки</p>';
+        container.innerHTML = '<p>Error loading projects</p>';
     }
 }
 
@@ -163,6 +194,11 @@ function clearAllLikes() {
     heartIcons.forEach(icon => {
         icon.setAttribute('fill', 'none');
     });
+    
+    // Update badge counter
+    if (window.dispatchLikesUpdateEvent) {
+        window.dispatchLikesUpdateEvent();
+    }
 }
 
 // Инициализация при загрузке страницы
@@ -181,5 +217,6 @@ window.addToLikes = addToLikes;
 window.removeFromLikes = removeFromLikes;
 window.toggleLike = toggleLike;
 window.isLiked = isLiked;
+window.getLikedCount = getLikedCount;
 window.clearAllLikes = clearAllLikes;
 window.loadLikedProperties = loadLikedProperties;
