@@ -186,6 +186,13 @@
                             fill="#313131" />
                     </svg>
                 </div>
+                <button class="wrapperMapPage__drawWrapper-btn" id="toggleNeighborhoods" data-tooltip="Show/Hide neighborhood boundaries">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="#313131" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M9 22V12H15V22" stroke="#313131" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Neighborhoods</span>
+                </button>
                 <button class="filtersMap__tablet-btn " id="filterMobilePhone">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
                         <path
@@ -4310,7 +4317,11 @@
 				let draw;
 				const projectIdsInPolygon = [];
 				let polygonDrawn = false;
-let allProjectsGeoJSON = null; 
+let allProjectsGeoJSON = null;
+				
+				// Змінні для полігонів районів
+				let neighborhoodsVisible = false;
+				let neighborhoodsLoaded = false; 
 				function initializeMap() {
     mapboxgl.accessToken = 'pk.eyJ1IjoiYWJpZXNwYW5hIiwiYSI6ImNsb3N4NzllYzAyOWYybWw5ZzNpNXlqaHkifQ.UxlTvUuSq9L5jt0jRtRR-A';
     map = new mapboxgl.Map({
@@ -4398,6 +4409,12 @@ let allProjectsGeoJSON = null;
         onDrawDelete();
     });
     
+    // Кнопка показу/приховання полігонів районів
+    document.getElementById('toggleNeighborhoods').addEventListener('click', () => {
+        console.log("🏘️ КНОПКА NEIGHBORHOODS НАТИСНУТА!");
+        toggleNeighborhoods();
+    });
+    
     // Кнопка закриття модалки з проектами полігону
     const closePolygonListBtn = document.getElementById('closePolygonList');
     if (closePolygonListBtn) {
@@ -4445,6 +4462,9 @@ let allProjectsGeoJSON = null;
 					map.on('mouseenter', 'unclustered-point', () => { map.getCanvas().style.cursor = 'pointer'; });
 					map.on('mouseleave', 'unclustered-point', () => { map.getCanvas().style.cursor = ''; });
 					
+					// Ініціалізація полігонів районів
+					initNeighborhoodLayers();
+					
 					fetchProjectsData();
 					
 					// Initialize polygon from URL after map is loaded
@@ -4452,6 +4472,374 @@ let allProjectsGeoJSON = null;
 						initializePolygonFromUrl();
 					}, 1000); // Small delay to ensure data is loaded
 				}
+				
+				// =================================================================
+				// --- ФУНКЦІЇ ДЛЯ РОБОТИ З ПОЛІГОНАМИ РАЙОНІВ ---
+				// =================================================================
+				
+				/**
+				 * Ініціалізація шарів для полігонів районів
+				 */
+				function initNeighborhoodLayers() {
+					console.log('🏘️ Ініціалізація шарів полігонів районів...');
+					
+					// Додаємо джерела даних для кожного рівня
+					map.addSource('neighborhoods-level-1', {
+						type: 'geojson',
+						data: { type: 'FeatureCollection', features: [] }
+					});
+					
+					map.addSource('neighborhoods-level-2', {
+						type: 'geojson',
+						data: { type: 'FeatureCollection', features: [] }
+					});
+					
+					map.addSource('neighborhoods-level-3', {
+						type: 'geojson',
+						data: { type: 'FeatureCollection', features: [] }
+					});
+					
+					// Шар для Рівня 1 (Costa del Sol - загальний регіон)
+					map.addLayer({
+						id: 'neighborhoods-fill-1',
+						type: 'fill',
+						source: 'neighborhoods-level-1',
+						layout: { visibility: 'none' },
+						paint: {
+							'fill-color': '#088',
+							'fill-opacity': 0.1
+						}
+					});
+					
+					map.addLayer({
+						id: 'neighborhoods-outline-1',
+						type: 'line',
+						source: 'neighborhoods-level-1',
+						layout: { visibility: 'none' },
+						paint: {
+							'line-color': '#088',
+							'line-width': 3,
+							'line-opacity': 0.6
+						}
+					});
+					
+					// Шар для Рівня 2 (Міста)
+					map.addLayer({
+						id: 'neighborhoods-fill-2',
+						type: 'fill',
+						source: 'neighborhoods-level-2',
+						layout: { visibility: 'none' },
+						paint: {
+							'fill-color': '#4a90e2',
+							'fill-opacity': 0.15
+						}
+					});
+					
+					map.addLayer({
+						id: 'neighborhoods-outline-2',
+						type: 'line',
+						source: 'neighborhoods-level-2',
+						layout: { visibility: 'none' },
+						paint: {
+							'line-color': '#4a90e2',
+							'line-width': 2,
+							'line-opacity': 0.7
+						}
+					});
+					
+					map.addLayer({
+						id: 'neighborhoods-labels-2',
+						type: 'symbol',
+						source: 'neighborhoods-level-2',
+						layout: {
+							visibility: 'none',
+							'text-field': ['get', 'name'],
+							'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+							'text-size': 14,
+							'text-anchor': 'center'
+						},
+						paint: {
+							'text-color': '#2c5aa0',
+							'text-halo-color': '#ffffff',
+							'text-halo-width': 2
+						}
+					});
+					
+					// Шар для Рівня 3 (Райони)
+					map.addLayer({
+						id: 'neighborhoods-fill-3',
+						type: 'fill',
+						source: 'neighborhoods-level-3',
+						layout: { visibility: 'none' },
+						paint: {
+							'fill-color': '#ff6b6b',
+							'fill-opacity': [
+								'case',
+								['boolean', ['feature-state', 'hover'], false],
+								0.3,
+								0.1
+							]
+						}
+					});
+					
+					map.addLayer({
+						id: 'neighborhoods-outline-3',
+						type: 'line',
+						source: 'neighborhoods-level-3',
+						layout: { visibility: 'none' },
+						paint: {
+							'line-color': '#ff6b6b',
+							'line-width': 1.5,
+							'line-opacity': 0.8
+						}
+					});
+					
+					map.addLayer({
+						id: 'neighborhoods-labels-3',
+						type: 'symbol',
+						source: 'neighborhoods-level-3',
+						layout: {
+							visibility: 'none',
+							'text-field': ['get', 'name'],
+							'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+							'text-size': 12,
+							'text-anchor': 'center'
+						},
+						paint: {
+							'text-color': '#c92a2a',
+							'text-halo-color': '#ffffff',
+							'text-halo-width': 1.5
+						}
+					});
+					
+					// Додаємо інтерактивність (hover)
+					let hoveredNeighborhoodId = null;
+					
+					map.on('mouseenter', 'neighborhoods-fill-3', (e) => {
+						map.getCanvas().style.cursor = 'pointer';
+						if (e.features.length > 0) {
+							if (hoveredNeighborhoodId !== null) {
+								map.setFeatureState(
+									{ source: 'neighborhoods-level-3', id: hoveredNeighborhoodId },
+									{ hover: false }
+								);
+							}
+							hoveredNeighborhoodId = e.features[0].id;
+							map.setFeatureState(
+								{ source: 'neighborhoods-level-3', id: hoveredNeighborhoodId },
+								{ hover: true }
+							);
+						}
+					});
+					
+					map.on('mouseleave', 'neighborhoods-fill-3', () => {
+						map.getCanvas().style.cursor = '';
+						if (hoveredNeighborhoodId !== null) {
+							map.setFeatureState(
+								{ source: 'neighborhoods-level-3', id: hoveredNeighborhoodId },
+								{ hover: false }
+							);
+						}
+						hoveredNeighborhoodId = null;
+					});
+					
+					// Клік на район
+					map.on('click', 'neighborhoods-fill-3', (e) => {
+						if (e.features.length > 0) {
+							const neighborhood = e.features[0];
+							const name = neighborhood.properties.name;
+							const parent = neighborhood.properties.parent;
+							
+							console.log('🏘️ Клік на район:', name, '(', parent, ')');
+							
+							// TODO: Додати фільтрацію проектів по району
+							// filterProjectsByNeighborhood(name, parent);
+						}
+					});
+					
+					console.log('✅ Шари полігонів ініціалізовано');
+				}
+				
+				/**
+				 * Завантаження GeoJSON даних для полігонів
+				 */
+				async function loadNeighborhoodPolygons() {
+					if (neighborhoodsLoaded) {
+						console.log('✅ Полігони вже завантажені');
+						return;
+					}
+					
+					console.log('📥 Завантаження GeoJSON полігонів...');
+					
+					const themeUri = '<?php echo get_template_directory_uri(); ?>';
+					
+					try {
+						// Завантажуємо всі 3 рівні
+						const [level1, level2, level3] = await Promise.all([
+							fetch(`${themeUri}/data/geojson/level-1-region.geojson`).then(r => r.json()),
+							fetch(`${themeUri}/data/geojson/level-2-cities.geojson`).then(r => r.json()),
+							fetch(`${themeUri}/data/geojson/level-3-neighborhoods.geojson`).then(r => r.json())
+						]);
+						
+						console.log('✅ Завантажено полігонів:', {
+							level1: level1.features.length,
+							level2: level2.features.length,
+							level3: level3.features.length
+						});
+						
+						// Оновлюємо джерела даних
+						map.getSource('neighborhoods-level-1').setData(level1);
+						map.getSource('neighborhoods-level-2').setData(level2);
+						map.getSource('neighborhoods-level-3').setData(level3);
+						
+						neighborhoodsLoaded = true;
+						
+					} catch (error) {
+						console.error('❌ Помилка завантаження полігонів:', error);
+					}
+				}
+				
+				/**
+				 * Показати/приховати полігони районів
+				 */
+				function toggleNeighborhoods() {
+					const button = document.getElementById('toggleNeighborhoods');
+					
+					if (!neighborhoodsLoaded) {
+						// Якщо ще не завантажені - завантажуємо
+						button.disabled = true;
+						button.style.opacity = '0.6';
+						
+						loadNeighborhoodPolygons().then(() => {
+							button.disabled = false;
+							button.style.opacity = '1';
+							showNeighborhoods();
+						});
+					} else {
+						// Якщо вже завантажені - просто перемикаємо видимість
+						if (neighborhoodsVisible) {
+							hideNeighborhoods();
+						} else {
+							showNeighborhoods();
+						}
+					}
+				}
+				
+				/**
+				 * Показати полігони
+				 */
+				function showNeighborhoods() {
+					console.log('👁️ Показуємо полігони районів');
+					
+					const currentZoom = map.getZoom();
+					
+					// Рівень 1 (Costa del Sol) - видно завжди при малому zoom
+					if (currentZoom < 11) {
+						map.setLayoutProperty('neighborhoods-fill-1', 'visibility', 'visible');
+						map.setLayoutProperty('neighborhoods-outline-1', 'visibility', 'visible');
+					}
+					
+					// Рівень 2 (Міста) - видно від zoom 9
+					if (currentZoom >= 9) {
+						map.setLayoutProperty('neighborhoods-fill-2', 'visibility', 'visible');
+						map.setLayoutProperty('neighborhoods-outline-2', 'visibility', 'visible');
+						map.setLayoutProperty('neighborhoods-labels-2', 'visibility', 'visible');
+					}
+					
+					// Рівень 3 (Райони) - видно від zoom 11
+					if (currentZoom >= 11) {
+						map.setLayoutProperty('neighborhoods-fill-3', 'visibility', 'visible');
+						map.setLayoutProperty('neighborhoods-outline-3', 'visibility', 'visible');
+						map.setLayoutProperty('neighborhoods-labels-3', 'visibility', 'visible');
+					}
+					
+					neighborhoodsVisible = true;
+					
+					// Оновлюємо вигляд кнопки
+					const button = document.getElementById('toggleNeighborhoods');
+					button.classList.add('active');
+					button.style.backgroundColor = '#4a90e2';
+					button.style.color = '#ffffff';
+					
+					// Додаємо слухач зміни zoom для автоматичного перемикання рівнів
+					map.on('zoom', updateNeighborhoodVisibilityByZoom);
+				}
+				
+				/**
+				 * Приховати полігони
+				 */
+				function hideNeighborhoods() {
+					console.log('🙈 Приховуємо полігони районів');
+					
+					// Приховуємо всі рівні
+					['1', '2', '3'].forEach(level => {
+						map.setLayoutProperty(`neighborhoods-fill-${level}`, 'visibility', 'none');
+						map.setLayoutProperty(`neighborhoods-outline-${level}`, 'visibility', 'none');
+						if (level !== '1') {
+							map.setLayoutProperty(`neighborhoods-labels-${level}`, 'visibility', 'none');
+						}
+					});
+					
+					neighborhoodsVisible = false;
+					
+					// Оновлюємо вигляд кнопки
+					const button = document.getElementById('toggleNeighborhoods');
+					button.classList.remove('active');
+					button.style.backgroundColor = '';
+					button.style.color = '';
+					
+					// Видаляємо слухач zoom
+					map.off('zoom', updateNeighborhoodVisibilityByZoom);
+				}
+				
+				/**
+				 * Оновлення видимості шарів залежно від zoom
+				 */
+				function updateNeighborhoodVisibilityByZoom() {
+					if (!neighborhoodsVisible) return;
+					
+					const currentZoom = map.getZoom();
+					
+					// Рівень 1 (Costa del Sol) - тільки при малому zoom
+					if (currentZoom < 11) {
+						map.setLayoutProperty('neighborhoods-fill-1', 'visibility', 'visible');
+						map.setLayoutProperty('neighborhoods-outline-1', 'visibility', 'visible');
+					} else {
+						map.setLayoutProperty('neighborhoods-fill-1', 'visibility', 'none');
+						map.setLayoutProperty('neighborhoods-outline-1', 'visibility', 'none');
+					}
+					
+					// Рівень 2 (Міста) - від zoom 9
+					if (currentZoom >= 9 && currentZoom < 13) {
+						map.setLayoutProperty('neighborhoods-fill-2', 'visibility', 'visible');
+						map.setLayoutProperty('neighborhoods-outline-2', 'visibility', 'visible');
+						map.setLayoutProperty('neighborhoods-labels-2', 'visibility', 'visible');
+					} else if (currentZoom < 9) {
+						map.setLayoutProperty('neighborhoods-fill-2', 'visibility', 'none');
+						map.setLayoutProperty('neighborhoods-outline-2', 'visibility', 'none');
+						map.setLayoutProperty('neighborhoods-labels-2', 'visibility', 'none');
+					} else {
+						// При великому zoom залишаємо тільки outline міст
+						map.setLayoutProperty('neighborhoods-fill-2', 'visibility', 'none');
+						map.setLayoutProperty('neighborhoods-outline-2', 'visibility', 'visible');
+						map.setLayoutProperty('neighborhoods-labels-2', 'visibility', 'none');
+					}
+					
+					// Рівень 3 (Райони) - від zoom 11
+					if (currentZoom >= 11) {
+						map.setLayoutProperty('neighborhoods-fill-3', 'visibility', 'visible');
+						map.setLayoutProperty('neighborhoods-outline-3', 'visibility', 'visible');
+						map.setLayoutProperty('neighborhoods-labels-3', 'visibility', 'visible');
+					} else {
+						map.setLayoutProperty('neighborhoods-fill-3', 'visibility', 'none');
+						map.setLayoutProperty('neighborhoods-outline-3', 'visibility', 'none');
+						map.setLayoutProperty('neighborhoods-labels-3', 'visibility', 'none');
+					}
+				}
+				
+				// =================================================================
+				// --- КІНЕЦЬ ФУНКЦІЙ ДЛЯ ПОЛІГОНІВ РАЙОНІВ ---
+				// =================================================================
 
 				function convertProjectsToGeoJSON(apiResponse) {
 					const items = (apiResponse && (apiResponse.projects || apiResponse.items)) ? (apiResponse.projects || apiResponse.items) : [];

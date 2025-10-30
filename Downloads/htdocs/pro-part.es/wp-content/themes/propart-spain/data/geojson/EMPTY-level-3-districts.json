@@ -1,0 +1,92 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "puerto-banus",
+      "properties": {
+        "name": "Puerto Banús",
+        "name_en": "Puerto Banus",
+        "type": "district",
+        "level": 3,
+        "parent": "marbella",
+        "slug": "puerto-banus"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "nueva-andalucia",
+      "properties": {
+        "name": "Nueva Andalucía",
+        "type": "district",
+        "level": 3,
+        "parent": "marbella"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "san-pedro-alcantara",
+      "properties": {
+        "name": "San Pedro de Alcántara",
+        "type": "district",
+        "level": 3,
+        "parent": "marbella"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sierra-blanca",
+      "properties": {
+        "name": "Sierra Blanca",
+        "type": "district",
+        "level": 3,
+        "parent": "marbella"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "golden-mile",
+      "properties": {
+        "name": "Golden Mile",
+        "type": "district",
+        "level": 3,
+        "parent": "marbella"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "nagueles",
+      "properties": {
+        "name": "Nagüeles",
+        "type": "district",
+        "level": 3,
+        "parent": "marbella"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[]]
+      }
+    }
+  ]
+}
+
