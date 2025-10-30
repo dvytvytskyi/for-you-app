@@ -1,0 +1,72 @@
+{
+  "properties": {
+    "title": "Недвижимость",
+    "filters": "Фильтры",
+    "sortBy": "Сортировать по",
+    "priceRange": "Диапазон цен",
+    "bedrooms": "Спальни",
+    "bathrooms": "Ванные комнаты",
+    "propertyType": "Тип недвижимости",
+    "location": "Локация",
+    "features": "Особенности",
+    "applyFilters": "Применить фильтры",
+    "clearFilters": "Очистить фильтры",
+    "results": "Найдено {{count}} объектов",
+    "noResults": "Недвижимость не найдена",
+    "tryDifferentFilters": "Попробуйте изменить фильтры"
+  },
+  
+  "liked": {
+    "title": "Избранное",
+    "subtitle": "Ваша любимая недвижимость",
+    "noLikedProperties": "Пока нет избранной недвижимости",
+    "startExploring": "Начните исследовать и сохраняйте избранное",
+    "removeFromLiked": "Удалить из избранного",
+    "addedOn": "Добавлено {{date}}"
+  },
+  
+  "collections": {
+    "title": "Коллекции",
+    "createCollection": "Создать коллекцию",
+    "editCollection": "Редактировать коллекцию",
+    "deleteCollection": "Удалить коллекцию",
+    "collectionName": "Название коллекции",
+    "collectionDescription": "Описание",
+    "addProperties": "Добавить недвижимость",
+    "noCollections": "Пока нет коллекций",
+    "createYourFirst": "Создайте свою первую коллекцию для организации недвижимости",
+    "propertiesCount": "{{count}} объектов"
+  },
+  
+  "crm": {
+    "title": "CRM",
+    "leads": "Лиды",
+    "clients": "Клиенты",
+    "tasks": "Задачи",
+    "deals": "Сделки",
+    "newLead": "Новый лид",
+    "addClient": "Добавить клиента",
+    "createTask": "Создать задачу",
+    "status": "Статус",
+    "priority": "Приоритет",
+    "dueDate": "Срок выполнения",
+    "assignedTo": "Назначено",
+    "noLeads": "Пока нет лидов",
+    "noClients": "Пока нет клиентов",
+    "noTasks": "Пока нет задач",
+    "noDeal": "Пока нет сделок"
+  },
+  
+  "map": {
+    "title": "Карта",
+    "searchOnMap": "Поиск на карте",
+    "nearby": "Рядом",
+    "satellite": "Спутник",
+    "terrain": "Рельеф",
+    "traffic": "Трафик",
+    "myLocation": "Моя локация",
+    "showList": "Показать список",
+    "propertiesInArea": "{{count}} объектов в этой зоне"
+  }
+}
+

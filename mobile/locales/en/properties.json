@@ -1,0 +1,33 @@
+{
+  "title": "Properties",
+  "searchPlaceholder": "Find property",
+  "propertyTypes": {
+    "all": "All",
+    "apartment": "Apartment",
+    "villa": "Villa",
+    "penthouse": "Penthouse",
+    "townhouse": "Townhouse",
+    "studio": "Studio"
+  },
+  "bedrooms": "bedrooms",
+  "bedroom": "bedroom",
+  "handover": "Handover",
+  "noProperties": "No properties found",
+  "tryAdjustFilters": "Try adjusting your filters",
+  "filters": "Filters",
+  "sortBy": "Sort by",
+  "sortOptions": {
+    "priceAsc": "Price: Low to High",
+    "priceDesc": "Price: High to Low",
+    "newest": "Newest First",
+    "oldest": "Oldest First"
+  },
+  "priceRange": "Price range",
+  "minPrice": "Min Price",
+  "maxPrice": "Max price",
+  "propertyType": "Property type",
+  "location": "Location",
+  "selectFromList": "Select from list",
+  "applyFilters": "Apply filters"
+}
+

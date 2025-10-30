@@ -1,15 +1,22 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native';
+import { useTheme } from '@/utils/theme';
 
 export default function TabsLayout() {
+  const { theme, isDark } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: '#102F73',
-        tabBarInactiveTintColor: '#999999',
+        tabBarStyle: {
+          ...styles.tabBar,
+          backgroundColor: theme.background,
+          borderTopColor: theme.border,
+        },
+        tabBarActiveTintColor: isDark ? '#FFFFFF' : '#102F73',
+        tabBarInactiveTintColor: isDark ? '#FFFFFF99' : '#999999',
         tabBarLabelStyle: styles.tabBarLabel,
       }}
     >
@@ -70,22 +77,13 @@ export default function TabsLayout() {
           href: null,
         }}
       />
-      
-      <Tabs.Screen
-        name="profile"
-        options={{
-          href: null, // Hide from tab bar but keep accessible via navigation
-        }}
-      />
     </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#E5E5E5',
     height: 84,
     paddingBottom: 20,
     paddingTop: 4,

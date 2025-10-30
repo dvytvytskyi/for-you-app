@@ -1,0 +1,33 @@
+{
+  "title": "Недвижимость",
+  "searchPlaceholder": "Найти недвижимость",
+  "propertyTypes": {
+    "all": "Все",
+    "apartment": "Квартира",
+    "villa": "Вилла",
+    "penthouse": "Пентхаус",
+    "townhouse": "Таунхаус",
+    "studio": "Студия"
+  },
+  "bedrooms": "спальни",
+  "bedroom": "спальня",
+  "handover": "Сдача",
+  "noProperties": "Недвижимость не найдена",
+  "tryAdjustFilters": "Попробуйте изменить фильтры",
+  "filters": "Фильтры",
+  "sortBy": "Сортировать",
+  "sortOptions": {
+    "priceAsc": "Цена: от низкой к высокой",
+    "priceDesc": "Цена: от высокой к низкой",
+    "newest": "Сначала новые",
+    "oldest": "Сначала старые"
+  },
+  "priceRange": "Диапазон цен",
+  "minPrice": "Мин. цена",
+  "maxPrice": "Макс. цена",
+  "propertyType": "Тип недвижимости",
+  "location": "Локация",
+  "selectFromList": "Выбрать из списка",
+  "applyFilters": "Применить фильтры"
+}
+

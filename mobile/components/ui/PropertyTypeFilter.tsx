@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { useTheme } from '@/utils/theme';
 
 interface PropertyTypeFilterProps {
   selectedTypes: string[];
@@ -8,6 +9,8 @@ interface PropertyTypeFilterProps {
 const propertyTypes = ['Apartment', 'Villa', 'Penthouse', 'Townhouse'];
 
 export default function PropertyTypeFilter({ selectedTypes, onTypesChange }: PropertyTypeFilterProps) {
+  const { theme } = useTheme();
+  
   const handleTypePress = (type: string) => {
     if (selectedTypes.includes(type)) {
       // Remove type from selection
@@ -31,15 +34,16 @@ export default function PropertyTypeFilter({ selectedTypes, onTypesChange }: Pro
             key={type}
             style={({ pressed }) => [
               styles.button,
-              isSelected && styles.buttonSelected,
-              { 
+              {
+                backgroundColor: isSelected ? theme.primary : theme.card,
+                borderColor: isSelected ? theme.primary : theme.border,
                 opacity: pressed ? 0.7 : 1,
                 transform: [{ scale: pressed ? 0.95 : 1 }]
               }
             ]}
             onPress={() => handleTypePress(type)}
           >
-            <Text style={[styles.buttonText, isSelected && styles.buttonTextSelected]}>
+            <Text style={[styles.buttonText, { color: isSelected ? '#FFFFFF' : theme.text }]}>
               {type}
             </Text>
           </Pressable>
@@ -56,23 +60,15 @@ const styles = StyleSheet.create({
   },
   button: {
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#FFFFFF',
+    // backgroundColor, borderColor applied dynamically
     borderWidth: 1,
-    borderColor: '#E5E5E5',
-  },
-  buttonSelected: {
-    backgroundColor: '#102F73',
-    borderColor: '#102F73',
   },
   buttonText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#102F73',
-  },
-  buttonTextSelected: {
-    color: '#FFFFFF',
+    // color applied dynamically
   },
 });
 

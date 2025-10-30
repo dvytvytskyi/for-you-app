@@ -1,0 +1,30 @@
+{
+  "dashboard": "Панель керування",
+  "search": "Пошук",
+  "searchPlaceholder": "Пошук нерухомості...",
+  
+  "newLeads": "Нові ліди",
+  "explore": "Переглянути",
+  "activeDeals": "Активні угоди",
+  "totalAmount": "Загальна сума",
+  
+  "yourLikedProjects": "Ваші вподобані проєкти",
+  "collectionDescription": "Це колекція ваших вподобань",
+  
+  "myLeads": "Мої ліди",
+  "properties": "Нерухомість",
+  "offers": "Пропозиції",
+  
+  "recentMarketNews": "Останні новини ринку",
+  
+  "propertyTypes": {
+    "apartment": "Апартаменти",
+    "villa": "Вілла",
+    "townhouse": "Таунхаус",
+    "penthouse": "Пентхаус",
+    "office": "Офіс"
+  },
+  
+  "handoverDate": "Здача: {{date}}"
+}
+

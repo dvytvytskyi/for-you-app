@@ -1,9 +1,11 @@
-import React, { useState, forwardRef } from 'react';
+import React, { useState, forwardRef, useRef, useImperativeHandle } from 'react';
 import { TextInput, View, Text, Pressable, StyleSheet, ReturnKeyTypeOptions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/utils/theme';
 
 interface InputProps {
-  placeholder: string;
+  label?: string;
+  placeholder?: string;
   value: string;
   onChangeText: (text: string) => void;
   type?: 'text' | 'email' | 'password';
@@ -14,9 +16,13 @@ interface InputProps {
   onSubmitEditing?: () => void;
   returnKeyType?: ReturnKeyTypeOptions;
   blurOnSubmit?: boolean;
+  keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
+  secureTextEntry?: boolean;
+  rightIcon?: React.ReactNode;
 }
 
 const Input = forwardRef<TextInput, InputProps>(({
+  label,
   placeholder,
   value,
   onChangeText,
@@ -28,10 +34,19 @@ const Input = forwardRef<TextInput, InputProps>(({
   onSubmitEditing,
   returnKeyType = 'next',
   blurOnSubmit = false,
+  keyboardType,
+  secureTextEntry: secureTextEntryProp,
+  rightIcon,
 }, ref) => {
   const [showPassword, setShowPassword] = useState(false);
+  const inputRef = useRef<TextInput>(null);
+  const { theme } = useTheme();
+
+  // Expose input methods to parent ref
+  useImperativeHandle(ref, () => inputRef.current as TextInput);
 
   const getKeyboardType = () => {
+    if (keyboardType) return keyboardType;
     switch (type) {
       case 'email':
         return 'email-address';
@@ -40,17 +55,39 @@ const Input = forwardRef<TextInput, InputProps>(({
     }
   };
 
+  const handleContainerPress = () => {
+    inputRef.current?.focus();
+  };
+
   const isPassword = type === 'password';
-  const secureTextEntry = isPassword && !showPassword;
+  // Use explicit secureTextEntry prop if provided, otherwise fallback to password type logic
+  const secureTextEntry = secureTextEntryProp !== undefined 
+    ? secureTextEntryProp 
+    : (isPassword && !showPassword);
 
   return (
     <View style={[styles.container, fullWidth ? styles.fullWidth : styles.fixedWidth]}>
-      <View style={[styles.inputContainer, error && styles.inputError]}>
+      {label && (
+        <Text style={[styles.label, { color: theme.text }]}>{label}</Text>
+      )}
+      
+      <Pressable 
+        style={[
+          styles.inputContainer, 
+          { 
+            backgroundColor: theme.inputBackground, 
+            borderColor: error ? theme.error : theme.inputBorder 
+          },
+          error && styles.inputError
+        ]}
+        onPress={handleContainerPress}
+        disabled={disabled}
+      >
         <TextInput
-          ref={ref}
-          style={styles.input}
-          placeholder={placeholder}
-          placeholderTextColor="#94A3B8"
+          ref={inputRef}
+          style={[styles.input, { color: theme.text }]}
+          placeholder={placeholder || label}
+          placeholderTextColor={theme.inputPlaceholder}
           value={value}
           onChangeText={onChangeText}
           secureTextEntry={secureTextEntry}
@@ -62,19 +99,23 @@ const Input = forwardRef<TextInput, InputProps>(({
           blurOnSubmit={blurOnSubmit}
         />
         
-        {isPassword && (
+        {/* Show custom rightIcon if provided, otherwise show default password toggle for password type */}
+        {rightIcon ? (
+          <View style={styles.iconWrapper}>{rightIcon}</View>
+        ) : isPassword && (
           <Pressable
             onPress={() => setShowPassword(!showPassword)}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={styles.iconWrapper}
           >
             <Ionicons
               name={showPassword ? 'eye-off-outline' : 'eye-outline'}
               size={20}
-              color="#64748B"
+              color={theme.textTertiary}
             />
           </Pressable>
         )}
-      </View>
+      </Pressable>
       
       {error && (
         <Text style={styles.errorText}>{error}</Text>
@@ -97,24 +138,33 @@ const styles = StyleSheet.create({
   fullWidth: {
     width: '100%',
   },
+  label: {
+    fontSize: 13,
+    fontWeight: '500',
+    marginBottom: 6,
+  },
   inputContainer: {
-    height: 56,
+    minHeight: 56,
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#f4f4f4',
-    borderRadius: 6,
+    paddingVertical: 12,
+    borderWidth: 0.5,
+    borderRadius: 8,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
   },
   inputError: {
     borderWidth: 1,
-    borderColor: '#EF4444',
   },
   input: {
     flex: 1,
     fontSize: 16,
-    color: '#010312',
+  },
+  iconWrapper: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 24,
+    minWidth: 24,
   },
   errorText: {
     color: '#EF4444',

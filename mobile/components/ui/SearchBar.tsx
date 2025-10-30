@@ -1,5 +1,6 @@
 import { View, TextInput, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/utils/theme';
 
 interface SearchBarProps {
   value: string;
@@ -8,15 +9,17 @@ interface SearchBarProps {
 }
 
 export default function SearchBar({ value, onChangeText, placeholder = 'Find property' }: SearchBarProps) {
+  const { theme } = useTheme();
+  
   return (
-    <View style={styles.container}>
-      <Ionicons name="search" size={20} color="#999999" style={styles.icon} />
+    <View style={[styles.container, { backgroundColor: theme.card, borderColor: theme.border }]}>
+      <Ionicons name="search" size={20} color={theme.textTertiary} style={styles.icon} />
       <TextInput
-        style={styles.input}
+        style={[styles.input, { color: theme.text }]}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#999999"
+        placeholderTextColor={theme.textTertiary}
       />
     </View>
   );
@@ -24,22 +27,22 @@ export default function SearchBar({ value, onChangeText, placeholder = 'Find pro
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    // backgroundColor, borderColor applied dynamically
     borderWidth: 1,
-    borderColor: '#E5E5E5',
     borderRadius: 8,
-    paddingHorizontal: 16,
-    height: 48,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   icon: {
-    marginRight: 12,
+    marginRight: 8,
   },
   input: {
     flex: 1,
-    fontSize: 16,
-    color: '#010312',
+    fontSize: 15,
+    // color applied dynamically
   },
 });
 

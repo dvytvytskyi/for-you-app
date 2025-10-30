@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme } from '@/utils/theme';
 
 interface HeaderProps {
   title: string;
@@ -8,15 +9,16 @@ interface HeaderProps {
 
 export default function Header({ title, avatar }: HeaderProps) {
   const router = useRouter();
+  const { theme } = useTheme();
 
   const handleAvatarPress = () => {
-    router.push('/(tabs)/profile');
+    router.push('/profile');
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Title */}
-      <Text style={styles.title}>{title}</Text>
+      <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
       
       {/* Avatar */}
       <Pressable 
@@ -32,8 +34,8 @@ export default function Header({ title, avatar }: HeaderProps) {
         {avatar ? (
           <Image source={{ uri: avatar }} style={styles.avatar} />
         ) : (
-          <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarText}>👤</Text>
+          <View style={[styles.avatarPlaceholder, { backgroundColor: theme.border }]}>
+            <Text style={[styles.avatarText, { color: theme.textTertiary }]}>👤</Text>
           </View>
         )}
       </Pressable>
@@ -47,14 +49,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 4,
-    backgroundColor: '#FFFFFF',
+    // backgroundColor applied dynamically
     gap: 16,
   },
   title: {
     flex: 1,
     fontSize: 24,
     fontWeight: '700',
-    color: '#102F73',
+    // color applied dynamically
   },
   avatarContainer: {
     width: 44,
@@ -69,14 +71,14 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#E5E5E5',
+    // backgroundColor applied dynamically
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarText: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#999999',
+    // color applied dynamically
   },
 });
 

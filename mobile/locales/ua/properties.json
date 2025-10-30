@@ -1,0 +1,33 @@
+{
+  "title": "Нерухомість",
+  "searchPlaceholder": "Знайти нерухомість",
+  "propertyTypes": {
+    "all": "Усі",
+    "apartment": "Квартира",
+    "villa": "Вілла",
+    "penthouse": "Пентхаус",
+    "townhouse": "Таунхаус",
+    "studio": "Студія"
+  },
+  "bedrooms": "спальні",
+  "bedroom": "спальня",
+  "handover": "Здача",
+  "noProperties": "Нерухомість не знайдена",
+  "tryAdjustFilters": "Спробуйте змінити фільтри",
+  "filters": "Фільтри",
+  "sortBy": "Сортувати",
+  "sortOptions": {
+    "priceAsc": "Ціна: від низької до високої",
+    "priceDesc": "Ціна: від високої до низької",
+    "newest": "Спочатку нові",
+    "oldest": "Спочатку старі"
+  },
+  "priceRange": "Діапазон цін",
+  "minPrice": "Мін. ціна",
+  "maxPrice": "Макс. ціна",
+  "propertyType": "Тип нерухомості",
+  "location": "Локація",
+  "selectFromList": "Обрати зі списку",
+  "applyFilters": "Застосувати фільтри"
+}
+

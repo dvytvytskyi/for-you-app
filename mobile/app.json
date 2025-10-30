@@ -9,7 +9,15 @@
     "scheme": "foryoure",
     "newArchEnabled": true,
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow For You Real Estate to access your photos to update your profile picture.",
+          "cameraPermission": "Allow For You Real Estate to access your camera to take a profile picture."
+        }
+      ],
+      "expo-localization"
     ],
     "splash": {
       "image": "./assets/splash-icon.png",

@@ -1,0 +1,30 @@
+{
+  "dashboard": "Панель управления",
+  "search": "Поиск",
+  "searchPlaceholder": "Поиск недвижимости...",
+  
+  "newLeads": "Новые лиды",
+  "explore": "Просмотреть",
+  "activeDeals": "Активные сделки",
+  "totalAmount": "Общая сумма",
+  
+  "yourLikedProjects": "Ваши избранные проекты",
+  "collectionDescription": "Это коллекция ваших избранных",
+  
+  "myLeads": "Мои лиды",
+  "properties": "Недвижимость",
+  "offers": "Предложения",
+  
+  "recentMarketNews": "Последние новости рынка",
+  
+  "propertyTypes": {
+    "apartment": "Апартаменты",
+    "villa": "Вилла",
+    "townhouse": "Таунхаус",
+    "penthouse": "Пентхаус",
+    "office": "Офис"
+  },
+  
+  "handoverDate": "Сдача: {{date}}"
+}
+

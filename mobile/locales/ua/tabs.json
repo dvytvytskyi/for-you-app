@@ -1,0 +1,72 @@
+{
+  "properties": {
+    "title": "Нерухомість",
+    "filters": "Фільтри",
+    "sortBy": "Сортувати за",
+    "priceRange": "Діапазон цін",
+    "bedrooms": "Спальні",
+    "bathrooms": "Ванні кімнати",
+    "propertyType": "Тип нерухомості",
+    "location": "Локація",
+    "features": "Особливості",
+    "applyFilters": "Застосувати фільтри",
+    "clearFilters": "Очистити фільтри",
+    "results": "Знайдено {{count}} об'єктів",
+    "noResults": "Нерухомість не знайдено",
+    "tryDifferentFilters": "Спробуйте змінити фільтри"
+  },
+  
+  "liked": {
+    "title": "Вподобане",
+    "subtitle": "Ваша улюблена нерухомість",
+    "noLikedProperties": "Поки немає вподобаної нерухомості",
+    "startExploring": "Почніть досліджувати та зберігайте улюблене",
+    "removeFromLiked": "Видалити з вподобаного",
+    "addedOn": "Додано {{date}}"
+  },
+  
+  "collections": {
+    "title": "Колекції",
+    "createCollection": "Створити колекцію",
+    "editCollection": "Редагувати колекцію",
+    "deleteCollection": "Видалити колекцію",
+    "collectionName": "Назва колекції",
+    "collectionDescription": "Опис",
+    "addProperties": "Додати нерухомість",
+    "noCollections": "Поки немає колекцій",
+    "createYourFirst": "Створіть свою першу колекцію для організації нерухомості",
+    "propertiesCount": "{{count}} об'єктів"
+  },
+  
+  "crm": {
+    "title": "CRM",
+    "leads": "Ліди",
+    "clients": "Клієнти",
+    "tasks": "Завдання",
+    "deals": "Угоди",
+    "newLead": "Новий лід",
+    "addClient": "Додати клієнта",
+    "createTask": "Створити завдання",
+    "status": "Статус",
+    "priority": "Пріоритет",
+    "dueDate": "Термін виконання",
+    "assignedTo": "Призначено",
+    "noLeads": "Поки немає лідів",
+    "noClients": "Поки немає клієнтів",
+    "noTasks": "Поки немає завдань",
+    "noDeal": "Поки немає угод"
+  },
+  
+  "map": {
+    "title": "Карта",
+    "searchOnMap": "Пошук на карті",
+    "nearby": "Поблизу",
+    "satellite": "Супутник",
+    "terrain": "Рельєф",
+    "traffic": "Трафік",
+    "myLocation": "Моя локація",
+    "showList": "Показати список",
+    "propertiesInArea": "{{count}} об'єктів у цій зоні"
+  }
+}
+

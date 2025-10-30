@@ -30,7 +30,7 @@ export default function SignUpGeneralScreen() {
   const handleLastNameChange = (text: string) => {
     setLastName(text);
     if (lastNameError) setLastNameError('');
-  };
+к  };
 
   const handleEmailChange = (text: string) => {
     setEmail(text);

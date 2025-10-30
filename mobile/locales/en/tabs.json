@@ -1,0 +1,72 @@
+{
+  "properties": {
+    "title": "Properties",
+    "filters": "Filters",
+    "sortBy": "Sort by",
+    "priceRange": "Price Range",
+    "bedrooms": "Bedrooms",
+    "bathrooms": "Bathrooms",
+    "propertyType": "Property Type",
+    "location": "Location",
+    "features": "Features",
+    "applyFilters": "Apply Filters",
+    "clearFilters": "Clear Filters",
+    "results": "{{count}} properties found",
+    "noResults": "No properties found",
+    "tryDifferentFilters": "Try adjusting your filters"
+  },
+  
+  "liked": {
+    "title": "Liked",
+    "subtitle": "Your favorite properties",
+    "noLikedProperties": "No liked properties yet",
+    "startExploring": "Start exploring and save your favorites",
+    "removeFromLiked": "Remove from liked",
+    "addedOn": "Added on {{date}}"
+  },
+  
+  "collections": {
+    "title": "Collections",
+    "createCollection": "Create Collection",
+    "editCollection": "Edit Collection",
+    "deleteCollection": "Delete Collection",
+    "collectionName": "Collection Name",
+    "collectionDescription": "Description",
+    "addProperties": "Add Properties",
+    "noCollections": "No collections yet",
+    "createYourFirst": "Create your first collection to organize properties",
+    "propertiesCount": "{{count}} properties"
+  },
+  
+  "crm": {
+    "title": "CRM",
+    "leads": "Leads",
+    "clients": "Clients",
+    "tasks": "Tasks",
+    "deals": "Deals",
+    "newLead": "New Lead",
+    "addClient": "Add Client",
+    "createTask": "Create Task",
+    "status": "Status",
+    "priority": "Priority",
+    "dueDate": "Due Date",
+    "assignedTo": "Assigned To",
+    "noLeads": "No leads yet",
+    "noClients": "No clients yet",
+    "noTasks": "No tasks yet",
+    "noDeal": "No deals yet"
+  },
+  
+  "map": {
+    "title": "Map",
+    "searchOnMap": "Search on map",
+    "nearby": "Nearby",
+    "satellite": "Satellite",
+    "terrain": "Terrain",
+    "traffic": "Traffic",
+    "myLocation": "My Location",
+    "showList": "Show List",
+    "propertiesInArea": "{{count}} properties in this area"
+  }
+}
+
