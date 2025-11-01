@@ -54,7 +54,10 @@
     "noLeads": "No leads yet",
     "noClients": "No clients yet",
     "noTasks": "No tasks yet",
-    "noDeal": "No deals yet"
+    "noDeal": "No deals yet",
+    "findByName": "Find by name",
+    "selectLeadStage": "Select lead stage",
+    "leadsFound": "{{count}} leads found"
   },
   
   "map": {

@@ -97,6 +97,10 @@ export default function ProfileScreen() {
     router.push('/profile/about');
   };
   
+  const handleKnowledgeBase = () => {
+    router.push('/profile/knowledge-base');
+  };
+  
   const handleLogout = () => {
     Alert.alert(
       t('profile.logOutConfirmTitle'),
@@ -201,6 +205,11 @@ export default function ProfileScreen() {
         
         {/* Support Section */}
         <SettingsSection>
+          <SettingsItem
+            icon="book-outline"
+            label="Knowledge Base"
+            onPress={handleKnowledgeBase}
+          />
           <SettingsItem
             icon="shield-checkmark-outline"
             label={t('profile.privacyPolicy')}

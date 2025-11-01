@@ -54,7 +54,10 @@
     "noLeads": "Пока нет лидов",
     "noClients": "Пока нет клиентов",
     "noTasks": "Пока нет задач",
-    "noDeal": "Пока нет сделок"
+    "noDeal": "Пока нет сделок",
+    "findByName": "Найти по имени",
+    "selectLeadStage": "Выбрать этап лида",
+    "leadsFound": "{{count}} лидов найдено"
   },
   
   "map": {

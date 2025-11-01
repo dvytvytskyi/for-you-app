@@ -1,13 +1,14 @@
-import { View, Text, StyleSheet, ScrollView, Pressable, Image, Dimensions, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
-import { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Image, Dimensions, NativeScrollEvent, NativeSyntheticEvent, Modal, Animated } from 'react-native';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '@/utils/theme';
 import { useTranslation } from '@/utils/i18n';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import MapView from '@/components/ui/MapView';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -16,9 +17,49 @@ export default function PropertyDetailScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const { fromCollection } = useLocalSearchParams();
+  const isFromCollection = Boolean(fromCollection);
   
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
+
+  const closeMenu = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(backdropOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setMenuVisible(false);
+    });
+  }, [backdropOpacity, slideAnim]);
+
+  useEffect(() => {
+    if (menuVisible) {
+      Animated.parallel([
+        Animated.timing(backdropOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.spring(slideAnim, {
+          toValue: 1,
+          useNativeDriver: true,
+          damping: 18,
+          stiffness: 120,
+        }),
+      ]).start();
+    }
+  }, [menuVisible]);
 
   // Mock data
   const property = {
@@ -27,6 +68,8 @@ export default function PropertyDetailScreen() {
     price: '249 932',
     currency: '$',
     location: 'Dubai land Islands, Dubai, UAE',
+    latitude: 25.2048,
+    longitude: 55.2708,
     bedrooms: 3,
     bathrooms: 2,
     size: 2660,
@@ -321,21 +364,22 @@ export default function PropertyDetailScreen() {
 
             {/* Location Map */}
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              <Text style={[styles.sectionTitle, { color: theme.text, marginBottom: 12 }]}>
                 Location
               </Text>
-              <View style={[styles.mapContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                <Image
-                  source={{ uri: 'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=800' }}
-                  style={styles.mapImage}
+              <View style={styles.mapWrapper}>
+                <MapView
+                  latitude={property.latitude}
+                  longitude={property.longitude}
+                  accessToken="pk.eyJ1IjoiYWJpZXNwYW5hIiwiYSI6ImNsb3N4NzllYzAyOWYybWw5ZzNpNXlqaHkifQ.UxlTvUuSq9L5jt0jRtRR-A"
+                  styleUrl="mapbox://styles/abiespana/clsq0mcqa00ke01qw8btw21mv"
+                  height={200}
+                  borderRadius={12}
                 />
-                <View style={styles.mapPin}>
-                  <Text style={styles.mapPinText}>Fy</Text>
-                </View>
+                <Text style={[styles.mapAddress, { color: theme.textSecondary }]}>
+                  Located in {property.location}
+                </Text>
               </View>
-              <Text style={[styles.mapAddress, { color: theme.textSecondary }]}>
-                Located in {property.location}
-              </Text>
             </View>
         </View>
       </ScrollView>
@@ -343,14 +387,101 @@ export default function PropertyDetailScreen() {
       {/* Bottom Action Button */}
       <View style={[styles.bottomButtonContainer, { borderTopColor: theme.border, backgroundColor: theme.background }]}>
         <Pressable
-          style={[styles.bottomButton, { backgroundColor: theme.primary }]}
-          onPress={() => console.log('Add to collection')}
+          style={[styles.bottomButton, { backgroundColor: isFromCollection ? '#FF6B5D' : theme.primary }]}
+          onPress={() => console.log(isFromCollection ? 'Remove from collection' : 'Add to collection')}
         >
           <Text style={styles.bottomButtonText}>
-            Add to collection
+            {isFromCollection ? 'Remove from collection' : 'Add to collection'}
           </Text>
         </Pressable>
+        {!isFromCollection && (
+          <Pressable
+            style={[styles.menuButton, { borderColor: theme.border }]}
+            onPress={() => setMenuVisible(!menuVisible)}
+          >
+            <Ionicons name="options-outline" size={24} color={theme.text} />
+          </Pressable>
+        )}
       </View>
+
+      {/* Menu Modal */}
+      <Modal
+        visible={menuVisible}
+        transparent
+        animationType="none"
+        onRequestClose={closeMenu}
+      >
+        <Animated.View
+          style={[
+            styles.menuBackdrop,
+            {
+              opacity: backdropOpacity,
+            },
+          ]}
+        >
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={closeMenu}
+          />
+          <Animated.View
+            style={[
+              styles.menuContent,
+              {
+                backgroundColor: theme.background,
+                borderColor: theme.border,
+                transform: [
+                  {
+                    translateY: slideAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [300, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            {/* Drag Handle */}
+            <View style={styles.dragHandleContainer}>
+              <View style={[styles.dragHandle, { backgroundColor: theme.textSecondary }]} />
+            </View>
+            
+            <View style={styles.menuItemsContainer}>
+              <Pressable
+                style={styles.menuItem}
+                onPress={() => {
+                  console.log('Report property');
+                  closeMenu();
+                }}
+              >
+                <Ionicons name="flag-outline" size={20} color={theme.text} />
+                <Text style={[styles.menuItemText, { color: theme.text }]}>Report property</Text>
+              </Pressable>
+              <View style={[styles.menuDivider, { backgroundColor: theme.border }]} />
+              <Pressable
+                style={styles.menuItem}
+                onPress={() => {
+                  console.log('Compare property');
+                  closeMenu();
+                }}
+              >
+                <Ionicons name="swap-horizontal-outline" size={20} color={theme.text} />
+                <Text style={[styles.menuItemText, { color: theme.text }]}>Compare property</Text>
+              </Pressable>
+              <View style={[styles.menuDivider, { backgroundColor: theme.border }]} />
+              <Pressable
+                style={styles.menuItem}
+                onPress={() => {
+                  console.log('Like property');
+                  closeMenu();
+                }}
+              >
+                <Ionicons name="heart-outline" size={20} color={theme.text} />
+                <Text style={[styles.menuItemText, { color: theme.text }]}>Like property</Text>
+              </Pressable>
+            </View>
+          </Animated.View>
+        </Animated.View>
+      </Modal>
     </View>
   );
 }
@@ -583,49 +714,28 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
-  mapContainer: {
-    height: 200,
-    borderRadius: 12,
-    borderWidth: 1,
-    overflow: 'hidden',
-    marginBottom: 12,
-  },
-  mapImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  mapPin: {
-    position: 'absolute',
-    top: '40%',
-    left: '50%',
-    marginLeft: -15,
-    marginTop: -25,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#102F73',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mapPinText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '700',
+  mapWrapper: {
+    marginBottom: 0,
   },
   mapAddress: {
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: 'left',
+    marginTop: 12,
   },
   bottomButtonContainer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 24,
     borderTopWidth: 1,
+    flexDirection: 'row',
+    gap: 8,
   },
   bottomButton: {
+    flex: 1,
     height: 56,
     borderRadius: 28,
     alignItems: 'center',
@@ -635,6 +745,54 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '500',
+  },
+  menuButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  menuBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  menuContent: {
+    width: '100%',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: 'hidden',
+  },
+  dragHandleContainer: {
+    alignItems: 'center',
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  dragHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    opacity: 0.3,
+  },
+  menuItemsContainer: {
+    paddingBottom: 24,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  menuDivider: {
+    height: 1,
+    width: '100%',
+  },
+  menuItemText: {
+    fontSize: 16,
+    fontWeight: '400',
   },
 });
 

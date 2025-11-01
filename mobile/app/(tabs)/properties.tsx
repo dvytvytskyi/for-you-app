@@ -477,10 +477,7 @@ function PropertyCard({ property, onToggleFavorite, onScrollStart, onScrollEnd, 
   const router = useRouter();
   
   return (
-    <Pressable 
-      style={styles.propertyCard}
-      onPress={() => router.push(`/property/${property.id}`)}
-    >
+    <View style={styles.propertyCard}>
       <ScrollView
         horizontal
         pagingEnabled
@@ -547,6 +544,10 @@ function PropertyCard({ property, onToggleFavorite, onScrollStart, onScrollEnd, 
         style={styles.gradient}
         pointerEvents="box-none"
       >
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={() => router.push(`/property/${property.id}`)}
+        />
         {/* Property Details */}
         <View style={styles.propertyDetails} pointerEvents="none">
           <Text style={styles.propertyTitle} numberOfLines={2}>
@@ -575,7 +576,7 @@ function PropertyCard({ property, onToggleFavorite, onScrollStart, onScrollEnd, 
           />
         </Pressable>
       </LinearGradient>
-    </Pressable>
+    </View>
   );
 }
 

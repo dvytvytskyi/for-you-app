@@ -68,6 +68,20 @@ export default function RootLayout() {
             presentation: 'card',
           }}
         />
+        <Stack.Screen 
+          name="collections/[id]" 
+          options={{
+            animation: 'slide_from_right',
+            presentation: 'card',
+          }}
+        />
+        <Stack.Screen 
+          name="lead/[id]" 
+          options={{
+            animation: 'slide_from_right',
+            presentation: 'card',
+          }}
+        />
       </Stack>
     </QueryClientProvider>
   );

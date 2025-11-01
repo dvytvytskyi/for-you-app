@@ -1,24 +1,30 @@
 import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/utils/theme';
+import { Ionicons } from '@expo/vector-icons';
 
 interface HeaderProps {
   title: string;
   avatar?: string; // URL to avatar image
+  onBack?: () => void;
 }
 
-export default function Header({ title, avatar }: HeaderProps) {
+export default function Header({ title, avatar, onBack }: HeaderProps) {
   const router = useRouter();
   const { theme } = useTheme();
 
   const handleAvatarPress = () => {
-    router.push('/profile');
+    if (onBack) {
+      onBack();
+    } else {
+      router.push('/profile');
+    }
   };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Title */}
-      <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
+      <Text style={[styles.title, { color: theme.primary }]}>{title}</Text>
       
       {/* Avatar */}
       <Pressable 
@@ -33,6 +39,8 @@ export default function Header({ title, avatar }: HeaderProps) {
       >
         {avatar ? (
           <Image source={{ uri: avatar }} style={styles.avatar} />
+        ) : onBack ? (
+          <Ionicons name="close" size={24} color={theme.textSecondary} />
         ) : (
           <View style={[styles.avatarPlaceholder, { backgroundColor: theme.border }]}>
             <Text style={[styles.avatarText, { color: theme.textTertiary }]}>👤</Text>
@@ -46,7 +54,7 @@ export default function Header({ title, avatar }: HeaderProps) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     paddingHorizontal: 16,
     paddingVertical: 4,
     // backgroundColor applied dynamically
@@ -54,8 +62,8 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 28,
+    fontWeight: '600',
     // color applied dynamically
   },
   avatarContainer: {

@@ -23,6 +23,26 @@ services:
       timeout: 5s
       retries: 5
 
+  admin-panel-db:
+    image: postgres:15
+    container_name: for-you-admin-panel-postgres
+    restart: unless-stopped
+    ports:
+      - '5434:5432'
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: admin_panel
+    volumes:
+      - admin_panel_db_data:/var/lib/postgresql/data
+    networks:
+      - for-you-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U admin']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   redis:
     image: redis:7-alpine
     container_name: for-you-real-estate-redis
@@ -70,6 +90,8 @@ volumes:
   postgres_data:
     driver: local
   redis_data:
+    driver: local
+  admin_panel_db_data:
     driver: local
 
 networks:

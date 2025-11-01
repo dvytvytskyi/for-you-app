@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { PropertiesModule } from './properties/properties.module';
 import { LeadsModule } from './leads/leads.module';
 import { AmoCrmModule } from './integrations/amo-crm/amo-crm.module';
+import { AdminPanelModule } from './integrations/admin-panel/admin-panel.module';
 import { FirebaseModule } from './integrations/firebase/firebase.module';
 import { MediaModule } from './integrations/media/media.module';
 import { DataSyncModule } from './integrations/data-sync/data-sync.module';
@@ -65,6 +66,7 @@ import { redisConfig } from './config/redis.config';
 
     // Integrations
     AmoCrmModule,
+    AdminPanelModule,
     FirebaseModule,
     MediaModule,
     DataSyncModule,

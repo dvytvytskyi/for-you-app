@@ -27,7 +27,6 @@ export default function SearchBar({ value, onChangeText, placeholder = 'Find pro
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     // backgroundColor, borderColor applied dynamically

@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_URL = process.env.API_URL || 'http://localhost:3000/api/v1'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -9,7 +9,7 @@ export const api = axios.create({
   },
 })
 
-// Request interceptor для додавання токену
+// Request interceptor для додавання JWT токену
 api.interceptors.request.use(
   (config) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
@@ -30,7 +30,6 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Redirect to login
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('token')
         window.location.href = '/login'
       }
     }
