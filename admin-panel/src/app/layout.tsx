@@ -1,8 +1,13 @@
-import type { Metadata } from 'next'
-import { ConfigProvider } from 'antd'
-import ukUA from 'antd/locale/uk_UA'
-import 'antd/dist/reset.css'
-import '../styles/globals.css'
+import { Outfit } from 'next/font/google';
+import './globals.css';
+
+import { SidebarProvider } from '@/context/SidebarContext';
+import { ThemeProvider } from '@/context/ThemeContext';
+import type { Metadata } from 'next';
+
+const outfit = Outfit({
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
   title: 'For You Real Estate - Адмін Панель',
@@ -16,12 +21,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="uk">
-      <body>
-        <ConfigProvider locale={ukUA}>
-          {children}
-        </ConfigProvider>
+      <body className={`${outfit.className} dark:bg-gray-900`}>
+        <ThemeProvider>
+          <SidebarProvider>{children}</SidebarProvider>
+        </ThemeProvider>
       </body>
     </html>
-  )
+  );
 }
 
