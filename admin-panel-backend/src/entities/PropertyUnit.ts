@@ -26,7 +26,7 @@ export class PropertyUnit {
   @Column({ type: 'enum', enum: UnitType })
   type!: UnitType;
 
-  @Column()
+  @Column({ nullable: true })
   planImage!: string;
 
   @Column('decimal', { precision: 10, scale: 2 })

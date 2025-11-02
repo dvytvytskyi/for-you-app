@@ -1,0 +1,333 @@
+{
+  "propertySchema": {
+    "description": "Schema for Off-Plan Property entity",
+    "propertyType": {
+      "value": "off-plan",
+      "fixed": true,
+      "description": "Тип нерухомості - завжди 'off-plan'"
+    },
+    "requiredFields": {
+      "propertyType": {
+        "type": "enum",
+        "value": "off-plan",
+        "required": true,
+        "description": "Тип нерухомості (завжди 'off-plan')"
+      },
+      "name": {
+        "type": "string",
+        "required": true,
+        "description": "Назва проекту",
+        "example": "Dubai Marina Residences"
+      },
+      "photos": {
+        "type": "array of strings",
+        "required": true,
+        "minItems": 1,
+        "description": "Масив URL фотографій. Перша фотографія буде головною",
+        "example": [
+          "https://res.cloudinary.com/dgv0rxd60/image/upload/v1234567890/properties/main.jpg",
+          "https://res.cloudinary.com/dgv0rxd60/image/upload/v1234567890/properties/view.jpg"
+        ]
+      },
+      "countryId": {
+        "type": "string (UUID)",
+        "required": true,
+        "description": "ID країни (UUID)",
+        "example": "d0a1af5f-94e0-4ee9-886a-689d2f77d9b9"
+      },
+      "cityId": {
+        "type": "string (UUID)",
+        "required": true,
+        "description": "ID міста (UUID)",
+        "example": "93d991f3-2468-4506-8417-f117f42a5b5b"
+      },
+      "areaId": {
+        "type": "string (UUID)",
+        "required": true,
+        "description": "ID району (UUID)",
+        "example": "1b6f0f1f-0587-4d5f-96b2-5cb76844b1a3"
+      },
+      "latitude": {
+        "type": "number (decimal)",
+        "required": true,
+        "precision": 10,
+        "scale": 8,
+        "range": "-90 to 90",
+        "description": "Широта координат",
+        "example": 25.2048492
+      },
+      "longitude": {
+        "type": "number (decimal)",
+        "required": true,
+        "precision": 11,
+        "scale": 8,
+        "range": "-180 to 180",
+        "description": "Довгота координат",
+        "example": 55.2707834
+      },
+      "description": {
+        "type": "string (text)",
+        "required": true,
+        "description": "Опис проекту",
+        "example": "Luxury off-plan development in Dubai Marina with stunning views"
+      },
+      "priceFrom": {
+        "type": "number (decimal)",
+        "required": true,
+        "precision": 15,
+        "scale": 2,
+        "min": 0,
+        "description": "Мінімальна ціна в USD",
+        "example": 142353.50
+      },
+      "bedroomsFrom": {
+        "type": "integer",
+        "required": true,
+        "min": 0,
+        "description": "Мінімальна кількість спалень",
+        "example": 1
+      },
+      "bedroomsTo": {
+        "type": "integer",
+        "required": true,
+        "min": 0,
+        "description": "Максимальна кількість спалень",
+        "example": 4
+      },
+      "bathroomsFrom": {
+        "type": "integer",
+        "required": true,
+        "min": 0,
+        "description": "Мінімальна кількість ванних кімнат",
+        "example": 1
+      },
+      "bathroomsTo": {
+        "type": "integer",
+        "required": true,
+        "min": 0,
+        "description": "Максимальна кількість ванних кімнат",
+        "example": 3
+      },
+      "sizeFrom": {
+        "type": "number (decimal)",
+        "required": true,
+        "precision": 10,
+        "scale": 2,
+        "min": 0,
+        "description": "Мінімальний розмір в кв.м",
+        "example": 50.50
+      },
+      "sizeTo": {
+        "type": "number (decimal)",
+        "required": true,
+        "precision": 10,
+        "scale": 2,
+        "min": 0,
+        "description": "Максимальний розмір в кв.м",
+        "example": 200.75
+      }
+    },
+    "optionalFields": {
+      "developerId": {
+        "type": "string (UUID)",
+        "required": false,
+        "nullable": true,
+        "description": "ID розробника (UUID)",
+        "example": "779b5432-e970-4246-a8bc-f24501208dbe"
+      },
+      "paymentPlan": {
+        "type": "string (text)",
+        "required": false,
+        "nullable": true,
+        "description": "План оплати",
+        "example": "10% down payment, 90% on completion"
+      },
+      "facilityIds": {
+        "type": "array of strings (UUIDs)",
+        "required": false,
+        "description": "Масив ID зручностей (facilities)",
+        "example": [
+          "facility-uuid-1",
+          "facility-uuid-2",
+          "facility-uuid-3"
+        ]
+      },
+      "units": {
+        "type": "array of Unit objects",
+        "required": false,
+        "description": "Масив одиниць (units) для off-plan проекту",
+        "schema": {
+          "unitId": {
+            "type": "string",
+            "required": true,
+            "description": "Унікальний ID одиниці",
+            "example": "UNIT-001"
+          },
+          "type": {
+            "type": "enum",
+            "required": true,
+            "values": ["apartment", "villa", "penthouse", "townhouse", "office"],
+            "description": "Тип одиниці",
+            "example": "apartment"
+          },
+          "planImage": {
+            "type": "string (URL)",
+            "required": false,
+            "nullable": true,
+            "description": "URL зображення плану одиниці",
+            "example": "https://res.cloudinary.com/dgv0rxd60/image/upload/v1234567890/properties/unit-plan.jpg"
+          },
+          "totalSize": {
+            "type": "number (decimal)",
+            "required": true,
+            "precision": 10,
+            "scale": 2,
+            "min": 0,
+            "description": "Загальна площа в кв.м",
+            "example": 85.50
+          },
+          "balconySize": {
+            "type": "number (decimal)",
+            "required": false,
+            "nullable": true,
+            "precision": 10,
+            "scale": 2,
+            "min": 0,
+            "description": "Площа балкону в кв.м",
+            "example": 10.00
+          },
+          "price": {
+            "type": "number (decimal)",
+            "required": true,
+            "precision": 15,
+            "scale": 2,
+            "min": 0,
+            "description": "Ціна одиниці в USD",
+            "example": 250000.00
+          }
+        }
+      }
+    },
+    "exampleJSON": {
+      "propertyType": "off-plan",
+      "name": "Dubai Marina Residences",
+      "photos": [
+        "https://res.cloudinary.com/dgv0rxd60/image/upload/v1234567890/properties/main.jpg",
+        "https://res.cloudinary.com/dgv0rxd60/image/upload/v1234567890/properties/view.jpg",
+        "https://res.cloudinary.com/dgv0rxd60/image/upload/v1234567890/properties/interior.jpg"
+      ],
+      "countryId": "d0a1af5f-94e0-4ee9-886a-689d2f77d9b9",
+      "cityId": "93d991f3-2468-4506-8417-f117f42a5b5b",
+      "areaId": "1b6f0f1f-0587-4d5f-96b2-5cb76844b1a3",
+      "latitude": 25.2048492,
+      "longitude": 55.2707834,
+      "description": "Luxury off-plan development in Dubai Marina with stunning sea views. Modern architecture, premium finishes, and world-class amenities.",
+      "developerId": "779b5432-e970-4246-a8bc-f24501208dbe",
+      "priceFrom": 142353.50,
+      "bedroomsFrom": 1,
+      "bedroomsTo": 4,
+      "bathroomsFrom": 1,
+      "bathroomsTo": 3,
+      "sizeFrom": 50.50,
+      "sizeTo": 200.75,
+      "paymentPlan": "10% down payment, 90% on completion. Flexible payment plans available.",
+      "facilityIds": [
+        "facility-uuid-swimming-pool",
+        "facility-uuid-gym",
+        "facility-uuid-parking",
+        "facility-uuid-security"
+      ],
+      "units": [
+        {
+          "unitId": "UNIT-001-A",
+          "type": "apartment",
+          "planImage": "https://res.cloudinary.com/dgv0rxd60/image/upload/v1234567890/properties/unit-plan-1.jpg",
+          "totalSize": 85.50,
+          "balconySize": 10.00,
+          "price": 250000.00
+        },
+        {
+          "unitId": "UNIT-002-B",
+          "type": "apartment",
+          "planImage": "https://res.cloudinary.com/dgv0rxd60/image/upload/v1234567890/properties/unit-plan-2.jpg",
+          "totalSize": 120.75,
+          "balconySize": 15.50,
+          "price": 350000.00
+        },
+        {
+          "unitId": "UNIT-003-PH",
+          "type": "penthouse",
+          "planImage": "https://res.cloudinary.com/dgv0rxd60/image/upload/v1234567890/properties/unit-plan-3.jpg",
+          "totalSize": 250.00,
+          "balconySize": 25.50,
+          "price": 750000.00
+        }
+      ]
+    },
+    "validationRules": {
+      "propertyType": "Завжди має бути 'off-plan'",
+      "photos": "Мінімум 1 фотографія, перша стає головною",
+      "latitude": "Число від -90 до 90",
+      "longitude": "Число від -180 до 180",
+      "priceFrom": "Додатнє число",
+      "bedroomsFrom": "Менше або дорівнює bedroomsTo",
+      "bedroomsTo": "Більше або дорівнює bedroomsFrom",
+      "bathroomsFrom": "Менше або дорівнює bathroomsTo",
+      "bathroomsTo": "Більше або дорівнює bathroomsFrom",
+      "sizeFrom": "Менше або дорівнює sizeTo",
+      "sizeTo": "Більше або дорівнює sizeFrom",
+      "units": "Кожен unit має унікальний unitId",
+      "unit.totalSize": "Додатнє число",
+      "unit.price": "Додатнє число",
+      "unit.balconySize": "Додатнє число (якщо вказано)"
+    },
+    "notes": {
+      "important": [
+        "Всі обов'язкові поля (requiredFields) мають бути заповнені",
+        "Поле photos має містити мінімум 1 URL",
+        "Перша фотографія в масиві photos автоматично стає головною (mainPhotoUrl)",
+        "Поля bedroomsFrom має бути <= bedroomsTo",
+        "Поля bathroomsFrom має бути <= bathroomsTo",
+        "Поля sizeFrom має бути <= sizeTo",
+        "countryId, cityId, areaId, developerId та facilityIds мають бути валідними UUID які існують в базі даних",
+        "Якщо передано units, кожен unit має мати унікальний unitId",
+        "Всі числові поля (крім координат) мають бути додатніми",
+        "Координати latitude та longitude мають бути валідними"
+      ],
+      "dataTypes": {
+        "UUID": "Формат: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (36 символів з дефісами). Має існувати в базі даних.",
+        "decimal": "Число з плаваючою точкою. precision - загальна кількість цифр, scale - кількість після коми.",
+        "integer": "Ціле число (0, 1, 2, 3, ...)",
+        "string": "Текстовий рядок",
+        "array": "Масив елементів вказаного типу",
+        "enum": "Один з перелічених значень",
+        "URL": "Валідний URL посилання (зазвичай Cloudinary)"
+      }
+    },
+    "fieldOrder": {
+      "suggestedOrder": [
+        "propertyType",
+        "name",
+        "photos",
+        "countryId",
+        "cityId",
+        "areaId",
+        "latitude",
+        "longitude",
+        "description",
+        "priceFrom",
+        "bedroomsFrom",
+        "bedroomsTo",
+        "bathroomsFrom",
+        "bathroomsTo",
+        "sizeFrom",
+        "sizeTo",
+        "developerId",
+        "paymentPlan",
+        "facilityIds",
+        "units"
+      ],
+      "description": "Рекомендований порядок полів для кращої читабельності"
+    }
+  }
+}

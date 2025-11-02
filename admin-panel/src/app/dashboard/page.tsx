@@ -6,7 +6,6 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({
     properties: 0,
     users: 0,
-    support: 0,
     courses: 0,
   })
   const [loading, setLoading] = useState(true)
@@ -17,16 +16,13 @@ export default function DashboardPage() {
 
   const loadStats = async () => {
     try {
-      const [props, news, support, courses] = await Promise.all([
+      const [props, courses] = await Promise.all([
         api.get('/properties'),
-        api.get('/news'),
-        api.get('/support'),
         api.get('/courses'),
       ])
       setStats({
         properties: props.data.data.length,
         users: 0,
-        support: support.data.data.length,
         courses: courses.data.data.length,
       })
     } catch (error) {
@@ -40,7 +36,7 @@ export default function DashboardPage() {
     <div className="grid grid-cols-12 gap-4 md:gap-6">
       {/* Stats Cards */}
       <div className="col-span-12">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {/* Properties Card */}
           <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
             <div className="flex items-center justify-between">
@@ -74,25 +70,6 @@ export default function DashboardPage() {
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-50 dark:bg-green-500/10">
                 <svg className="fill-green-500 dark:fill-green-400" width="24" height="24" viewBox="0 0 24 24" fill="none">
                   <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z"/>
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          {/* Support Card */}
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Support Requests
-                </p>
-                <p className="mt-2 text-2xl font-semibold text-gray-800 dark:text-white">
-                  {loading ? '...' : stats.support}
-                </p>
-              </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-500/10">
-                <svg className="fill-orange-500 dark:fill-orange-400" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2ZM20 16H6L4 18V4H20V16Z"/>
                 </svg>
               </div>
             </div>

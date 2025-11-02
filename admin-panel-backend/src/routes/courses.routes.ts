@@ -28,8 +28,23 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const course = await AppDataSource.getRepository(Course).save(req.body);
-  res.json(successResponse(course));
+  try {
+    const courseRepository = AppDataSource.getRepository(Course);
+    const course = courseRepository.create(req.body);
+    const result = await courseRepository.save(course);
+    const savedCourse = Array.isArray(result) ? result[0] : result;
+    
+    // Fetch with relations to return complete data
+    const completeCourse = await courseRepository.findOne({
+      where: { id: savedCourse.id },
+      relations: ['contents', 'links'],
+    });
+    
+    res.json(successResponse(completeCourse));
+  } catch (error: any) {
+    console.error('Error creating course:', error);
+    res.status(500).json({ success: false, message: error.message || 'Failed to create course' });
+  }
 });
 
 router.patch('/:id', async (req, res) => {

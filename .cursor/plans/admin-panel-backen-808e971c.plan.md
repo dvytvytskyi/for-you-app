@@ -10,11 +10,13 @@ Mobile App → Backend (NestJS, існуючий) → Admin Panel Backend (но�
 ```
 
 **Проекти:**
+
 - `/admin-panel-backend/` - новий Express.js + TypeORM + PostgreSQL
 - `/admin-panel/` - існуючий Next.js (frontend)
 - `/backend/` - існуючий NestJS (тільки додамо API client для Admin Panel)
 
 **Authentication:**
+
 - Admin Panel Frontend ↔ Admin Panel Backend: JWT (NextAuth)
 - Backend (NestJS) ↔ Admin Panel Backend: API Key в headers
 
@@ -25,6 +27,7 @@ Mobile App → Backend (NestJS, існуючий) → Admin Panel Backend (но�
 ### Step 1.1: Project Initialization
 
 **Create structure:**
+
 ```bash
 mkdir admin-panel-backend
 cd admin-panel-backend
@@ -32,6 +35,7 @@ npm init -y
 ```
 
 **Install dependencies:**
+
 ```bash
 npm install express cors dotenv typeorm pg bcrypt jsonwebtoken
 npm install -D typescript @types/express @types/node @types/cors @types/bcrypt @types/jsonwebtoken ts-node-dev
@@ -40,6 +44,7 @@ npm install -D typescript @types/express @types/node @types/cors @types/bcrypt @
 **Files to create:**
 
 `admin-panel-backend/tsconfig.json`:
+
 ```json
 {
   "compilerOptions": {
@@ -58,6 +63,7 @@ npm install -D typescript @types/express @types/node @types/cors @types/bcrypt @
 ```
 
 `admin-panel-backend/package.json` scripts:
+
 ```json
 {
   "scripts": {
@@ -69,6 +75,7 @@ npm install -D typescript @types/express @types/node @types/cors @types/bcrypt @
 ```
 
 `admin-panel-backend/.env`:
+
 ```
 PORT=4000
 DATABASE_URL=postgresql://admin:admin123@localhost:5433/admin_panel
@@ -80,6 +87,7 @@ UPLOAD_DIR=./uploads
 ```
 
 `admin-panel-backend/.gitignore`:
+
 ```
 node_modules/
 dist/
@@ -92,6 +100,7 @@ uploads/
 **Files to create:**
 
 `admin-panel-backend/src/config/database.ts`:
+
 ```typescript
 import { DataSource } from 'typeorm';
 import dotenv from 'dotenv';
@@ -109,6 +118,7 @@ export const AppDataSource = new DataSource({
 ```
 
 `admin-panel-backend/ormconfig.json`:
+
 ```json
 {
   "type": "postgres",
@@ -126,6 +136,7 @@ export const AppDataSource = new DataSource({
 **Files to create:**
 
 `admin-panel-backend/src/middleware/auth.ts`:
+
 ```typescript
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
@@ -153,6 +164,7 @@ export const authenticateAPIKey = (req: Request, res: Response, next: NextFuncti
 ```
 
 `admin-panel-backend/src/utils/conversions.ts`:
+
 ```typescript
 export class Conversions {
   static readonly USD_TO_AED = 3.67;
@@ -169,6 +181,7 @@ export class Conversions {
 ```
 
 `admin-panel-backend/src/utils/response.ts`:
+
 ```typescript
 export const successResponse = (data: any, message = 'Success') => ({
   success: true,
@@ -250,6 +263,7 @@ AppDataSource.initialize()
 **Files to create:**
 
 `admin-panel-backend/src/entities/Country.ts`:
+
 ```typescript
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { City } from './City';
@@ -277,6 +291,7 @@ export class Country {
 ```
 
 `admin-panel-backend/src/entities/City.ts`:
+
 ```typescript
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from 'typeorm';
 import { Country } from './Country';
@@ -308,6 +323,7 @@ export class City {
 ```
 
 `admin-panel-backend/src/entities/Area.ts`:
+
 ```typescript
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
 import { City } from './City';
@@ -335,6 +351,7 @@ export class Area {
 ```
 
 `admin-panel-backend/src/entities/Facility.ts`:
+
 ```typescript
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
@@ -358,6 +375,7 @@ export class Facility {
 ```
 
 `admin-panel-backend/src/entities/Developer.ts`:
+
 ```typescript
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
 
@@ -385,6 +403,7 @@ export class Developer {
 **Files to create:**
 
 `admin-panel-backend/src/entities/Property.ts`:
+
 ```typescript
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, ManyToMany, JoinTable, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { Country } from './Country';
@@ -496,6 +515,7 @@ export class Property {
 ```
 
 `admin-panel-backend/src/entities/PropertyUnit.ts`:
+
 ```typescript
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
 import { Property } from './Property';
@@ -543,6 +563,7 @@ export class PropertyUnit {
 **Files to create:**
 
 `admin-panel-backend/src/entities/Course.ts`:
+
 ```typescript
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { CourseContent } from './CourseContent';
@@ -577,6 +598,7 @@ export class Course {
 ```
 
 `admin-panel-backend/src/entities/CourseContent.ts`:
+
 ```typescript
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
 import { Course } from './Course';
@@ -618,6 +640,7 @@ export class CourseContent {
 ```
 
 `admin-panel-backend/src/entities/CourseLink.ts`:
+
 ```typescript
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
 import { Course } from './Course';
@@ -648,6 +671,7 @@ export class CourseLink {
 **Files to create:**
 
 `admin-panel-backend/src/entities/News.ts`:
+
 ```typescript
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { NewsContent } from './NewsContent';
@@ -684,6 +708,7 @@ export class News {
 ```
 
 `admin-panel-backend/src/entities/NewsContent.ts`:
+
 ```typescript
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
 import { News } from './News';
@@ -729,6 +754,7 @@ export class NewsContent {
 **Files to create:**
 
 `admin-panel-backend/src/entities/SupportRequest.ts`:
+
 ```typescript
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { SupportResponse } from './SupportResponse';
@@ -772,6 +798,7 @@ export class SupportRequest {
 ```
 
 `admin-panel-backend/src/entities/SupportResponse.ts`:
+
 ```typescript
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from 'typeorm';
 import { SupportRequest } from './SupportRequest';
@@ -1063,6 +1090,7 @@ export default router;
 ### Step 3.4: Courses, News, Support, Users Routes
 
 Create similar routes for:
+
 - `admin-panel-backend/src/routes/courses.routes.ts`
 - `admin-panel-backend/src/routes/news.routes.ts`
 - `admin-panel-backend/src/routes/support.routes.ts`
@@ -1179,6 +1207,7 @@ export class AdminPanelClient {
 ### Step 4.2: Update Backend .env
 
 Add to `backend/.env`:
+
 ```
 ADMIN_PANEL_API_URL=http://localhost:4000/api
 ADMIN_PANEL_API_KEY=your-secure-api-key-for-main-backend
@@ -1207,6 +1236,7 @@ export class PropertiesService {
 ```
 
 Do the same for:
+
 - `backend/src/knowledge-base/` (if doesn't exist, create module)
 - `backend/src/news/` (if doesn't exist, create module)
 - Update existing modules to use Admin Panel API instead of local DB
@@ -1526,6 +1556,7 @@ export default function PropertiesPage() {
 **File:** `admin-panel/src/app/properties/new/page.tsx` and `admin-panel/src/app/properties/[id]/page.tsx`
 
 Create detailed form with:
+
 - Property type selector (Off-Plan / Secondary)
 - Photo uploader (multiple)
 - Location cascading selects (Country → City → Area)
@@ -1543,26 +1574,31 @@ Use Ant Design Form, Upload, Select, InputNumber, Checkbox, Button.
 Create similar pages for:
 
 ### 7.1: Settings (`/settings`)
+
 - Tabs: Developers, Facilities, Locations
 - Tables with CRUD operations
 
 ### 7.2: Knowledge Base (`/knowledge-base`)
+
 - List of courses
 - Course editor with dynamic content blocks (text/image/video)
 - Use react-quill for rich text
 
 ### 7.3: News (`/news`)
+
 - List of news articles
 - News editor (similar to courses but no useful links)
 - Published toggle
 
 ### 7.4: Support (`/support`)
+
 - List of support requests
 - Conversation view
 - Reply form
 - Status update
 
 ### 7.5: Users (`/users`)
+
 - Table of mobile app users
 - User details page
 - Disable/enable actions
@@ -1591,6 +1627,7 @@ CMD ["npm", "start"]
 **File:** `docker-compose.yml`
 
 Add to existing compose:
+
 ```yaml
 services:
   admin-panel-db:
@@ -1600,25 +1637,25 @@ services:
       POSTGRES_PASSWORD: admin123
       POSTGRES_DB: admin_panel
     ports:
-      - "5433:5432"
+                           - "5433:5432"
     volumes:
-      - admin_panel_db_data:/var/lib/postgresql/data
+                           - admin_panel_db_data:/var/lib/postgresql/data
 
   admin-panel-backend:
     build: ./admin-panel-backend
     ports:
-      - "4000:4000"
+                           - "4000:4000"
     environment:
       DATABASE_URL: postgresql://admin:admin123@admin-panel-db:5432/admin_panel
       ADMIN_JWT_SECRET: admin-jwt-secret
       API_KEY: your-secure-api-key
     depends_on:
-      - admin-panel-db
+                           - admin-panel-db
 
   admin-panel-frontend:
     build: ./admin-panel
     ports:
-      - "3001:3000"
+                           - "3001:3000"
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:4000/api
       NEXTAUTH_URL: http://localhost:3001
@@ -1634,6 +1671,7 @@ volumes:
 ### Step 9.1: Test All Endpoints
 
 Use Postman or curl to test:
+
 - Login
 - Properties CRUD
 - Settings CRUD
@@ -1645,6 +1683,7 @@ Use Postman or curl to test:
 ### Step 9.2: Test Main Backend Integration
 
 From main NestJS backend, call Admin Panel API:
+
 ```typescript
 const properties = await adminPanelClient.getProperties();
 ```
@@ -1688,33 +1727,39 @@ const properties = await adminPanelClient.getProperties();
 ## Summary
 
 **What we've built:**
+
 1. **Admin Panel Backend** (Express.js + TypeORM + PostgreSQL)
-   - Separate database
-   - API Key authentication for main backend
-   - JWT for admin panel frontend
-   - Full CRUD for Properties, Courses, News, Support, Settings
+
+                        - Separate database
+                        - API Key authentication for main backend
+                        - JWT for admin panel frontend
+                        - Full CRUD for Properties, Courses, News, Support, Settings
 
 2. **Admin Panel Frontend** (Next.js + Ant Design)
-   - Login with NextAuth
-   - Dashboard
-   - Properties management (off-plan & secondary)
-   - Settings (developers, facilities, locations)
-   - Knowledge Base editor
-   - News editor
-   - Support system
-   - User management
+
+                        - Login with NextAuth
+                        - Dashboard
+                        - Properties management (off-plan & secondary)
+                        - Settings (developers, facilities, locations)
+                        - Knowledge Base editor
+                        - News editor
+                        - Support system
+                        - User management
 
 3. **Main Backend Integration** (NestJS)
-   - API client to Admin Panel Backend
-   - Services updated to fetch from Admin Panel
-   - No database changes to main backend
+
+                        - API client to Admin Panel Backend
+                        - Services updated to fetch from Admin Panel
+                        - No database changes to main backend
 
 **Architecture:**
+
 - Decentralized: Admin Panel is completely separate
 - Portable: Easy to copy to other projects
 - Secure: API Key between backends, JWT for frontend
 
 **Next Steps:**
+
 1. Run migrations & seeds
 2. Start all services (docker-compose up)
 3. Login to admin panel

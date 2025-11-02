@@ -56,12 +56,6 @@ export default function ProfileLayout() {
         }}
       />
       <Stack.Screen 
-        name="support"
-        options={{
-          animation: 'slide_from_right',
-        }}
-      />
-      <Stack.Screen 
         name="about"
         options={{
           animation: 'slide_from_right',

@@ -1,0 +1,316 @@
+{
+  "propertySchema": {
+    "description": "Schema for Property entity - supports both Off-Plan and Secondary property types",
+    "baseFields": {
+      "id": {
+        "type": "string (UUID)",
+        "required": false,
+        "description": "Auto-generated UUID, не потрібно передавати при створенні"
+      },
+      "propertyType": {
+        "type": "enum",
+        "required": true,
+        "values": ["off-plan", "secondary"],
+        "description": "Тип нерухомості: 'off-plan' або 'secondary'"
+      },
+      "name": {
+        "type": "string",
+        "required": true,
+        "description": "Назва проекту"
+      },
+      "photos": {
+        "type": "array of strings",
+        "required": true,
+        "minItems": 1,
+        "description": "Масив URL фотографій. Перша фотографія буде головною",
+        "example": ["https://res.cloudinary.com/.../photo1.jpg", "https://res.cloudinary.com/.../photo2.jpg"]
+      },
+      "countryId": {
+        "type": "string (UUID)",
+        "required": true,
+        "description": "ID країни (UUID)"
+      },
+      "cityId": {
+        "type": "string (UUID)",
+        "required": true,
+        "description": "ID міста (UUID)"
+      },
+      "areaId": {
+        "type": "string (UUID)",
+        "required": true,
+        "description": "ID району (UUID)"
+      },
+      "latitude": {
+        "type": "number (decimal)",
+        "required": true,
+        "precision": 10,
+        "scale": 8,
+        "range": "-90 to 90",
+        "description": "Широта координат",
+        "example": 25.2048492
+      },
+      "longitude": {
+        "type": "number (decimal)",
+        "required": true,
+        "precision": 11,
+        "scale": 8,
+        "range": "-180 to 180",
+        "description": "Довгота координат",
+        "example": 55.2707834
+      },
+      "description": {
+        "type": "string (text)",
+        "required": true,
+        "description": "Опис проекту"
+      },
+      "developerId": {
+        "type": "string (UUID)",
+        "required": false,
+        "nullable": true,
+        "description": "ID розробника (UUID)"
+      }
+    },
+    "offPlanFields": {
+      "description": "Поля які використовуються ТІЛЬКИ для propertyType: 'off-plan'",
+      "priceFrom": {
+        "type": "number (decimal)",
+        "required": true,
+        "precision": 15,
+        "scale": 2,
+        "description": "Мінімальна ціна в USD",
+        "example": 142353.50
+      },
+      "bedroomsFrom": {
+        "type": "integer",
+        "required": true,
+        "description": "Мінімальна кількість спалень",
+        "example": 1
+      },
+      "bedroomsTo": {
+        "type": "integer",
+        "required": true,
+        "description": "Максимальна кількість спалень",
+        "example": 4
+      },
+      "bathroomsFrom": {
+        "type": "integer",
+        "required": true,
+        "description": "Мінімальна кількість ванних кімнат",
+        "example": 1
+      },
+      "bathroomsTo": {
+        "type": "integer",
+        "required": true,
+        "description": "Максимальна кількість ванних кімнат",
+        "example": 3
+      },
+      "sizeFrom": {
+        "type": "number (decimal)",
+        "required": true,
+        "precision": 10,
+        "scale": 2,
+        "description": "Мінімальний розмір в кв.м",
+        "example": 50.50
+      },
+      "sizeTo": {
+        "type": "number (decimal)",
+        "required": true,
+        "precision": 10,
+        "scale": 2,
+        "description": "Максимальний розмір в кв.м",
+        "example": 200.75
+      },
+      "paymentPlan": {
+        "type": "string (text)",
+        "required": false,
+        "nullable": true,
+        "description": "План оплати"
+      },
+      "facilityIds": {
+        "type": "array of strings (UUIDs)",
+        "required": false,
+        "description": "Масив ID зручностей (facilities)",
+        "example": ["uuid1", "uuid2", "uuid3"]
+      },
+      "units": {
+        "type": "array of Unit objects",
+        "required": false,
+        "description": "Масив одиниць (units) для off-plan проекту",
+        "schema": {
+          "unitId": {
+            "type": "string",
+            "required": true,
+            "description": "Унікальний ID одиниці"
+          },
+          "type": {
+            "type": "enum",
+            "required": true,
+            "values": ["apartment", "villa", "penthouse", "townhouse", "office"],
+            "description": "Тип одиниці"
+          },
+          "planImage": {
+            "type": "string (URL)",
+            "required": false,
+            "description": "URL зображення плану одиниці"
+          },
+          "totalSize": {
+            "type": "number (decimal)",
+            "required": true,
+            "precision": 10,
+            "scale": 2,
+            "description": "Загальна площа в кв.м",
+            "example": 85.50
+          },
+          "balconySize": {
+            "type": "number (decimal)",
+            "required": false,
+            "nullable": true,
+            "precision": 10,
+            "scale": 2,
+            "description": "Площа балкону в кв.м",
+            "example": 10.00
+          },
+          "price": {
+            "type": "number (decimal)",
+            "required": true,
+            "precision": 15,
+            "scale": 2,
+            "description": "Ціна одиниці в USD",
+            "example": 250000.00
+          }
+        }
+      }
+    },
+    "secondaryFields": {
+      "description": "Поля які використовуються ТІЛЬКИ для propertyType: 'secondary'",
+      "price": {
+        "type": "number (decimal)",
+        "required": true,
+        "precision": 15,
+        "scale": 2,
+        "description": "Ціна в USD",
+        "example": 500000.00
+      },
+      "bedrooms": {
+        "type": "integer",
+        "required": true,
+        "description": "Кількість спалень",
+        "example": 3
+      },
+      "bathrooms": {
+        "type": "integer",
+        "required": true,
+        "description": "Кількість ванних кімнат",
+        "example": 2
+      },
+      "size": {
+        "type": "number (decimal)",
+        "required": true,
+        "precision": 10,
+        "scale": 2,
+        "description": "Розмір в кв.м",
+        "example": 150.00
+      }
+    },
+    "autoGeneratedFields": {
+      "createdAt": {
+        "type": "Date (ISO 8601)",
+        "required": false,
+        "description": "Автоматично генерується при створенні"
+      },
+      "updatedAt": {
+        "type": "Date (ISO 8601)",
+        "required": false,
+        "description": "Автоматично оновлюється при зміні"
+      }
+    }
+  },
+  "exampleJSON": {
+    "offPlanExample": {
+      "propertyType": "off-plan",
+      "name": "Dubai Marina Residences",
+      "photos": [
+        "https://res.cloudinary.com/dgv0rxd60/image/upload/v1234567890/properties/main.jpg",
+        "https://res.cloudinary.com/dgv0rxd60/image/upload/v1234567890/properties/view.jpg"
+      ],
+      "countryId": "d0a1af5f-94e0-4ee9-886a-689d2f77d9b9",
+      "cityId": "93d991f3-2468-4506-8417-f117f42a5b5b",
+      "areaId": "1b6f0f1f-0587-4d5f-96b2-5cb76844b1a3",
+      "latitude": 25.2048492,
+      "longitude": 55.2707834,
+      "description": "Luxury off-plan development in Dubai Marina",
+      "developerId": "779b5432-e970-4246-a8bc-f24501208dbe",
+      "priceFrom": 142353.50,
+      "bedroomsFrom": 1,
+      "bedroomsTo": 4,
+      "bathroomsFrom": 1,
+      "bathroomsTo": 3,
+      "sizeFrom": 50.50,
+      "sizeTo": 200.75,
+      "paymentPlan": "10% down payment, 90% on completion",
+      "facilityIds": [
+        "facility-uuid-1",
+        "facility-uuid-2",
+        "facility-uuid-3"
+      ],
+      "units": [
+        {
+          "unitId": "UNIT-001",
+          "type": "apartment",
+          "planImage": "https://res.cloudinary.com/dgv0rxd60/image/upload/v1234567890/properties/unit-plan.jpg",
+          "totalSize": 85.50,
+          "balconySize": 10.00,
+          "price": 250000.00
+        },
+        {
+          "unitId": "UNIT-002",
+          "type": "penthouse",
+          "planImage": "https://res.cloudinary.com/dgv0rxd60/image/upload/v1234567890/properties/unit-plan-2.jpg",
+          "totalSize": 250.00,
+          "balconySize": 25.50,
+          "price": 750000.00
+        }
+      ]
+    },
+    "secondaryExample": {
+      "propertyType": "secondary",
+      "name": "Luxury Villa in Palm Jumeirah",
+      "photos": [
+        "https://res.cloudinary.com/dgv0rxd60/image/upload/v1234567890/properties/villa-main.jpg",
+        "https://res.cloudinary.com/dgv0rxd60/image/upload/v1234567890/properties/villa-pool.jpg"
+      ],
+      "countryId": "d0a1af5f-94e0-4ee9-886a-689d2f77d9b9",
+      "cityId": "93d991f3-2468-4506-8417-f117f42a5b5b",
+      "areaId": "1b6f0f1f-0587-4d5f-96b2-5cb76844b1a3",
+      "latitude": 25.1127,
+      "longitude": 55.1390,
+      "description": "Stunning villa with private beach access",
+      "developerId": "779b5432-e970-4246-a8bc-f24501208dbe",
+      "price": 5000000.00,
+      "bedrooms": 5,
+      "bathrooms": 4,
+      "size": 450.00
+    }
+  },
+  "notes": {
+    "important": [
+      "При propertyType='off-plan' - обов'язкові поля: priceFrom, bedroomsFrom, bedroomsTo, bathroomsFrom, bathroomsTo, sizeFrom, sizeTo",
+      "При propertyType='secondary' - обов'язкові поля: price, bedrooms, bathrooms, size",
+      "Поле photos має містити мінімум 1 URL",
+      "Перша фотографія в масиві photos автоматично стає головною (mainPhotoUrl)",
+      "Поля units використовуються тільки для off-plan",
+      "Поля facilityIds та paymentPlan використовуються тільки для off-plan",
+      "latitude та longitude мають бути валідними координатами (latitude: -90 до 90, longitude: -180 до 180)",
+      "Всі числові поля мають бути додатніми (крім координат)",
+      "countryId, cityId, areaId, developerId та facilityIds мають бути валідними UUID які існують в базі даних"
+    ],
+    "dataTypes": {
+      "UUID": "Формат: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (36 символів з дефісами)",
+      "decimal": "Число з плаваючою точкою. Точність вказана в полях (precision - загальна кількість цифр, scale - кількість після коми)",
+      "integer": "Ціле число",
+      "string": "Текстовий рядок",
+      "array": "Масив елементів вказаного типу",
+      "enum": "Один з перелічених значень"
+    }
+  }
+}

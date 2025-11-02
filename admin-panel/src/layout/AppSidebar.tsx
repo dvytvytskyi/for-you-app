@@ -11,7 +11,6 @@ import {
   UsersIcon,
   KnowledgeIcon,
   NewsIcon,
-  SupportIcon,
   SettingsIcon,
 } from "../icons/index";
 import SidebarWidget from "./SidebarWidget";
@@ -48,11 +47,6 @@ const navItems: NavItem[] = [
     icon: <NewsIcon />,
     name: "News",
     path: "/news",
-  },
-  {
-    icon: <SupportIcon />,
-    name: "Support",
-    path: "/support",
   },
 ];
 

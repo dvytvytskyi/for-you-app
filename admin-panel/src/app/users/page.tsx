@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import Image from 'next/image'
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table'
@@ -7,9 +8,10 @@ import Badge from '@/components/ui/badge/Badge'
 import Button from '@/components/ui/button/Button'
 
 export default function UsersPage() {
+  const router = useRouter()
   const [users, setUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [userType, setUserType] = useState<'agent' | 'investor'>('agent')
+  const [userType, setUserType] = useState<'agent' | 'investor' | 'client'>('agent')
 
   useEffect(() => {
     loadUsers()
@@ -18,54 +20,36 @@ export default function UsersPage() {
   const loadUsers = async () => {
     setLoading(true)
     try {
-      // For now, using mock data - replace with actual API call when ready
-      const mockUsers = [
-        {
-          id: 1,
-          name: 'John Smith',
-          email: 'john.smith@example.com',
-          type: 'agent',
-          phone: '+971 50 123 4567',
-          properties: 12,
-          status: 'active',
-          avatar: 'https://i.pravatar.cc/150?img=1',
-        },
-        {
-          id: 2,
-          name: 'Sarah Johnson',
-          email: 'sarah.j@example.com',
-          type: 'agent',
-          phone: '+971 50 234 5678',
-          properties: 8,
-          status: 'active',
-          avatar: 'https://i.pravatar.cc/150?img=2',
-        },
-        {
-          id: 3,
-          name: 'Michael Brown',
-          email: 'm.brown@example.com',
-          type: 'investor',
-          phone: '+971 50 345 6789',
-          budget: '$500K - $1M',
-          status: 'active',
-          avatar: 'https://i.pravatar.cc/150?img=3',
-        },
-        {
-          id: 4,
-          name: 'Emily Davis',
-          email: 'emily.d@example.com',
-          type: 'investor',
-          phone: '+971 50 456 7890',
-          budget: '$1M - $5M',
-          status: 'inactive',
-          avatar: 'https://i.pravatar.cc/150?img=4',
-        },
-      ]
+      const { data } = await api.get('/users')
+      const allUsers = data.data || []
       
-      const filtered = mockUsers.filter(user => user.type === userType)
+      // Map backend data to frontend format
+      const mappedUsers = allUsers.map((user: any) => ({
+        id: user.id,
+        name: `${user.firstName} ${user.lastName}`,
+        email: user.email,
+        phone: user.phone,
+        type: user.role === 'BROKER' ? 'agent' : user.role === 'INVESTOR' ? 'investor' : 'client',
+        role: user.role,
+        status: user.status?.toLowerCase() || 'inactive',
+        avatar: user.avatar || 'https://i.pravatar.cc/150?img=5',
+        properties: user.role === 'BROKER' ? 0 : undefined, // TODO: Get actual count from backend
+        budget: user.role === 'INVESTOR' ? '-' : undefined, // TODO: Get actual budget from backend
+      }))
+      
+      // Filter by user type
+      const filtered = mappedUsers.filter((user: any) => {
+        if (userType === 'agent') return user.type === 'agent'
+        if (userType === 'investor') return user.type === 'investor'
+        if (userType === 'client') return user.type === 'client'
+        return true
+      })
+      
       setUsers(filtered)
     } catch (error) {
       console.error('Error loading users:', error)
+      // Fallback to empty array on error
+      setUsers([])
     } finally {
       setLoading(false)
     }
@@ -78,7 +62,7 @@ export default function UsersPage() {
         <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">
           Users
         </h1>
-        <Button className="flex items-center gap-2">
+        <Button className="flex items-center gap-2" onClick={() => router.push('/users/add')}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M8 3V13M3 8H13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
           </svg>
@@ -108,6 +92,16 @@ export default function UsersPage() {
         >
           Investor
         </button>
+        <button
+          onClick={() => setUserType('client')}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            userType === 'client'
+              ? 'bg-brand-500 text-white'
+              : 'text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5'
+          }`}
+        >
+          Client
+        </button>
       </div>
 
       {/* Table */}
@@ -116,28 +110,28 @@ export default function UsersPage() {
           <Table>
             <TableHeader className="border-b border-gray-100 dark:border-white/5">
               <TableRow>
-                <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-theme-xs dark:text-gray-400">
+                <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-theme-xs dark:text-gray-400 text-start">
                   User
                 </TableCell>
-                <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-theme-xs dark:text-gray-400">
+                <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-theme-xs dark:text-gray-400 text-start">
                   Email
                 </TableCell>
-                <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-theme-xs dark:text-gray-400">
+                <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-theme-xs dark:text-gray-400 text-start">
                   Phone
                 </TableCell>
                 {userType === 'agent' ? (
-                  <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-theme-xs dark:text-gray-400">
+                  <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-theme-xs dark:text-gray-400 text-start">
                     Properties
                   </TableCell>
-                ) : (
-                  <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-theme-xs dark:text-gray-400">
+                ) : userType === 'investor' ? (
+                  <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-theme-xs dark:text-gray-400 text-start">
                     Budget
                   </TableCell>
-                )}
-                <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-theme-xs dark:text-gray-400">
+                ) : null}
+                <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-theme-xs dark:text-gray-400 text-start">
                   Status
                 </TableCell>
-                <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-theme-xs dark:text-gray-400">
+                <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-theme-xs dark:text-gray-400 text-start">
                   Actions
                 </TableCell>
               </TableRow>
@@ -146,19 +140,23 @@ export default function UsersPage() {
             <TableBody className="divide-y divide-gray-100 dark:divide-white/5">
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="px-5 py-8 text-center text-gray-500">
+                  <TableCell colSpan={userType === 'client' ? 5 : 6} className="px-5 py-8 text-center text-gray-500">
                     Loading...
                   </TableCell>
                 </TableRow>
               ) : users.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="px-5 py-8 text-center text-gray-500">
+                  <TableCell colSpan={userType === 'client' ? 5 : 6} className="px-5 py-8 text-center text-gray-500">
                     No users
                   </TableCell>
                 </TableRow>
               ) : (
                 users.map((user) => (
-                  <TableRow key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                  <TableRow 
+                    key={user.id} 
+                    className="hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
+                    onClick={() => router.push(`/users/${user.id}`)}
+                  >
                     <TableCell className="px-5 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 overflow-hidden rounded-full">
@@ -191,26 +189,34 @@ export default function UsersPage() {
                           {user.properties || 0}
                         </span>
                       </TableCell>
-                    ) : (
+                    ) : userType === 'investor' ? (
                       <TableCell className="px-5 py-4">
                         <span className="block text-gray-800 text-theme-sm dark:text-white/90 font-medium">
                           {user.budget || '-'}
                         </span>
                       </TableCell>
-                    )}
+                    ) : null}
                     <TableCell className="px-5 py-4">
                       <Badge 
                         size="sm" 
-                        color={user.status === 'active' ? 'success' : 'error'}
+                        color={
+                          user.status === 'active' ? 'success' : 
+                          user.status === 'pending' ? 'warning' : 
+                          'error'
+                        }
                       >
-                        {user.status === 'active' ? 'Active' : 'Inactive'}
+                        {user.status === 'active' ? 'Active' : 
+                         user.status === 'pending' ? 'Pending' : 
+                         user.status === 'blocked' ? 'Blocked' : 
+                         user.status === 'rejected' ? 'Rejected' : 
+                         'Inactive'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="px-5 py-4">
+                    <TableCell className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-2">
                         <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
                           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <path d="M11.3333 2.00004H4.66659C3.93021 2.00004 3.33325 2.59699 3.33325 3.33337V13.3334C3.33325 14.0698 3.93021 14.6667 4.66659 14.6667H11.3333C12.0696 14.6667 12.6666 14.0698 12.6666 13.3334V5.05337C12.6666 4.68443 12.5254 4.33033 12.2754 4.08033L9.94659 1.75162C9.69659 1.50162 9.34249 1.3604 8.97355 1.3604H4.66659C3.93021 1.3604 3.33325 1.95735 3.33325 2.69373V13.3334C3.33325 14.0698 3.93021 14.6667 4.66659 14.6667H11.3333C12.0696 14.6667 12.6666 14.0698 12.6666 13.3334V5.05337C12.6666 4.68443 12.5254 4.33033 12.2754 4.08033L9.94659 1.75162C9.69659 1.50162 9.34249 1.3604 8.97355 1.3604ZM8.97355 2.3604L11.3022 4.68911H8.97355V2.3604Z" fill="currentColor"/>
+                            <path d="M11.3333 2.00004H4.66659C3.93021 2.00004 3.33325 2.59699 3.33325 3.33337V13.3334C3.33325 14.0698 3.93021 14.6667 4.66659 14.6667H11.3333C12.0696 14.6667 12.6666 14.0698 12.6666 13.3334V5.05337C12.6666 4.68443 12.5254 4.33033 12.2754 4.08033L9.94659 1.75162C9.69659 1.50162 9.34249 1.3604 8.97355 1.3604ZM8.97355 2.3604L11.3022 4.68911H8.97355V2.3604Z" fill="currentColor"/>
                           </svg>
                         </button>
                         <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">

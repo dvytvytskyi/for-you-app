@@ -89,9 +89,6 @@ export default function ProfileScreen() {
     router.push('/profile/terms');
   };
   
-  const handleHelp = () => {
-    router.push('/profile/support');
-  };
   
   const handleAbout = () => {
     router.push('/profile/about');
@@ -219,11 +216,6 @@ export default function ProfileScreen() {
             icon="document-text-outline"
             label={t('profile.termsOfService')}
             onPress={handleTerms}
-          />
-          <SettingsItem
-            icon="help-circle-outline"
-            label={t('profile.helpAndSupport')}
-            onPress={handleHelp}
           />
           <SettingsItem
             icon="information-circle-outline"

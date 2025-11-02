@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 interface Option {
   value: string;
@@ -11,6 +11,7 @@ interface SelectProps {
   onChange: (value: string) => void;
   className?: string;
   defaultValue?: string;
+  disabled?: boolean;
 }
 
 const Select: React.FC<SelectProps> = ({
@@ -19,11 +20,20 @@ const Select: React.FC<SelectProps> = ({
   onChange,
   className = "",
   defaultValue = "",
+  disabled = false,
 }) => {
   // Manage the selected value
   const [selectedValue, setSelectedValue] = useState<string>(defaultValue);
 
+  // Update selected value when defaultValue changes
+  useEffect(() => {
+    if (defaultValue !== undefined) {
+      setSelectedValue(defaultValue);
+    }
+  }, [defaultValue]);
+
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (disabled) return
     const value = e.target.value;
     setSelectedValue(value);
     onChange(value); // Trigger parent handler
@@ -35,9 +45,10 @@ const Select: React.FC<SelectProps> = ({
         selectedValue
           ? "text-gray-800 dark:text-white/90"
           : "text-gray-400 dark:text-gray-400"
-      } ${className}`}
+      } ${disabled ? "bg-gray-50 dark:bg-gray-800 cursor-not-allowed opacity-60" : ""} ${className}`}
       value={selectedValue}
       onChange={handleChange}
+      disabled={disabled}
     >
       {/* Placeholder option */}
       <option
