@@ -1,13 +1,24 @@
 import { View, Text, StyleSheet, TextInput, KeyboardAvoidingView, Platform, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { useState, useRef } from 'react';
+import { useRouter, useNavigation } from 'expo-router';
+import { useState, useRef, useEffect } from 'react';
 import { Input, Button } from '@/components/ui';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuthStore } from '@/store/authStore';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
+  const login = useAuthStore((state) => state.login);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  // Enable swipe back gesture
+  useEffect(() => {
+    navigation.setOptions({
+      gestureEnabled: true,
+    });
+  }, [navigation]);
 
   // Error states
   const [emailError, setEmailError] = useState('');
@@ -32,7 +43,7 @@ export default function LoginScreen() {
     return emailRegex.test(email);
   };
 
-  const handleSignIn = () => {
+  const handleSignIn = async () => {
     let hasError = false;
 
     // Reset all errors
@@ -55,10 +66,15 @@ export default function LoginScreen() {
     }
 
     if (!hasError) {
-      // TODO: Implement sign in logic with backend
-      console.log('Sign in', { email, password });
-      // After successful login, redirect to tabs
-      router.replace('/(tabs)/home');
+      try {
+        // Адмін-панель використовує email
+        await login({ email: email, password });
+        // After successful login, redirect to tabs (same for all roles)
+        router.replace('/(tabs)/home');
+      } catch (error: any) {
+        // Handle login error
+        setPasswordError(error.message || 'Login failed');
+      }
     }
   };
 
@@ -71,8 +87,21 @@ export default function LoginScreen() {
     router.push('/(auth)/intro');
   };
 
+  const handleGoBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.push('/(auth)/intro');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      {/* Back Button */}
+      <Pressable onPress={handleGoBack} style={styles.backButton}>
+        <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+      </Pressable>
+
       {/* Dark Top Section */}
       <View style={styles.topSection}>
         <Text style={styles.title}>SIGN IN TO YOUR ACCOUNT</Text>
@@ -104,6 +133,10 @@ export default function LoginScreen() {
               returnKeyType="next"
               onSubmitEditing={() => passwordRef.current?.focus()}
               blurOnSubmit={false}
+              inputBackgroundColor="#FFFFFF"
+              inputBorderColor="#DFDFE0"
+              inputTextColor="#010312"
+              inputPlaceholderColor="#94A3B8"
             />
             
             <Input
@@ -116,6 +149,10 @@ export default function LoginScreen() {
               fullWidth
               returnKeyType="done"
               onSubmitEditing={handleSignIn}
+              inputBackgroundColor="#FFFFFF"
+              inputBorderColor="#DFDFE0"
+              inputTextColor="#010312"
+              inputPlaceholderColor="#94A3B8"
             />
 
             <Pressable onPress={handleForgotPassword} style={styles.forgotPasswordContainer}>
@@ -147,10 +184,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#010312',
   },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 16,
+    width: 40,
+    height: 40,
+    zIndex: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   topSection: {
     backgroundColor: '#010312',
     paddingHorizontal: 16,
-    paddingTop: 20,
+    paddingTop: 70,
     paddingBottom: 20,
   },
   title: {

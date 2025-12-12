@@ -18,6 +18,8 @@ export { default as ProfileHeader } from './ProfileHeader';
 export { default as SettingsItem } from './SettingsItem';
 export { default as SettingsSection } from './SettingsSection';
 export { default as MapView } from './MapView';
+export { default as DeveloperCard } from './DeveloperCard';
+export { default as AddPropertyToCollectionModal } from './AddPropertyToCollectionModal';
 
 export type { DropdownOption } from './Dropdown';
 export type { ButtonVariant } from './Button';

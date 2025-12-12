@@ -1,14 +1,12 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
-// TODO: Replace with your backend URL
-const API_URL = __DEV__ 
-  ? 'http://localhost:3000/api' 
-  : 'https://your-production-api.com/api';
+// Backend API URL (адмін-панель)
+const API_URL = 'https://admin.foryou-realestate.com/api';
 
 export const apiClient = axios.create({
   baseURL: API_URL,
-  timeout: 10000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },

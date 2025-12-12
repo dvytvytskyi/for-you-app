@@ -9,6 +9,7 @@ interface MapViewProps {
   styleUrl: string;
   height?: number;
   borderRadius?: number;
+  interactive?: boolean; // Дозволити зум/пан для повноекранної карти
 }
 
 export default function MapView({
@@ -18,6 +19,7 @@ export default function MapView({
   styleUrl,
   height = 200,
   borderRadius = 12,
+  interactive = false, // За замовчуванням неінтерактивна (для маленьких карт)
 }: MapViewProps) {
   // Convert mapbox:// style URL to https:// style URL
   const convertedStyleUrl = styleUrl.replace('mapbox://styles/', 'https://api.mapbox.com/styles/v1/');
@@ -51,7 +53,7 @@ export default function MapView({
             style: '${convertedStyleUrl}?access_token=${accessToken}',
             center: [${longitude}, ${latitude}],
             zoom: 13,
-            interactive: false, // Disable zoom/pan gestures for better scroll experience
+            interactive: ${interactive ? 'true' : 'false'}, // Дозволити інтерактивність для повноекранної карти
           });
 
           // Add a marker
@@ -66,11 +68,11 @@ export default function MapView({
   `;
 
   return (
-    <View style={[styles.container, { height, borderRadius }]}>
+    <View style={[styles.container, height ? { height, borderRadius } : { flex: 1, borderRadius }]}>
       <WebView
         source={{ html }}
         style={styles.webview}
-        scrollEnabled={false}
+        scrollEnabled={interactive} // Дозволити скрол для інтерактивної карти
         showsHorizontalScrollIndicator={false}
         showsVerticalScrollIndicator={false}
         androidLayerType="hardware"

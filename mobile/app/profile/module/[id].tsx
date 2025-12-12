@@ -1,64 +1,13 @@
-import { View, Text, StyleSheet, ScrollView, Pressable, Image, Linking, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Image, Linking, Dimensions, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/utils/theme';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { coursesApi, CourseContent, CourseLink } from '@/api/courses';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-interface ContentBlock {
-  id: string;
-  type: 'text' | 'image' | 'video';
-  title: string;
-  description?: string;
-  imageUrl?: string;
-  videoUrl?: string;
-}
-
-interface Module {
-  id: string;
-  title: string;
-  description: string;
-  createdAt: string;
-  status: 'not-started' | 'in-progress' | 'completed';
-  contentBlocks: ContentBlock[];
-  usefulLinks?: Array<{ title: string; url: string }>;
-}
-
-const MOCK_MODULES: Module[] = [
-  {
-    id: '1',
-    title: 'Introduction to Dubai Market',
-    description: 'This section made to create post-title scenario. It\'s a short description.',
-    createdAt: '2024-01-15',
-    status: 'in-progress',
-    contentBlocks: [
-      {
-        id: '1',
-        type: 'text',
-        title: 'Title #1 made here',
-        description: 'An anti-detect browser (also known as a multi-profile or multi-accounting browser) is a specially modified browser that allows you to change or mask the user\'s digital fingerprint (browser fingerprint), IP address, language, time zone, geolocation, WebGL/WebRTC characteristics, font list, User-Agent, and other parameters.',
-      },
-      {
-        id: '2',
-        type: 'image',
-        title: 'Architecture in Dubai',
-        imageUrl: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&auto=format&fit=crop&q=80',
-      },
-      {
-        id: '3',
-        type: 'text',
-        title: 'Title #2 made here',
-        description: 'An anti-detect browser (also known as a multi-profile or multi-accounting browser) is a specially modified browser that allows you to change or mask the user\'s digital fingerprint.',
-      },
-    ],
-    usefulLinks: [
-      { title: 'Dubai Real Estate Guide', url: 'https://example.com' },
-      { title: 'Investment Tips', url: 'https://example.com' },
-    ],
-  },
-];
 
 export default function ModuleDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -67,9 +16,37 @@ export default function ModuleDetailScreen() {
   const insets = useSafeAreaInsets();
   const [status, setStatus] = useState<'not-started' | 'in-progress' | 'completed'>('not-started');
 
-  const module = MOCK_MODULES.find(m => m.id === id);
+  // Завантаження курсу з API
+  const { data: courseResponse, isLoading, error } = useQuery({
+    queryKey: ['course', id],
+    queryFn: async () => {
+      if (!id || typeof id !== 'string') {
+        throw new Error('Course ID is required');
+      }
+      console.log('🔄 Завантаження курсу за ID:', id);
+      const response = await coursesApi.getById(id);
+      console.log('✅ Курс завантажено:', response?.data?.title);
+      return response;
+    },
+    enabled: !!id && typeof id === 'string',
+    retry: 1,
+  });
 
-  const formatDate = (dateString: string) => {
+  const course = courseResponse?.data;
+
+  // Валідація URI для зображення
+  const getValidImageUri = (imageUrl: string | null | undefined): string => {
+    if (!imageUrl || typeof imageUrl !== 'string' || imageUrl.trim().length === 0) {
+      return 'https://via.placeholder.com/400x300?text=No+Image';
+    }
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://') || imageUrl.startsWith('data:') || imageUrl.startsWith('file://')) {
+      return imageUrl;
+    }
+    return 'https://via.placeholder.com/400x300?text=No+Image';
+  };
+
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return '';
     const date = new Date(dateString);
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
@@ -153,87 +130,135 @@ export default function ModuleDetailScreen() {
           </Text>
         </View>
 
-        {/* Metadata */}
-        <Text style={[styles.metadata, { color: theme.textSecondary }]}>
-          Created {module?.createdAt ? formatDate(module.createdAt) : ''}
-        </Text>
-
-        {/* Title */}
-        <Text style={[styles.title, { color: theme.primary }]}>
-          {module?.title}
-        </Text>
-
-        {/* Description */}
-        <Text style={[styles.description, { color: theme.text }]}>
-          {module?.description}
-        </Text>
-
-        {/* Content Blocks */}
-        {module?.contentBlocks.map((block) => (
-          <View key={block.id} style={styles.blockContainer}>
-            {block.type === 'text' && (
-              <>
-                <Text style={[styles.blockTitle, { color: theme.primary }]}>
-                  {block.title}
-                </Text>
-                {block.description && (
-                  <Text style={[styles.blockDescription, { color: theme.text }]}>
-                    {block.description}
-                  </Text>
-                )}
-              </>
-            )}
-            {block.type === 'image' && block.imageUrl && (
-              <>
-                {block.title && (
-                  <Text style={[styles.blockTitle, { color: theme.primary }]}>
-                    {block.title}
-                  </Text>
-                )}
-                <Image
-                  source={{ uri: block.imageUrl }}
-                  style={styles.image}
-                  resizeMode="cover"
-                />
-              </>
-            )}
-            {block.type === 'video' && block.videoUrl && (
-              <>
-                {block.title && (
-                  <Text style={[styles.blockTitle, { color: theme.primary }]}>
-                    {block.title}
-                  </Text>
-                )}
-                <Pressable
-                  style={styles.videoContainer}
-                  onPress={() => Linking.openURL(block.videoUrl!)}
-                >
-                  <Ionicons name="play-circle" size={64} color={theme.primary} />
-                </Pressable>
-              </>
-            )}
-          </View>
-        ))}
-
-        {/* Useful Links */}
-        {module?.usefulLinks && module.usefulLinks.length > 0 && (
-          <View style={styles.linksContainer}>
-            <Text style={[styles.linksTitle, { color: theme.primary }]}>
-              Useful Links
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={theme.primary} />
+            <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+              Loading course...
             </Text>
-            {module.usefulLinks.map((link, index) => (
-              <Pressable
-                key={index}
-                style={styles.linkItem}
-                onPress={() => Linking.openURL(link.url)}
-              >
-                <Text style={[styles.linkText, { color: theme.text }]}>
-                  {link.title}
-                </Text>
-                <Ionicons name="open-outline" size={20} color={theme.textSecondary} />
-              </Pressable>
-            ))}
           </View>
+        ) : error || !course ? (
+          <View style={styles.errorContainer}>
+            <Ionicons name="alert-circle-outline" size={64} color={theme.textTertiary} />
+            <Text style={[styles.errorTitle, { color: theme.text }]}>
+              Course not found
+            </Text>
+            <Text style={[styles.errorSubtitle, { color: theme.textSecondary }]}>
+              {(error as any)?.message || 'The course could not be loaded'}
+            </Text>
+          </View>
+        ) : (
+          <>
+            {/* Metadata */}
+            {course.createdAt && (
+              <Text style={[styles.metadata, { color: theme.textSecondary }]}>
+                Created {formatDate(course.createdAt)}
+              </Text>
+            )}
+
+            {/* Title */}
+            <Text style={[styles.title, { color: theme.primary }]}>
+              {course.title}
+            </Text>
+
+            {/* Description */}
+            {course.description && (
+              <Text style={[styles.description, { color: theme.text }]}>
+                {course.description}
+              </Text>
+            )}
+
+            {/* Content Blocks */}
+            {course.contents && course.contents.length > 0 && (
+              <>
+                {course.contents.map((content, index) => (
+                  <View key={content.id || index} style={styles.blockContainer}>
+                    {content.type === 'text' && (
+                      <>
+                        {content.title && (
+                          <Text style={[styles.blockTitle, { color: theme.primary }]}>
+                            {content.title}
+                          </Text>
+                        )}
+                        {content.description && (
+                          <Text style={[styles.blockDescription, { color: theme.text }]}>
+                            {content.description}
+                          </Text>
+                        )}
+                      </>
+                    )}
+                    {content.type === 'image' && (
+                      <>
+                        {content.title && (
+                          <Text style={[styles.blockTitle, { color: theme.primary }]}>
+                            {content.title}
+                          </Text>
+                        )}
+                        {content.imageUrl && (
+                          <Image
+                            source={{ uri: getValidImageUri(content.imageUrl) }}
+                            style={styles.image}
+                            resizeMode="cover"
+                          />
+                        )}
+                        {content.description && (
+                          <Text style={[styles.blockCaption, { color: theme.textSecondary }]}>
+                            {content.description}
+                          </Text>
+                        )}
+                      </>
+                    )}
+                    {content.type === 'video' && (
+                      <>
+                        {content.title && (
+                          <Text style={[styles.blockTitle, { color: theme.primary }]}>
+                            {content.title}
+                          </Text>
+                        )}
+                        {content.videoUrl && (
+                          <Pressable
+                            style={[styles.videoContainer, { backgroundColor: theme.card }]}
+                            onPress={() => Linking.openURL(content.videoUrl!)}
+                          >
+                            <Ionicons name="play-circle" size={64} color={theme.primary} />
+                            <Text style={[styles.videoText, { color: theme.textSecondary }]}>
+                              Tap to play video
+                            </Text>
+                          </Pressable>
+                        )}
+                        {content.description && (
+                          <Text style={[styles.blockCaption, { color: theme.textSecondary }]}>
+                            {content.description}
+                          </Text>
+                        )}
+                      </>
+                    )}
+                  </View>
+                ))}
+              </>
+            )}
+
+            {/* Useful Links */}
+            {course.links && course.links.length > 0 && (
+              <View style={styles.linksContainer}>
+                <Text style={[styles.linksTitle, { color: theme.primary }]}>
+                  Useful Links
+                </Text>
+                {course.links.map((link, index) => (
+                  <Pressable
+                    key={link.id || index}
+                    style={[styles.linkItem, { borderBottomColor: theme.border }]}
+                    onPress={() => Linking.openURL(link.url)}
+                  >
+                    <Text style={[styles.linkText, { color: theme.text }]}>
+                      {link.title}
+                    </Text>
+                    <Ionicons name="open-outline" size={20} color={theme.textSecondary} />
+                  </Pressable>
+                ))}
+              </View>
+            )}
+          </>
         )}
       </ScrollView>
 
@@ -393,5 +418,39 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '500',
     color: '#FFFFFF',
+  },
+  loadingContainer: {
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+  },
+  errorContainer: {
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  errorSubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  blockCaption: {
+    fontSize: 12,
+    fontStyle: 'italic',
+    marginTop: 8,
+  },
+  videoText: {
+    fontSize: 12,
+    marginTop: 8,
   },
 });

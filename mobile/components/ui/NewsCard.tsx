@@ -25,7 +25,11 @@ export default function NewsCard({ image, title, description, timestamp, onPress
       ]}
     >
       <Image 
-        source={{ uri: image }} 
+        source={{ 
+          uri: image && image.trim().length > 0 && (image.startsWith('http://') || image.startsWith('https://') || image.startsWith('data:') || image.startsWith('file://'))
+            ? image 
+            : 'https://via.placeholder.com/400x300?text=No+Image'
+        }} 
         style={styles.thumbnail}
         resizeMode="cover"
       />

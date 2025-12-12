@@ -33,7 +33,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 8,
+    height: 40,
+    flex: 1,
+    maxWidth: '100%',
   },
   icon: {
     marginRight: 8,

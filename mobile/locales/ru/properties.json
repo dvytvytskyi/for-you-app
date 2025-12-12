@@ -28,6 +28,9 @@
   "propertyType": "Тип недвижимости",
   "location": "Локация",
   "selectFromList": "Выбрать из списка",
-  "applyFilters": "Применить фильтры"
+  "applyFilters": "Применить фильтры",
+  "loading": "Загрузка недвижимости...",
+  "loadingMore": "Загрузка еще...",
+  "errorLoading": "Ошибка загрузки недвижимости"
 }
 

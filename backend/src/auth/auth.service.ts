@@ -11,6 +11,7 @@ import * as bcrypt from 'bcrypt';
 import { User, UserRole, UserStatus } from '../database/entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ActivityLogService } from '../activity-log/activity-log.service';
 import { ActivityAction, ActivityEntity } from '../database/entities/activity-log.entity';
 
@@ -117,7 +118,18 @@ export class AuthService {
     // Не повертаємо passwordHash
     const { passwordHash: _pwd, ...userWithoutPassword } = user;
 
-    return { user: userWithoutPassword as User, accessToken };
+    // Явно перевіряємо, що роль включена в відповідь
+    const userResponse = {
+      ...userWithoutPassword,
+      role: user.role, // Явно додаємо роль для гарантії
+    } as User;
+
+    // Логуємо для діагностики
+    console.log('Login - User role:', user.role);
+    console.log('Login - UserResponse role:', userResponse.role);
+    console.log('Login - UserResponse:', JSON.stringify(userResponse, null, 2));
+
+    return { user: userResponse, accessToken };
   }
 
   async validateUser(userId: string): Promise<User> {
@@ -138,6 +150,71 @@ export class AuthService {
   private async hashPassword(password: string): Promise<string> {
     const saltRounds = 10;
     return bcrypt.hash(password, saltRounds);
+  }
+
+  async updateProfile(userId: string, updateProfileDto: UpdateProfileDto): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // Перевірка на унікальність email, якщо він змінюється
+    if (updateProfileDto.email && updateProfileDto.email !== user.email) {
+      const existingUser = await this.userRepository.findOne({
+        where: { email: updateProfileDto.email },
+      });
+
+      if (existingUser) {
+        throw new ConflictException('User with this email already exists');
+      }
+    }
+
+    // Перевірка на унікальність phone, якщо він змінюється
+    if (updateProfileDto.phone && updateProfileDto.phone !== user.phone) {
+      const existingUser = await this.userRepository.findOne({
+        where: { phone: updateProfileDto.phone },
+      });
+
+      if (existingUser) {
+        throw new ConflictException('User with this phone number already exists');
+      }
+    }
+
+    // Оновлюємо поля
+    if (updateProfileDto.firstName !== undefined) {
+      user.firstName = updateProfileDto.firstName;
+    }
+    if (updateProfileDto.lastName !== undefined) {
+      user.lastName = updateProfileDto.lastName;
+    }
+    if (updateProfileDto.email !== undefined) {
+      user.email = updateProfileDto.email;
+    }
+    if (updateProfileDto.phone !== undefined) {
+      user.phone = updateProfileDto.phone;
+    }
+    if (updateProfileDto.licenseNumber !== undefined) {
+      user.licenseNumber = updateProfileDto.licenseNumber;
+    }
+    if (updateProfileDto.avatar !== undefined) {
+      user.avatar = updateProfileDto.avatar;
+    }
+
+    await this.userRepository.save(user);
+
+    // Логуємо оновлення профілю
+    await this.activityLogService.log({
+      userId: user.id,
+      action: ActivityAction.USER_UPDATE,
+      entityType: ActivityEntity.USER,
+      entityId: user.id,
+      description: `User profile updated`,
+    });
+
+    // Не повертаємо passwordHash
+    const { passwordHash: _hash, ...userWithoutPassword } = user;
+    return userWithoutPassword as User;
   }
 
   private generateToken(user: User): string {

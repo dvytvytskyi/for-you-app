@@ -176,7 +176,7 @@ export default function TermsOfServiceScreen() {
             </View>
             <View style={styles.contactItem}>
               <Ionicons name="call-outline" size={16} color={theme.primary} />
-              <Text style={[styles.contactText, { color: theme.primary }]}>+971 50 123 4567</Text>
+              <Text style={[styles.contactText, { color: theme.primary }]}>Contact support</Text>
             </View>
           </View>
         </View>

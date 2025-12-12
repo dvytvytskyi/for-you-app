@@ -1,135 +1,264 @@
-import { View, Text, StyleSheet, Dimensions, Pressable, FlatList, Animated, PanResponder } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, Dimensions, Pressable, FlatList, Animated, PanResponder, ActivityIndicator, Alert } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Header, CollectionPropertyCard } from '@/components/ui';
+import AddPropertyToCollectionModal from '@/components/ui/AddPropertyToCollectionModal';
 import { useTheme } from '@/utils/theme';
-import { useMemo, useState, useRef } from 'react';
+import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { useCollectionsStore } from '@/store/collectionsStore';
+import { useQuery } from '@tanstack/react-query';
+import { propertiesApi } from '@/api/properties';
+import { convertPropertyToCard, formatPrice } from '@/utils/property-utils';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-
-// Mock data - same as collections screen
-interface Collection {
-  id: string;
-  title: string;
-  description: string;
-  image: string;
-  propertyCount: number;
-  createdDate: string;
-}
-
-interface Property {
-  id: string;
-  title: string;
-  description: string;
-  image: string;
-  price: string;
-  handoverDate: string;
-}
-
-// Mock properties for collections
-const MOCK_PROPERTIES: Property[] = [
-  {
-    id: '1',
-    title: 'Apartment #12421412',
-    description: 'Burj Apartment, Address Bay, Palm Jumeirah offers stunning views and modern amenities in the heart of Dubai.',
-    image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400',
-    price: '1 300 000$',
-    handoverDate: '25 Mar 2027',
-  },
-  {
-    id: '2',
-    title: 'Apartment #12421412',
-    description: 'There\'ve been new things recently built in this area with great facilities and community spaces for families.',
-    image: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400',
-    price: '1 300 000$',
-    handoverDate: '25 Mar 2027',
-  },
-  {
-    id: '3',
-    title: 'Apartment #12421413',
-    description: 'Modern luxury apartment with sea views and premium finishes in a prime location.',
-    image: 'https://images.unsplash.com/photo-1600210492493-0946911123ea?w=400',
-    price: '2 100 000$',
-    handoverDate: '15 Jun 2027',
-  },
-  {
-    id: '4',
-    title: 'Apartment #12421414',
-    description: 'Spacious family apartment near schools and shopping malls with park views.',
-    image: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=400',
-    price: '890 000$',
-    handoverDate: '10 Sep 2027',
-  },
-];
-
-const MOCK_COLLECTIONS: Collection[] = [
-  {
-    id: '1',
-    title: 'Collection #12024',
-    description: 'This collection features premium properties in the heart of Dubai. Burj Apartment offers stunning views of the city skyline, Address Bay properties provide luxury waterfront living.',
-    image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400',
-    propertyCount: 12,
-    createdDate: '3 weeks ago',
-  },
-  {
-    id: '2',
-    title: 'Collection #4322',
-    description: 'Discover elegant villa communities in Dubai Hills and surrounding premium areas. Each villa boasts spacious layouts, private gardens, swimming pools.',
-    image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400',
-    propertyCount: 8,
-    createdDate: '2 weeks ago',
-  },
-  {
-    id: '3',
-    title: 'Collection #7856',
-    description: 'Marina Properties represents the pinnacle of luxury living in Dubai Marina. These stunning residences feature panoramic sea views, modern architecture.',
-    image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400',
-    propertyCount: 15,
-    createdDate: '1 month ago',
-  },
-  {
-    id: '4',
-    title: 'Collection #9021',
-    description: 'Downtown Collection features modern apartments and penthouses in the heart of Dubai. These properties offer breathtaking views of Burj Khalifa.',
-    image: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=400',
-    propertyCount: 6,
-    createdDate: '1 week ago',
-  },
-  {
-    id: '5',
-    title: 'Collection #3456',
-    description: 'Business Bay presents a comprehensive selection of office spaces and commercial properties designed for success. These modern facilities offer flexible layouts.',
-    image: 'https://images.unsplash.com/photo-1600210492493-0946911123ea?w=400',
-    propertyCount: 9,
-    createdDate: '4 days ago',
-  },
-  {
-    id: '6',
-    title: 'Collection #6789',
-    description: 'Palm Jumeirah Waterfront Collection showcases exclusive properties along one of the world\'s most iconic man-made islands. These residences combine unparalleled luxury.',
-    image: 'https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=400',
-    propertyCount: 20,
-    createdDate: '2 months ago',
-  },
-];
 
 export default function CollectionDetailScreen() {
   const { id } = useLocalSearchParams();
   const { theme } = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [showDescription, setShowDescription] = useState(false);
-  const [properties, setProperties] = useState<Property[]>(MOCK_PROPERTIES);
-
+  const [showAddModal, setShowAddModal] = useState(false);
+  
+  // Завантажуємо колекцію з store (реактивно)
+  const collections = useCollectionsStore((state) => state.collections);
+  const { removePropertyFromCollection, addPropertyToCollection, clearCollectionProperties, updateCollectionImage } = useCollectionsStore();
+  
   const collection = useMemo(() => {
-    return MOCK_COLLECTIONS.find(c => c.id === id);
-  }, [id]);
+    const collectionId = typeof id === 'string' ? id : id?.[0];
+    if (!collectionId) return undefined;
+    
+    // Шукаємо колекцію в актуальному списку (реактивно оновлюється)
+    const foundCollection = collections.find(c => c.id === collectionId);
+    console.log('🔍 Looking for collection:', {
+      collectionId,
+      totalCollections: collections.length,
+      found: !!foundCollection,
+      propertyIds: foundCollection?.propertyIds.length || 0,
+    });
+    return foundCollection;
+  }, [id, collections]);
 
-  const deleteProperty = (propertyId: string) => {
-    setProperties(prev => prev.filter(p => p.id !== propertyId));
-  };
+  // Завантажуємо properties з API (реактивно оновлюється з collection)
+  const propertyIds = useMemo(() => {
+    const ids = collection?.propertyIds || [];
+    console.log('📋 Current propertyIds for collection:', {
+      collectionId: collection?.id,
+      propertyIds: ids,
+      count: ids.length,
+    });
+    return ids;
+  }, [collection?.propertyIds, collection?.id]);
+  
+  // Створюємо унікальний ключ для query на основі propertyIds
+  const propertyIdsKey = useMemo(() => {
+    const key = propertyIds.sort().join(',');
+    console.log('🔑 PropertyIds key:', key);
+    return key;
+  }, [propertyIds]);
+  
+  const { data: propertiesData, isLoading, error, refetch } = useQuery({
+    queryKey: ['collection-properties', collection?.id, propertyIdsKey],
+    queryFn: async () => {
+      if (propertyIds.length === 0) {
+        return [];
+      }
+      
+      console.log('🔄 Завантаження properties для колекції:', {
+        collectionId: collection?.id,
+        propertyIdsCount: propertyIds.length,
+        propertyIds: propertyIds,
+      });
+      
+      // Завантажуємо кожен property за ID
+      const propertiesPromises = propertyIds.map(propertyId => 
+        propertiesApi.getById(propertyId).catch(err => {
+          console.warn(`⚠️ Не вдалося завантажити property ${propertyId}:`, err);
+          return null;
+        })
+      );
+      
+      const results = await Promise.all(propertiesPromises);
+      const properties = results
+        .filter((result): result is { success: boolean; data: any } => 
+          result !== null && 
+          result !== undefined && 
+          result.success && 
+          result.data !== null && 
+          result.data !== undefined
+        )
+        .map(result => result.data)
+        .filter(prop => prop && prop.id); // Додаткова перевірка
+      
+      console.log('✅ Завантажено properties для колекції:', {
+        total: properties.length,
+        propertyIds: properties.map(p => p.id),
+      });
+      
+      // Конвертуємо в формат для UI
+      return properties.map(prop => convertPropertyToCard(prop));
+    },
+    enabled: !!collection,
+    staleTime: 0,
+    cacheTime: 0,
+  });
+  
+  // Оновлюємо image колекції, коли завантажуються properties
+  useEffect(() => {
+    if (!collection?.id || !propertiesData || propertiesData.length === 0) {
+      // Якщо немає properties - скидаємо image (якщо потрібно)
+      if (collection?.id && (!propertiesData || propertiesData.length === 0) && collection.image) {
+        updateCollectionImage(collection.id, null);
+      }
+      return;
+    }
+    
+    // Якщо колекція не має image і є properties - встановлюємо перше зображення
+    if (!collection.image && propertiesData.length > 0) {
+      const firstProperty = propertiesData[0];
+      const firstImage = firstProperty.images && firstProperty.images.length > 0 
+        ? firstProperty.images[0] 
+        : null;
+      
+      if (firstImage) {
+        console.log('🖼️ Setting collection image from first property:', {
+          collectionId: collection.id,
+          propertyId: firstProperty.id,
+          image: firstImage.substring(0, 50),
+        });
+        updateCollectionImage(collection.id, firstImage);
+      }
+    }
+  }, [collection?.id, collection?.image, propertiesData, updateCollectionImage]);
 
-  const SwipeableItem = ({ item }: { item: Property }) => {
+  // Форматування дати
+  const formatDate = useCallback((dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Just now';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) {
+      const weeks = Math.floor(diffDays / 7);
+      return `${weeks} ${weeks === 1 ? 'week' : 'weeks'} ago`;
+    }
+    if (diffDays < 365) {
+      const months = Math.floor(diffDays / 30);
+      return `${months} ${months === 1 ? 'month' : 'months'} ago`;
+    }
+    const years = Math.floor(diffDays / 365);
+    return `${years} ${years === 1 ? 'year' : 'years'} ago`;
+  }, []);
+
+  const createdDate = collection?.createdAt ? formatDate(collection.createdAt) : '';
+
+  const deleteProperty = useCallback((propertyId: string) => {
+    if (collection?.id) {
+      removePropertyFromCollection(collection.id, propertyId);
+    }
+  }, [collection?.id, removePropertyFromCollection]);
+
+  // Обробка додавання properties
+  const handleAddProperties = useCallback((propertyIdsToAdd: string[]) => {
+    if (!collection?.id) {
+      console.warn('⚠️ Collection ID is missing');
+      return;
+    }
+    
+    if (!propertyIdsToAdd || propertyIdsToAdd.length === 0) {
+      console.warn('⚠️ No property IDs provided');
+      return;
+    }
+    
+    console.log('➕ Adding properties to collection:', {
+      collectionId: collection.id,
+      propertyIdsToAdd,
+      count: propertyIdsToAdd.length,
+      currentPropertyIds: propertyIds,
+    });
+    
+    // Завантажуємо дані properties, щоб отримати їх зображення
+    const loadPropertiesAndAdd = async () => {
+      try {
+        // Завантажуємо дані для кожного property
+        const propertiesPromises = propertyIdsToAdd.map(async (propertyId) => {
+          try {
+            const response = await propertiesApi.getById(propertyId);
+            if (response.success && response.data) {
+              const property = response.data;
+              // Отримуємо перше зображення
+              const firstImage = property.photos && property.photos.length > 0 
+                ? property.photos[0] 
+                : null;
+              return { propertyId, image: firstImage };
+            }
+          } catch (error) {
+            console.warn(`⚠️ Failed to load property ${propertyId}:`, error);
+          }
+          return { propertyId, image: null };
+        });
+        
+        const propertiesData = await Promise.all(propertiesPromises);
+        
+        // Додаємо properties з їх зображеннями
+        propertiesData.forEach(({ propertyId, image }) => {
+          console.log('➕ Adding property with image:', {
+            propertyId,
+            hasImage: !!image,
+            imagePreview: image?.substring(0, 50) || 'none',
+          });
+          addPropertyToCollection(collection.id, propertyId, image);
+        });
+      } catch (error) {
+        console.error('❌ Error loading properties data:', error);
+        // Якщо не вдалося завантажити дані, додаємо без зображень
+        propertyIdsToAdd.forEach(propertyId => {
+          addPropertyToCollection(collection.id, propertyId, null);
+        });
+      }
+    };
+    
+    loadPropertiesAndAdd();
+    
+    // Оновлюємо query після додавання
+    // Query автоматично оновиться, оскільки propertyIds зміниться через useMemo
+    // Але також викликаємо refetch для гарантії
+    setTimeout(() => {
+      console.log('🔄 Refetching collection properties after adding...');
+      console.log('📋 Expected propertyIds after add:', {
+        current: propertyIds,
+        added: propertyIdsToAdd,
+        expected: [...propertyIds, ...propertyIdsToAdd],
+      });
+      refetch();
+    }, 500);
+  }, [collection?.id, propertyIds, addPropertyToCollection, refetch]);
+
+  // Обробка очищення колекції
+  const handleClearCollection = useCallback(() => {
+    if (!collection?.id) return;
+
+    Alert.alert(
+      'Clear Collection?',
+      'Are you sure you want to remove all properties from this collection? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: () => {
+            clearCollectionProperties(collection.id);
+          },
+        },
+      ]
+    );
+  }, [collection?.id, clearCollectionProperties]);
+
+  const SwipeableItem = ({ item }: { item: ReturnType<typeof convertPropertyToCard> }) => {
     const panX = useRef(new Animated.Value(0)).current;
     const deleteOpacity = useRef(new Animated.Value(0)).current;
 
@@ -174,6 +303,27 @@ export default function CollectionDetailScreen() {
       })
     ).current;
 
+    // Форматуємо дані для картки з валідацією URI
+    const getValidImageUri = (images: string[] | undefined): string => {
+      if (!images || images.length === 0) {
+        return 'https://via.placeholder.com/400x300?text=No+Image';
+      }
+      const firstImage = images[0];
+      if (!firstImage || typeof firstImage !== 'string' || firstImage.trim().length === 0) {
+        return 'https://via.placeholder.com/400x300?text=No+Image';
+      }
+      // Перевіряємо, чи це валідний URI
+      if (firstImage.startsWith('http://') || firstImage.startsWith('https://') || firstImage.startsWith('data:') || firstImage.startsWith('file://')) {
+        return firstImage;
+      }
+      return 'https://via.placeholder.com/400x300?text=No+Image';
+    };
+    const image = getValidImageUri(item.images);
+    const title = item.title;
+    const description = item.location; // Використовуємо location як description
+    const price = formatPrice(item.price, 'USD');
+    const handoverDate = item.handoverDate || (item.type === 'off-plan' ? 'TBA' : 'N/A');
+
     return (
       <View style={styles.swipeableContainer}>
         <Animated.View
@@ -196,19 +346,19 @@ export default function CollectionDetailScreen() {
           {...panResponder.panHandlers}
         >
           <CollectionPropertyCard
-            image={item.image}
-            title={item.title}
-            description={item.description}
-            price={item.price}
-            handoverDate={item.handoverDate}
-            onPress={() => router.push(`/property/${item.id}?fromCollection=${id}`)}
+            image={image}
+            title={title}
+            description={description}
+            price={price}
+            handoverDate={handoverDate}
+            onPress={() => router.push(`/property/${item.id}?fromCollection=${collection?.id}`)}
           />
         </Animated.View>
       </View>
     );
   };
 
-  const renderPropertyItem = ({ item }: { item: Property }) => (
+  const renderPropertyItem = ({ item }: { item: ReturnType<typeof convertPropertyToCard> }) => (
     <SwipeableItem item={item} />
   );
 
@@ -227,54 +377,43 @@ export default function CollectionDetailScreen() {
       
       {showDescription && (
         <Text style={[styles.description, { color: theme.textSecondary }]}>
-          {collection?.description || 'Loading...'}
+          {collection?.description || 'No description'}
         </Text>
       )}
 
-      {/* Stats Cards */}
-      <View style={styles.statsContainer}>
-        <View style={[styles.statCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-          <View style={styles.statHeader}>
-            <Text style={[styles.statTitle, { color: theme.primary }]}>VIEWS</Text>
-            <View style={[styles.statIcon, { backgroundColor: theme.card }]}>
-              <Ionicons name="eye-outline" size={20} color={theme.primary} />
-            </View>
-          </View>
-          <View style={styles.statGraph}>
-            <View style={styles.graphBar} />
-            <View style={[styles.graphBar, styles.graphBarShort]} />
-            <View style={[styles.graphBar, styles.graphBarTall]} />
-            <View style={[styles.graphBar, styles.graphBarMedium]} />
-            <View style={[styles.graphBar, styles.graphBarTall]} />
-            <View style={[styles.graphBar, styles.graphBarMedium]} />
-            <View style={styles.graphBar} />
-          </View>
-          <Text style={[styles.statValue, { color: theme.primary }]}>1,348</Text>
-          <Text style={[styles.statPeriod, { color: theme.textSecondary }]}>for last 7 days</Text>
-        </View>
-
-        <View style={[styles.statCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-          <View style={styles.statHeader}>
-            <Text style={[styles.statTitle, { color: theme.primary }]}>LIKES</Text>
-            <View style={[styles.statIcon, { backgroundColor: theme.card }]}>
-              <Ionicons name="heart-outline" size={20} color="#9B59B6" />
-            </View>
-          </View>
-          <View style={styles.statGraph}>
-            <View style={styles.graphBar} />
-            <View style={[styles.graphBar, styles.graphBarShort]} />
-            <View style={[styles.graphBar, styles.graphBarTall]} />
-            <View style={[styles.graphBar, styles.graphBarMedium]} />
-            <View style={[styles.graphBar, styles.graphBarTall]} />
-            <View style={[styles.graphBar, styles.graphBarMedium]} />
-            <View style={styles.graphBar} />
-          </View>
-          <Text style={[styles.statValue, { color: '#9B59B6' }]}>243</Text>
-          <Text style={[styles.statPeriod, { color: theme.textSecondary }]}>for last 7 days</Text>
-        </View>
-      </View>
+      {/* Stats Cards - поки що прибрано, можна додати пізніше при наявності API */}
+      {/* <View style={styles.statsContainer}>
+        ...
+      </View> */}
     </>
   );
+
+  // Показуємо помилку, якщо колекція не знайдена
+  if (!collection && !isLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
+        <View style={[styles.header, { borderBottomColor: theme.border }]}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.backButton,
+              { opacity: pressed ? 0.6 : 1 }
+            ]}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="chevron-back" size={20} color={theme.text} />
+          </Pressable>
+          <Text style={[styles.headerTitle, { color: theme.text }]}>Collection</Text>
+          <View style={styles.backButton} />
+        </View>
+        <View style={styles.emptyContainer}>
+          <Ionicons name="folder-outline" size={64} color={theme.textTertiary} />
+          <Text style={[styles.emptyTitle, { color: theme.text }]}>
+            Collection not found
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
@@ -295,13 +434,79 @@ export default function CollectionDetailScreen() {
         <View style={styles.backButton} />
       </View>
       
-      <FlatList
-        data={properties}
-        renderItem={renderPropertyItem}
-        keyExtractor={(item) => item.id}
-        ListHeaderComponent={ListHeaderComponent}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.primary} />
+          <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+            Loading properties...
+          </Text>
+        </View>
+      ) : error ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="alert-circle-outline" size={64} color={theme.textTertiary} />
+          <Text style={[styles.emptyTitle, { color: theme.text }]}>
+            Error loading properties
+          </Text>
+          <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
+            {(error as any)?.message || 'Unknown error'}
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={propertiesData || []}
+          renderItem={renderPropertyItem}
+          keyExtractor={(item) => item.id}
+          ListHeaderComponent={ListHeaderComponent}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons name="home-outline" size={64} color={theme.textTertiary} />
+              <Text style={[styles.emptyTitle, { color: theme.text }]}>
+                No properties in this collection
+              </Text>
+              <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
+                Add properties to see them here
+              </Text>
+            </View>
+          }
+        />
+      )}
+
+      {/* Bottom Action Button */}
+      <View
+        style={[
+          styles.bottomButtonContainer,
+          {
+            borderTopColor: theme.border,
+            backgroundColor: theme.background,
+            paddingBottom: insets.bottom + 16,
+          },
+        ]}
+      >
+        <Pressable
+          style={[styles.bottomButton, { backgroundColor: theme.primary }]}
+          onPress={() => setShowAddModal(true)}
+        >
+          <Text style={styles.bottomButtonText}>Add to collection</Text>
+        </Pressable>
+        {propertyIds.length > 0 && (
+          <Pressable
+            style={[styles.clearButton, { borderColor: theme.border }]}
+            onPress={handleClearCollection}
+          >
+            <Ionicons name="trash-outline" size={24} color="#FF3B30" />
+          </Pressable>
+        )}
+      </View>
+
+      {/* Add Property Modal */}
+      <AddPropertyToCollectionModal
+        visible={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        collectionId={collection?.id || ''}
+        onAddProperties={handleAddProperties}
+        existingPropertyIds={propertyIds}
       />
     </SafeAreaView>
   );
@@ -313,6 +518,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
+    paddingBottom: 100, // Додаємо padding знизу для кнопки
     gap: 12,
   },
   header: {
@@ -337,6 +543,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 8,
   },
   title: {
     fontSize: 16,
@@ -349,6 +556,34 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 16,
+    marginBottom: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 80,
+    paddingHorizontal: 32,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: 15,
+    textAlign: 'center',
   },
   statsContainer: {
     flexDirection: 'row',
@@ -433,5 +668,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 12,
   },
+  bottomButtonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  bottomButton: {
+    flex: 1,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bottomButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  clearButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
 });
-

@@ -116,7 +116,7 @@ export default function AboutScreen() {
             <ContactItem 
               icon="call-outline"
               label="Phone"
-              value="+971 50 123 4567"
+              value=""
               theme={theme}
             />
             <ContactItem 

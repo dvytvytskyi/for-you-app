@@ -1,6 +1,6 @@
-import { View, StyleSheet, ScrollView, Alert, Modal, Image, Pressable, Text } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, Modal, Image, Pressable, Text, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import { ProfileHeader, SettingsSection, SettingsItem } from '@/components/ui';
 import { useTranslation } from '@/utils/i18n';
 import { useTheme } from '@/utils/theme';
 import { useLanguageStore } from '@/store/languageStore';
+import { useAuthStore } from '@/store/authStore';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -29,15 +30,37 @@ export default function ProfileScreen() {
     }
   };
   
-  // Mock user data - буде з API/Store
-  const [user, setUser] = useState({
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@example.com',
-    phone: '+971 50 123 4567',
-    role: 'BROKER' as const,
-    avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=200',
-  });
+  // Get user from auth store - використовуємо напряму без fallback
+  const { user: authUser, isLoading: authLoading, isAuthenticated } = useAuthStore();
+  
+  // Перенаправляємо на інтро якщо не авторизований або завантаження завершено без користувача
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      console.log('🔄 User not authenticated, redirecting to intro...');
+      router.replace('/(auth)/intro');
+    }
+  }, [authLoading, isAuthenticated, router]);
+  
+  // Використовуємо реальні дані користувача, без мокових fallback
+  // Використовуємо avatar з authUser, якщо він є, інакше null
+  const user = authUser ? {
+    firstName: authUser.firstName,
+    lastName: authUser.lastName,
+    email: authUser.email,
+    phone: authUser.phone,
+    role: authUser.role as 'BROKER' | 'INVESTOR' | 'ADMIN' | undefined,
+    avatar: authUser.avatar || null, // Використовуємо реальний avatar або null
+  } : null;
+
+  // Debug: log user role
+  useEffect(() => {
+    console.log('=== PROFILE SCREEN ===');
+    console.log('authUser:', authUser);
+    console.log('authUser?.role:', authUser?.role);
+    console.log('authUser?.role type:', typeof authUser?.role);
+    console.log('authUser?.role === "INVESTOR":', authUser?.role === 'INVESTOR');
+    console.log('Should show Knowledge Base:', authUser && authUser.role !== 'INVESTOR');
+  }, [authUser]);
   
   // Notification settings
   const [pushEnabled, setPushEnabled] = useState(true);
@@ -56,8 +79,11 @@ export default function ProfileScreen() {
       quality: 0.8,
     });
 
-    if (!result.canceled && result.assets[0]) {
-      setUser(prev => ({ ...prev, avatar: result.assets[0].uri }));
+    if (!result.canceled && result.assets[0] && authUser) {
+      // Оновлюємо avatar в authStore (якщо буде потрібно)
+      // Поки що просто зберігаємо локально
+      console.log('Avatar selected:', result.assets[0].uri);
+      // TODO: Відправити avatar на сервер та оновити authUser
     }
   };
   
@@ -116,39 +142,70 @@ export default function ProfileScreen() {
     );
   };
 
+  const handleGoBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.push('/(tabs)/home');
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <ProfileHeader
-          avatar={user.avatar}
-          firstName={user.firstName}
-          lastName={user.lastName}
-          email={user.email}
-          role={user.role}
-          onEditPress={handleEditProfile}
-          onAvatarPress={() => setShowImageViewer(true)}
-        />
-        
-        {/* Account Section */}
-        <SettingsSection isFirst>
-          <SettingsItem
-            icon="person-outline"
-            label={t('profile.editProfile')}
-            onPress={handleEditProfilePage}
+      {/* Back Button */}
+      <Pressable onPress={handleGoBack} style={styles.backButton}>
+        <Ionicons name="arrow-back" size={24} color={theme.text} />
+      </Pressable>
+
+      {authLoading ? (
+        <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+          <ActivityIndicator size="large" color={theme.primary} />
+          <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+            Loading profile...
+          </Text>
+        </View>
+      ) : !user ? (
+        <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+          <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+            No user data. Redirecting...
+          </Text>
+        </View>
+      ) : (
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <ProfileHeader
+            avatar={user.avatar}
+            firstName={user.firstName}
+            lastName={user.lastName}
+            email={user.email}
+            role={user.role || 'BROKER'} // Fallback на BROKER якщо роль не визначена
+            onEditPress={handleEditProfile}
+            onAvatarPress={() => {
+              if (user.avatar) {
+                setShowImageViewer(true);
+              }
+            }}
           />
-          <SettingsItem
-            icon="lock-closed-outline"
-            label={t('profile.changePassword')}
-            onPress={handleChangePassword}
-          />
-          <SettingsItem
-            icon="call-outline"
-            label={t('profile.phoneNumber')}
-            value={user.phone}
-            hasArrow={false}
-            isLast
-          />
-        </SettingsSection>
+          
+          {/* Account Section */}
+          <SettingsSection isFirst>
+            <SettingsItem
+              icon="person-outline"
+              label={t('profile.editProfile')}
+              onPress={handleEditProfilePage}
+            />
+            <SettingsItem
+              icon="lock-closed-outline"
+              label={t('profile.changePassword')}
+              onPress={handleChangePassword}
+            />
+            <SettingsItem
+              icon="call-outline"
+              label={t('profile.phoneNumber')}
+              value={user.phone}
+              hasArrow={false}
+              isLast
+            />
+          </SettingsSection>
         
         {/* Notifications Section */}
         <SettingsSection>
@@ -202,11 +259,14 @@ export default function ProfileScreen() {
         
         {/* Support Section */}
         <SettingsSection>
+          {/* Only show Knowledge Base if user is explicitly not an INVESTOR and user exists */}
+          {authUser && authUser.role !== 'INVESTOR' && (
           <SettingsItem
             icon="book-outline"
             label="Knowledge Base"
             onPress={handleKnowledgeBase}
           />
+          )}
           <SettingsItem
             icon="shield-checkmark-outline"
             label={t('profile.privacyPolicy')}
@@ -237,34 +297,37 @@ export default function ProfileScreen() {
           />
         </SettingsSection>
         
-        <View style={[styles.footer, { backgroundColor: theme.backgroundSecondary }]} />
-      </ScrollView>
+          <View style={[styles.footer, { backgroundColor: theme.backgroundSecondary }]} />
+        </ScrollView>
+      )}
       
       {/* Fullscreen Image Viewer */}
-      <Modal
-        visible={showImageViewer}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowImageViewer(false)}
-      >
-        <View style={styles.imageViewerContainer}>
-          <Image 
-            source={{ uri: user.avatar }} 
-            style={styles.fullscreenImage}
-            resizeMode="contain"
-          />
+      {user && user.avatar && (
+        <Modal
+          visible={showImageViewer}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowImageViewer(false)}
+        >
+          <View style={styles.imageViewerContainer}>
+            <Image 
+              source={{ uri: user.avatar }} 
+              style={styles.fullscreenImage}
+              resizeMode="contain"
+            />
           
-          <Pressable 
-            style={({ pressed }) => [
-              styles.closeButton,
-              { opacity: pressed ? 0.7 : 1 }
-            ]}
-            onPress={() => setShowImageViewer(false)}
-          >
-            <Text style={styles.closeButtonText}>{t('common.close')}</Text>
-          </Pressable>
-        </View>
-      </Modal>
+            <Pressable 
+              style={({ pressed }) => [
+                styles.closeButton,
+                { opacity: pressed ? 0.7 : 1 }
+              ]}
+              onPress={() => setShowImageViewer(false)}
+            >
+              <Text style={styles.closeButtonText}>{t('common.close')}</Text>
+            </Pressable>
+          </View>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 }
@@ -272,6 +335,16 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 16,
+    width: 40,
+    height: 40,
+    zIndex: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   footer: {
     height: 24,
@@ -301,5 +374,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '300',
     color: '#939393',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
   },
 });

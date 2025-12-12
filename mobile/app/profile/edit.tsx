@@ -1,28 +1,63 @@
 import { View, Text, StyleSheet, ScrollView, Alert, Image, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Input } from '@/components/ui';
 import { useTheme } from '@/utils/theme';
+import { useAuthStore } from '@/store/authStore';
+import { ActivityIndicator } from 'react-native';
 
 export default function EditProfileScreen() {
   const router = useRouter();
   const { theme } = useTheme();
+  const authUser = useAuthStore((state) => state.user);
+  const updateProfile = useAuthStore((state) => state.updateProfile);
+  const isLoading = useAuthStore((state) => state.isLoading);
   
-  // Initial data (from API/storage)
-  const initialData = {
-    avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=200',
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@example.com',
-    phone: '+971 50 123 4567',
-    licenseNumber: 'BRK-12345',
+  // Initial data from authStore (real user data)
+  const getInitialData = () => {
+    if (!authUser) {
+      return {
+        avatar: null as string | null,
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        licenseNumber: '',
+      };
+    }
+    
+    return {
+      avatar: authUser.avatar || null,
+      firstName: authUser.firstName || '',
+      lastName: authUser.lastName || '',
+      email: authUser.email || '',
+      phone: authUser.phone || '',
+      licenseNumber: authUser.licenseNumber || '',
+    };
   };
   
   // Current form data
-  const [formData, setFormData] = useState(initialData);
+  const [formData, setFormData] = useState(getInitialData());
+  
+  // Update form data when authUser changes
+  useEffect(() => {
+    if (authUser) {
+      setFormData({
+        avatar: authUser.avatar || null,
+        firstName: authUser.firstName || '',
+        lastName: authUser.lastName || '',
+        email: authUser.email || '',
+        phone: authUser.phone || '',
+        licenseNumber: authUser.licenseNumber || '',
+      });
+    }
+  }, [authUser]);
+  
+  // Initial data for comparison
+  const initialData = getInitialData();
   
   // Validation errors
   const [errors, setErrors] = useState({
@@ -34,6 +69,13 @@ export default function EditProfileScreen() {
   
   // Check if data has changed
   const hasChanges = JSON.stringify(formData) !== JSON.stringify(initialData);
+  
+  // Redirect if no user
+  useEffect(() => {
+    if (!authUser) {
+      router.replace('/profile');
+    }
+  }, [authUser, router]);
   
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -83,7 +125,7 @@ export default function EditProfileScreen() {
     }
   };
   
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!hasChanges) return;
     
     // Validate all fields
@@ -127,10 +169,40 @@ export default function EditProfileScreen() {
       return;
     }
     
-    // Save logic here (API call)
-    Alert.alert('Success', 'Profile updated successfully', [
-      { text: 'OK', onPress: () => router.back() }
-    ]);
+    // Save profile via API
+    try {
+      await updateProfile({
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        licenseNumber: formData.licenseNumber?.trim() || undefined,
+        avatar: formData.avatar || undefined,
+      });
+      
+      Alert.alert('Success', 'Profile updated successfully', [
+        { text: 'OK', onPress: () => router.back() }
+      ]);
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      console.error('Error response:', error.response);
+      
+      let errorMessage = 'Failed to update profile. Please try again.';
+      
+      if (error.response?.status === 404) {
+        errorMessage = 'Profile update is currently unavailable. The feature is being deployed. Please try again later or contact support.';
+      } else if (error.response?.status === 409) {
+        errorMessage = error.response?.data?.message || 'A user with this email or phone number already exists.';
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response?.data?.message || 'Invalid data provided.';
+      } else if (error.response?.status === 401) {
+        errorMessage = 'You are not authorized. Please log in again.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('Error', errorMessage);
+    }
   };
 
   return (
@@ -262,13 +334,17 @@ export default function EditProfileScreen() {
             <Pressable
               style={({ pressed }) => [
                 styles.saveButton,
-                { backgroundColor: hasChanges ? theme.primary : theme.border },
-                { opacity: pressed && hasChanges ? 0.9 : 1, transform: [{ scale: pressed && hasChanges ? 0.98 : 1 }] }
+                { backgroundColor: hasChanges && !isLoading ? theme.primary : theme.border },
+                { opacity: (pressed && hasChanges && !isLoading) ? 0.9 : 1, transform: [{ scale: (pressed && hasChanges && !isLoading) ? 0.98 : 1 }] }
               ]}
               onPress={handleSave}
-              disabled={!hasChanges}
+              disabled={!hasChanges || isLoading}
             >
-              <Text style={[styles.saveButtonText, { color: hasChanges ? '#FFFFFF' : theme.textTertiary }]}>Save</Text>
+              {isLoading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={[styles.saveButtonText, { color: hasChanges ? '#FFFFFF' : theme.textTertiary }]}>Save</Text>
+              )}
             </Pressable>
           </View>
         </ScrollView>

@@ -12,21 +12,70 @@ export class AmoCrmController {
   /**
    * OAuth callback endpoint
    * Приймає authorization code і обмінює на токени
+   * Викликається автоматично після обміну API ключа або стандартного OAuth flow
    */
   @Get('callback')
   @ApiOperation({ summary: 'OAuth2 callback для отримання токенів' })
   @ApiResponse({ status: 200, description: 'Токени успішно отримані' })
-  async handleCallback(@Query('code') code: string) {
+  async handleCallback(
+    @Query('code') code: string,
+    @Query('from_exchange') fromExchange?: string,
+    @Query('state') state?: string,
+  ) {
     try {
+      if (!code) {
+        return {
+          statusCode: 400,
+          message: 'Authorization code is missing',
+        };
+      }
+
       await this.amoCrmService.exchangeCode(code);
       return {
         message: 'AMO CRM successfully connected',
         status: 'success',
+        fromExchange: fromExchange === '1',
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         statusCode: error.status || 400,
         message: error.message || 'Failed to exchange authorization code',
+        details: error.response?.data || error.message,
+      };
+    }
+  }
+
+  /**
+   * Обмін API ключа на authorization code
+   * POST /oauth2/exchange_api_key
+   */
+  @Post('exchange-api-key')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({ summary: 'Обмін API ключа на OAuth код авторизації' })
+  @ApiResponse({ status: 202, description: 'Запит прийнято, код авторизації буде відправлено на redirect URI' })
+  async exchangeApiKey(
+    @Body()
+    body: {
+      login: string;
+      api_key: string;
+      state?: string;
+    },
+  ) {
+    try {
+      await this.amoCrmService.exchangeApiKeyForCode(
+        body.login,
+        body.api_key,
+        body.state,
+      );
+      return {
+        message: 'API key exchange request accepted',
+        status: 'accepted',
+        note: 'Authorization code will be sent to redirect URI',
+      };
+    } catch (error: any) {
+      return {
+        statusCode: error.status || 400,
+        message: error.message || 'Failed to exchange API key',
         details: error.response?.data || error.message,
       };
     }
@@ -54,10 +103,10 @@ export class AmoCrmController {
   @Get('test')
   @ApiOperation({ summary: 'Тестовий endpoint для перевірки підключення' })
   async testConnection() {
-    // TODO: Додати логіку тестування підключення
+    const status = await this.amoCrmService.getConnectionStatus();
     return {
-      message: 'AMO CRM integration is ready',
-      status: 'ok',
+      message: 'AMO CRM integration status',
+      ...status,
     };
   }
 
@@ -206,6 +255,41 @@ export class AmoCrmController {
     return {
       message: 'Leads синхронізовано з AMO CRM',
       ...result,
+      status: 'success',
+    };
+  }
+
+  /**
+   * Повна синхронізація: pipelines, stages та leads
+   */
+  @Post('sync-all')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Повна синхронізація: pipelines, stages та всі leads з AMO CRM' })
+  @ApiResponse({ status: 200, description: 'Всі дані синхронізовано' })
+  async syncAll(@Query('leadsLimit') leadsLimit?: number) {
+    const results = {
+      pipelines: { synced: 0, errors: 0 },
+      leads: { synced: 0, errors: 0 },
+    };
+
+    // 1. Синхронізувати pipelines та stages
+    try {
+      results.pipelines = await this.amoCrmService.syncPipelines();
+    } catch (error) {
+      results.pipelines.errors = 1;
+    }
+
+    // 2. Синхронізувати всі leads (0 = без ліміту)
+    try {
+      results.leads = await this.amoCrmService.syncLeadsFromAmo(leadsLimit || 0);
+    } catch (error) {
+      results.leads.errors = 1;
+    }
+
+    return {
+      message: 'Повна синхронізація завершена',
+      pipelines: results.pipelines,
+      leads: results.leads,
       status: 'success',
     };
   }

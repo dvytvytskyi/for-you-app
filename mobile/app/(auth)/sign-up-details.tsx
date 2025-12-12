@@ -1,12 +1,27 @@
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, TextInput } from 'react-native';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, TextInput, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { useState, useRef } from 'react';
+import { useRouter, useNavigation, useLocalSearchParams } from 'expo-router';
+import { useState, useRef, useEffect } from 'react';
 import { Input, Button, Toggle, Dropdown } from '@/components/ui';
 import type { DropdownOption } from '@/components/ui/Dropdown';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuthStore } from '@/store/authStore';
+import { UserRole } from '@/types/user';
 
 export default function SignUpDetailsScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
+  const params = useLocalSearchParams<{
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    password: string;
+  }>();
+  
+  const { signUpGeneral, signUpAgent } = useAuthStore();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   
   // Toggle для "I'm Real Estate Agent"
   const [isAgent, setIsAgent] = useState(false);
@@ -26,25 +41,144 @@ export default function SignUpDetailsScreen() {
   const whatsappRef = useRef<TextInput>(null);
   const telegramRef = useRef<TextInput>(null);
 
-  const handleContinue = () => {
-    // All fields are optional, so we can proceed directly
-    // TODO: Send data to backend
-    console.log('Sign up complete', {
-      isAgent,
-      ...(isAgent ? {
+  const handleContinue = async () => {
+    try {
+      setIsLoading(true);
+      setError('');
+      
+      // Перевірка, чи є дані з попереднього екрану
+      if (!params.firstName || !params.lastName || !params.email || !params.phone || !params.password) {
+        setError('Missing registration data. Please go back and fill the form again.');
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log('🔄 Starting registration...');
+      console.log('📋 Registration data:', {
+        firstName: params.firstName,
+        lastName: params.lastName,
+        email: params.email,
+        phone: params.phone,
+        isAgent,
         phoneNumber,
-        whatsappNumber,
-        telegramNumber,
-        fieldOfExpertise,
-      } : {
-        budgetRange,
-        propertyType,
-        purpose,
-        preferredLocation,
-      })
-    });
-    // After successful registration, redirect to tabs
-    router.replace('/(tabs)/home');
+      });
+      
+      // Перевірка phone
+      if (!params.phone || params.phone.trim().length < 10) {
+        setError('Phone number is required and must be at least 10 characters');
+        setIsLoading(false);
+        return;
+      }
+      
+      if (isAgent) {
+        // Реєстрація як BROKER
+        // Використовуємо phone з першого екрану, або phoneNumber якщо вказано
+        const brokerPhone = phoneNumber.trim() || params.phone;
+        
+        if (!brokerPhone.trim() || brokerPhone.trim().length < 10) {
+          setError('Phone number is required for agents and must be at least 10 characters');
+          setIsLoading(false);
+          return;
+        }
+        
+        // Для BROKER потрібен licenseNumber
+        // Генеруємо тимчасовий licenseNumber (в реальному додатку це має бути введено користувачем)
+        const licenseNumber = `BROKER-${Date.now()}`;
+        
+        console.log('📋 Registering as BROKER with:', {
+          email: params.email,
+          phone: brokerPhone,
+          firstName: params.firstName,
+          lastName: params.lastName,
+          licenseNumber,
+        });
+        
+        await signUpAgent({
+          email: params.email,
+          password: params.password,
+          firstName: params.firstName,
+          lastName: params.lastName,
+          phone: brokerPhone,
+          role: UserRole.BROKER,
+          whatsapp: whatsappNumber || undefined,
+          telegram: telegramNumber || undefined,
+          fieldOfExpertise: fieldOfExpertise || 'general',
+          licenseNumber: licenseNumber,
+        });
+      } else {
+        // Реєстрація як INVESTOR (для клієнтів/інвесторів)
+        // Бекенд вимагає phone, використовуємо phone з першого екрану
+        console.log('📋 Registering as INVESTOR with:', {
+          email: params.email,
+          phone: params.phone,
+          firstName: params.firstName,
+          lastName: params.lastName,
+        });
+        
+        await signUpGeneral({
+          email: params.email,
+          password: params.password,
+          firstName: params.firstName,
+          lastName: params.lastName,
+          phone: params.phone,
+          role: UserRole.INVESTOR, // Використовуємо INVESTOR замість CLIENT
+        });
+      }
+      
+      console.log('✅ Registration successful!');
+      
+      // Після успішної реєстрації перенаправляємо на home
+      router.replace('/(tabs)/home');
+    } catch (error: any) {
+      try {
+        console.error('❌ Registration error:', error?.message || error);
+        console.error('Error status:', error.response?.status);
+        
+        // Безпечне логування response data
+        if (error.response?.data) {
+          try {
+            const errorData = typeof error.response.data === 'string'
+              ? error.response.data
+              : JSON.stringify(error.response.data, null, 2);
+            console.error('Error data:', errorData);
+          } catch (stringifyError) {
+            console.error('Error data: [Unable to stringify]');
+          }
+        }
+      } catch (loggingError) {
+        console.error('❌ Error in error handler:', loggingError);
+      }
+      
+      let errorMessage = 'Registration failed. Please try again.';
+      
+      // Обробка різних типів помилок
+      if (error.response?.status === 409) {
+        // Conflict - користувач вже існує
+        errorMessage = error.response?.data?.message || 'A user with this email or phone number already exists. Please use a different email or phone number.';
+      } else if (error.response?.status === 400) {
+        // Bad Request - невалідні дані
+        errorMessage = error.response?.data?.message || 'Invalid data provided. Please check all fields and try again.';
+      } else if (error.response?.status === 401) {
+        // Unauthorized
+        errorMessage = error.response?.data?.message || 'Authentication failed. Please try again.';
+      } else if (error.response?.status === 500) {
+        // Internal Server Error
+        errorMessage = error.response?.data?.message || 'Server error. Please try again later.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
+      Alert.alert(
+        'Registration Failed',
+        errorMessage,
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Options for dropdowns
@@ -82,8 +216,28 @@ export default function SignUpDetailsScreen() {
     { label: 'Investment Properties', value: 'investment' },
   ];
 
+  // Enable swipe back gesture
+  useEffect(() => {
+    navigation.setOptions({
+      gestureEnabled: true,
+    });
+  }, [navigation]);
+
+  const handleGoBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.push('/(auth)/sign-up-general');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      {/* Back Button */}
+      <Pressable onPress={handleGoBack} style={styles.backButton}>
+        <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+      </Pressable>
+
       {/* Dark Top Section */}
       <View style={styles.topSection}>
         <Text style={styles.title}>PROVIDE MORE INFORMATION</Text>
@@ -157,6 +311,10 @@ export default function SignUpDetailsScreen() {
                   returnKeyType="next"
                   onSubmitEditing={() => whatsappRef.current?.focus()}
                   blurOnSubmit={false}
+                  inputBackgroundColor="#FFFFFF"
+                  inputBorderColor="#DFDFE0"
+                  inputTextColor="#010312"
+                  inputPlaceholderColor="#94A3B8"
                 />
                 
                 <Input
@@ -168,6 +326,10 @@ export default function SignUpDetailsScreen() {
                   returnKeyType="next"
                   onSubmitEditing={() => telegramRef.current?.focus()}
                   blurOnSubmit={false}
+                  inputBackgroundColor="#FFFFFF"
+                  inputBorderColor="#DFDFE0"
+                  inputTextColor="#010312"
+                  inputPlaceholderColor="#94A3B8"
                 />
                 
                 <Input
@@ -177,6 +339,10 @@ export default function SignUpDetailsScreen() {
                   onChangeText={setTelegramNumber}
                   fullWidth
                   returnKeyType="done"
+                  inputBackgroundColor="#FFFFFF"
+                  inputBorderColor="#DFDFE0"
+                  inputTextColor="#010312"
+                  inputPlaceholderColor="#94A3B8"
                 />
                 
                 <Dropdown
@@ -189,12 +355,25 @@ export default function SignUpDetailsScreen() {
               </>
             )}
 
+            {error && (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
+            
             <Button
-              title="Sign up"
+              title={isLoading ? "Creating account..." : "Sign up"}
               variant="dark"
               fullWidth
               onPress={handleContinue}
+              disabled={isLoading}
             />
+            
+            {isLoading && (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color="#010312" />
+              </View>
+            )}
 
             <Text style={styles.disclaimer}>
               By agreeing to the above terms, you are consenting that your personal information will be collected, stored, and processed in the United States and the European Union on behalf of Sporify Properties, Inc.
@@ -211,10 +390,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#010312',
   },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 16,
+    width: 40,
+    height: 40,
+    zIndex: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   topSection: {
     backgroundColor: '#010312',
     paddingHorizontal: 16,
-    paddingTop: 20,
+    paddingTop: 70,
     paddingBottom: 20,
   },
   title: {
@@ -257,6 +446,21 @@ const styles = StyleSheet.create({
     textAlign: 'left',
     marginTop: 12,
     marginBottom: 48,
+  },
+  errorContainer: {
+    backgroundColor: '#FFEBEE',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  errorText: {
+    color: '#C62828',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    marginTop: 8,
   },
 });
 

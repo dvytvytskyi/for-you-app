@@ -5,7 +5,7 @@
 ### 1. Отримані дані з AMO CRM:
 
 ```env
-AMO_DOMAIN=vytvytskyi.amocrm.ru
+AMO_DOMAIN=reforyou.amocrm.ru
 AMO_CLIENT_ID=2912780f-a1e4-4d5d-a069-ee01422d8bef
 AMO_CLIENT_SECRET=VfzqqKrfDD78ROmXTMUJkPAauTrYYNHQBAsWaLSYxQNvcQSB9i3xBFVTlcBifumd
 AMO_ACCOUNT_ID=31920194

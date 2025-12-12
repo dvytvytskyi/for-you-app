@@ -7,13 +7,12 @@ interface ProfileHeaderProps {
   firstName: string;
   lastName: string;
   email: string;
-  role: 'CLIENT' | 'BROKER' | 'INVESTOR' | 'ADMIN';
+  role?: 'BROKER' | 'INVESTOR' | 'ADMIN'; // Може бути undefined
   onEditPress: () => void;
   onAvatarPress?: () => void;
 }
 
 const getRoleConfig = (themePrimary: string) => ({
-  CLIENT: { label: 'Client', icon: 'person' as const, color: themePrimary },
   BROKER: { label: 'Broker', icon: 'briefcase' as const, color: themePrimary },
   INVESTOR: { label: 'Investor', icon: 'trending-up' as const, color: themePrimary },
   ADMIN: { label: 'Admin', icon: 'shield-checkmark' as const, color: themePrimary },
@@ -21,7 +20,11 @@ const getRoleConfig = (themePrimary: string) => ({
 
 export default function ProfileHeader({ avatar, firstName, lastName, email, role, onEditPress, onAvatarPress }: ProfileHeaderProps) {
   const { theme } = useTheme();
-  const config = getRoleConfig(theme.primary)[role];
+  
+  // Нормалізуємо роль (uppercase) і додаємо fallback
+  const normalizedRole = role?.toUpperCase() as 'BROKER' | 'INVESTOR' | 'ADMIN';
+  const roleConfigs = getRoleConfig(theme.primary);
+  const config = roleConfigs[normalizedRole] || roleConfigs.BROKER; // Fallback на BROKER, якщо роль невідома
   
   return (
     <>
@@ -57,6 +60,7 @@ export default function ProfileHeader({ avatar, firstName, lastName, email, role
         >
           <Ionicons name="camera" size={16} color={theme.textInverse} />
         </Pressable>
+        </View>
       </View>
       
       <View style={styles.infoContainer}>
@@ -69,9 +73,8 @@ export default function ProfileHeader({ avatar, firstName, lastName, email, role
         
         <Text style={[styles.email, { color: theme.textTertiary }]}>{email}</Text>
       </View>
-      </View>
       
-      <View style={[styles.separator, { backgroundColor: theme.backgroundSecondary }]} />
+      <View style={[styles.separator, { backgroundColor: theme.backgroundSecondary }]}></View>
     </>
   );
 }
@@ -125,12 +128,13 @@ const styles = StyleSheet.create({
   },
   infoContainer: {
     alignItems: 'center',
-    gap: 4,
+    gap: 8,
   },
   name: {
     fontSize: 24,
     fontWeight: '700',
     color: '#010312',
+    marginBottom: 4,
   },
   roleContainer: {
     flexDirection: 'row',
@@ -140,6 +144,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
     backgroundColor: '#F0F4FF',
+    marginBottom: 4,
   },
   roleText: {
     fontSize: 12,
@@ -150,6 +155,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '400',
     color: '#999999',
+    paddingBottom: 12,
   },
 });
 

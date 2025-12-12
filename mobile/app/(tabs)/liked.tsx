@@ -1,6 +1,6 @@
-import { View, Text, StyleSheet, ScrollView, FlatList, Image, Dimensions, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, FlatList, Image, Dimensions, Pressable, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Header, SearchBar } from '@/components/ui';
 import { useTheme } from '@/utils/theme';
 import { useTranslation } from '@/utils/i18n';
@@ -8,136 +8,101 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { useQuery } from '@tanstack/react-query';
+import { propertiesApi } from '@/api/properties';
+import { useFavoritesStore } from '@/store/favoritesStore';
+import { convertPropertyToCard, PropertyCardData, formatPrice } from '@/utils/property-utils';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_WIDTH = SCREEN_WIDTH - 32;
-
-type PropertyType = 'apartment' | 'villa' | 'penthouse' | 'townhouse' | 'studio';
-
-interface Property {
-  id: string;
-  title: string;
-  location: string;
-  price: number;
-  bedrooms: number;
-  type: PropertyType;
-  images: string[];
-  handoverDate: string;
-  isFavorite: boolean;
-}
-
-// Mock data - liked properties
-const LIKED_PROPERTIES: Property[] = [
-  {
-    id: '1',
-    title: 'Lovely apartment with 2 bedrooms',
-    location: 'Downtown Dubai',
-    price: 1300000,
-    bedrooms: 3,
-    type: 'apartment',
-    images: [
-      'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800',
-      'https://images.unsplash.com/photo-1502672260066-6bc35f0a5c1a?w=800',
-      'https://images.unsplash.com/photo-1600210492493-0946911123ea?w=800',
-    ],
-    handoverDate: '25 Mar 2027',
-    isFavorite: true,
-  },
-  {
-    id: '3',
-    title: 'Modern penthouse with sea view',
-    location: 'Dubai Marina',
-    price: 3200000,
-    bedrooms: 4,
-    type: 'penthouse',
-    images: [
-      'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800',
-      'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800',
-      'https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=800',
-    ],
-    handoverDate: '10 Jan 2027',
-    isFavorite: true,
-  },
-  {
-    id: '7',
-    title: 'Luxury apartment with view',
-    location: 'Business Bay',
-    price: 2800000,
-    bedrooms: 3,
-    type: 'apartment',
-    images: [
-      'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800',
-      'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800',
-    ],
-    handoverDate: '15 Feb 2027',
-    isFavorite: true,
-  },
-];
 
 export default function LikedScreen() {
   const { theme } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const [properties, setProperties] = useState<Property[]>(LIKED_PROPERTIES);
   const [scrollEnabled, setScrollEnabled] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-
-  const toggleFavorite = useCallback((id: string) => {
-    setProperties(prev => prev.map(prop => 
-      prop.id === id ? { ...prop, isFavorite: !prop.isFavorite } : prop
-    ));
-  }, []);
-
-  const filteredProperties = properties.filter(property => {
-    const matchesSearch = property.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         property.location.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
+  
+  // Favorites store
+  const { favoriteIds, toggleFavorite: toggleFavoriteInStore, isFavorite } = useFavoritesStore();
+  
+  // Завантаження улюблених properties з API
+  const { data: propertiesData, isLoading, error, refetch, isRefetching } = useQuery({
+    queryKey: ['favorite-properties', favoriteIds],
+    queryFn: async () => {
+      if (favoriteIds.length === 0) {
+        return { properties: [], total: 0 };
+      }
+      
+      console.log('🔄 Завантаження улюблених properties:', favoriteIds.length);
+      
+      // Завантажуємо кожен property за ID
+      const propertiesPromises = favoriteIds.map(id => 
+        propertiesApi.getById(id).catch(err => {
+          console.warn(`⚠️ Не вдалося завантажити property ${id}:`, err);
+          return null;
+        })
+      );
+      
+      const results = await Promise.all(propertiesPromises);
+      const properties = results
+        .filter((result): result is { success: boolean; data: any } => 
+          result !== null && 
+          result !== undefined && 
+          result.success && 
+          result.data !== null && 
+          result.data !== undefined
+        )
+        .map(result => result.data)
+        .filter(prop => prop && prop.id); // Додаткова перевірка на наявність id
+      
+      console.log('✅ Завантажено улюблених properties:', properties.length);
+      
+      // Видаляємо дубльовані properties за ID
+      const uniqueProperties = Array.from(
+        new Map(properties.map(prop => [prop.id, prop]).filter(([id]) => id)).values()
+      );
+      
+      return { 
+        properties: uniqueProperties.map(prop => convertPropertyToCard(prop)),
+        total: uniqueProperties.length 
+      };
+    },
+    enabled: favoriteIds.length > 0,
+    staleTime: 0,
+    cacheTime: 0,
   });
 
-  const loadMore = useCallback(async () => {
-    if (loading || !hasMore) return;
+  const properties = useMemo(() => {
+    return propertiesData?.properties || [];
+  }, [propertiesData]);
+
+  const toggleFavorite = useCallback((id: string) => {
+    toggleFavoriteInStore(id);
+  }, [toggleFavoriteInStore]);
+
+  const handleRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  const filteredProperties = useMemo(() => {
+    // Видаляємо дубльовані properties за ID перед фільтрацією
+    const uniqueProperties = Array.from(
+      new Map(properties.map(prop => [prop.id, prop])).values()
+    );
     
-    setLoading(true);
+    const filtered = uniqueProperties.filter(property => {
+      const matchesSearch = property.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           property.location.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesSearch;
+    });
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Generate more properties (in real app, this would be an API call)
-    const newProperties: Property[] = [
-      {
-        id: `${properties.length + 1}`,
-        title: 'Luxury villa in JBR',
-        location: 'Jumeirah Beach Residence',
-        price: 4500000,
-        bedrooms: 5,
-        type: 'villa',
-        images: ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800'],
-        handoverDate: '30 May 2027',
-        isFavorite: true,
-      },
-      {
-        id: `${properties.length + 2}`,
-        title: 'Studio with balcony',
-        location: 'Dubai Marina',
-        price: 1200000,
-        bedrooms: 1,
-        type: 'studio',
-        images: ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'],
-        handoverDate: '20 Nov 2026',
-        isFavorite: true,
-      },
-    ];
-    
-    setProperties(prev => [...prev, ...newProperties]);
-    setLoading(false);
-    
-    // Simulate end of data after 3 loads
-    if (properties.length >= 7) {
-      setHasMore(false);
-    }
-  }, [loading, hasMore, properties.length]);
+    // Додаємо isFavorite для кожного property
+    return filtered.map(prop => ({
+      ...prop,
+      isFavorite: true, // Всі properties в liked page є улюбленими
+    }));
+  }, [properties, searchQuery]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
@@ -158,68 +123,113 @@ export default function LikedScreen() {
       </View>
 
       {/* Properties List */}
-      <FlatList
-        data={filteredProperties}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        scrollEnabled={scrollEnabled}
-        renderItem={({ item }) => (
-          <PropertyCard
-            property={item}
-            onToggleFavorite={() => toggleFavorite(item.id)}
-            onScrollStart={() => setScrollEnabled(false)}
-            onScrollEnd={() => setScrollEnabled(true)}
-            theme={theme}
-            t={t}
-          />
-        )}
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={
-          loading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={theme.primary} />
-              <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
-                Loading more properties...
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.primary} />
+          <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+            {t('properties.loading')}
+          </Text>
+        </View>
+      ) : error ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="alert-circle-outline" size={64} color={theme.textTertiary} />
+          <Text style={[styles.emptyTitle, { color: theme.text }]}>
+            {t('properties.errorLoading')}
+          </Text>
+          <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
+            {(error as any)?.message || 'Unknown error'}
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredProperties}
+          keyExtractor={(item, index) => `${item.id}-${index}`}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={scrollEnabled}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={handleRefresh}
+              tintColor={theme.primary}
+            />
+          }
+          renderItem={({ item }) => (
+            <PropertyCard
+              property={item}
+              onToggleFavorite={() => toggleFavorite(item.id)}
+              onScrollStart={() => setScrollEnabled(false)}
+              onScrollEnd={() => setScrollEnabled(true)}
+              theme={theme}
+              t={t}
+              router={router}
+            />
+          )}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons name="heart-outline" size={64} color={theme.textTertiary} />
+              <Text style={[styles.emptyTitle, { color: theme.text }]}>
+                {t('tabs.liked.noLikedProperties')}
+              </Text>
+              <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
+                {t('tabs.liked.startExploring')}
               </Text>
             </View>
-          ) : !hasMore && filteredProperties.length > 0 ? (
-            <View style={styles.endContainer}>
-              <Text style={[styles.endText, { color: theme.textTertiary }]}>
-                No more properties to load
-              </Text>
-            </View>
-          ) : null
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="heart-outline" size={64} color={theme.textTertiary} />
-            <Text style={[styles.emptyTitle, { color: theme.text }]}>
-              {t('tabs.liked.noLikedProperties')}
-            </Text>
-            <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
-              {t('tabs.liked.startExploring')}
-            </Text>
-          </View>
-        }
-      />
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
 
 interface PropertyCardProps {
-  property: Property;
+  property: PropertyCardData;
   onToggleFavorite: () => void;
   onScrollStart: () => void;
   onScrollEnd: () => void;
   theme: any;
   t: any;
+  router: any;
 }
 
-function PropertyCard({ property, onToggleFavorite, onScrollStart, onScrollEnd, theme, t }: PropertyCardProps) {
+function PropertyCard({ property, onToggleFavorite, onScrollStart, onScrollEnd, theme, t, router }: PropertyCardProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const router = useRouter();
+  const { isFavorite: isFavoriteInStore } = useFavoritesStore();
+  
+  // Валідація URI для зображень
+  const getValidImages = (images: string[] | undefined): string[] => {
+    if (!images || images.length === 0) {
+      return ['https://via.placeholder.com/400x300?text=No+Image'];
+    }
+    return images
+      .filter(img => img && typeof img === 'string' && img.trim().length > 0)
+      .filter(img => {
+        // Перевіряємо, чи це валідний URI
+        return img.startsWith('http://') || img.startsWith('https://') || img.startsWith('data:') || img.startsWith('file://');
+      })
+      .map(img => img.trim());
+  };
+  
+  const images = getValidImages(property.images);
+  
+  const bedroomsLabel = typeof property.bedrooms === 'string'
+    ? property.bedrooms
+    : property.bedrooms === 1
+    ? t('properties.bedroom')
+    : `${property.bedrooms} ${t('properties.bedrooms')}`;
+  
+  const isFavorite = isFavoriteInStore(property.id);
+  
+  // Форматуємо payment plan (до 2 рядків, без агресивного обрізання)
+  const getShortPaymentPlan = (paymentPlan: string | null | undefined): string | null => {
+    if (!paymentPlan) return null;
+    
+    // Видаляємо всі переноси рядків і зайві пробіли, але залишаємо текст для 2 рядків
+    const singleLine = paymentPlan.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+    
+    // Не обрізаємо - дозволяємо React Native автоматично переносити на 2 рядки
+    return singleLine;
+  };
   
   return (
     <View style={styles.propertyCard}>
@@ -238,7 +248,7 @@ function PropertyCard({ property, onToggleFavorite, onScrollStart, onScrollEnd, 
         scrollEventThrottle={16}
         style={styles.imageScroller}
       >
-        {property.images.map((image, index) => (
+        {images.map((image, index) => (
           <Image
             key={`${property.id}-image-${index}`}
             source={{ uri: image }}
@@ -255,31 +265,61 @@ function PropertyCard({ property, onToggleFavorite, onScrollStart, onScrollEnd, 
         pointerEvents="none"
       />
       
-      {/* Pagination Dots */}
-      {property.images.length > 1 && (
-        <View style={styles.paginationContainer} pointerEvents="none">
-          {property.images.map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.paginationDot,
-                index === currentImageIndex && styles.paginationDotActive
-              ]}
-            />
-          ))}
-        </View>
-      )}
+      {/* Pagination Dots - завжди показуємо максимум 4 крапки, які рухаються при скролі */}
+      {images.length > 1 && (() => {
+        const maxDots = 4;
+        const totalImages = images.length;
+        
+        // Розраховуємо, які крапки показувати та яка активна
+        let dotIndices: number[] = [];
+        let activeDotIndex = 0;
+        
+        if (totalImages <= maxDots) {
+          // Якщо фото 4 або менше, показуємо всі
+          dotIndices = Array.from({ length: totalImages }, (_, i) => i);
+          activeDotIndex = currentImageIndex;
+        } else {
+          // Якщо фото більше 4, крапки рухаються
+          // Розраховуємо відносні позиції (0%, 33%, 67%, 100%)
+          dotIndices = [0, Math.floor(totalImages / 3), Math.floor((totalImages * 2) / 3), totalImages - 1];
+          
+          // Знаходимо найближчу крапку до поточного фото
+          activeDotIndex = dotIndices.reduce((closest, pos, idx) => {
+            return Math.abs(pos - currentImageIndex) < Math.abs(dotIndices[closest] - currentImageIndex) 
+              ? idx 
+              : closest;
+          }, 0);
+        }
+        
+        return (
+          <View style={styles.paginationContainer} pointerEvents="none">
+            {dotIndices.map((imageIndex, displayIndex) => (
+              <View
+                key={`${property.id}-dot-${displayIndex}`}
+                style={[
+                  styles.paginationDot,
+                  displayIndex === activeDotIndex && styles.paginationDotActive
+                ]}
+              />
+            ))}
+          </View>
+        );
+      })()}
       
       {/* Tags */}
       <View style={styles.tagsContainer} pointerEvents="none">
         <BlurView intensity={20} tint="light" style={styles.tag}>
           <Text style={[styles.tagText, { color: '#FFFFFF' }]}>
-            {t(`properties.propertyTypes.${property.type}`)}
+            {property.type === 'off-plan' ? 'Off-Plan' : 'Secondary'}
           </Text>
         </BlurView>
         <BlurView intensity={20} tint="light" style={styles.tag}>
           <Text style={[styles.tagText, { color: '#FFFFFF' }]}>
-            {property.bedrooms} {property.bedrooms === 1 ? t('properties.bedroom') : t('properties.bedrooms')}
+            {typeof property.bedrooms === 'string'
+              ? property.bedrooms
+              : property.bedrooms === 1
+              ? t('properties.bedroom')
+              : `${property.bedrooms} ${t('properties.bedrooms')}`}
           </Text>
         </BlurView>
       </View>
@@ -301,9 +341,20 @@ function PropertyCard({ property, onToggleFavorite, onScrollStart, onScrollEnd, 
           <Text style={styles.propertyLocation} numberOfLines={1}>
             {property.location}
           </Text>
-          <Text style={styles.propertyPrice}>
-            {property.price.toLocaleString()}$ • {t('properties.handover')} {property.handoverDate}
-          </Text>
+          <View style={styles.priceContainer}>
+            <Text style={styles.propertyPrice} numberOfLines={1}>
+              {formatPrice(property.price, 'USD')}{property.bedrooms ? ` | ${bedroomsLabel}` : ''}
+            </Text>
+            {getShortPaymentPlan(property.paymentPlan) && (
+              <Text 
+                style={styles.paymentPlan} 
+                numberOfLines={1} 
+                ellipsizeMode="tail"
+              >
+                {getShortPaymentPlan(property.paymentPlan)}
+              </Text>
+            )}
+          </View>
         </View>
 
         {/* Favorite Button */}
@@ -312,12 +363,15 @@ function PropertyCard({ property, onToggleFavorite, onScrollStart, onScrollEnd, 
             styles.favoriteButton,
             { opacity: pressed ? 0.7 : 1 }
           ]}
-          onPress={onToggleFavorite}
+          onPress={(e) => {
+            e?.stopPropagation?.();
+            onToggleFavorite();
+          }}
         >
           <Ionicons
-            name={property.isFavorite ? 'heart' : 'heart-outline'}
+            name={isFavorite ? 'heart' : 'heart-outline'}
             size={24}
-            color={property.isFavorite ? '#FF3B30' : '#FFFFFF'}
+            color={isFavorite ? '#FF3B30' : '#FFFFFF'}
           />
         </Pressable>
       </LinearGradient>
@@ -330,9 +384,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   searchSection: {
-    paddingTop: 16,
+    paddingTop: 8,
     paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingBottom: 8,
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   listContent: {
     paddingHorizontal: 16,
@@ -387,9 +444,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: '60%',
-    padding: 16,
+    height: '45%',
+    paddingBottom: 13, // Збільшено на 5px (було 8)
+    paddingHorizontal: 16,
+    paddingTop: 0,
     justifyContent: 'flex-end',
+    alignItems: 'flex-start',
   },
   tagsContainer: {
     position: 'absolute',
@@ -412,7 +472,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   propertyDetails: {
-    gap: 4,
+    gap: 3,
+    paddingRight: 56, // Залишаємо місце для сердечка (40px button + 16px margin)
+    flexShrink: 1,
+    marginBottom: 0,
+    alignSelf: 'flex-start', // Вирівнюємо по низу
   },
   propertyTitle: {
     fontSize: 18,
@@ -424,10 +488,23 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     opacity: 0.9,
   },
+  priceContainer: {
+    marginTop: 4,
+    flexShrink: 1,
+    width: CARD_WIDTH - 32 - 56, // Ширина картки - padding - місце для сердечка
+    gap: 2,
+  },
   propertyPrice: {
     fontSize: 14,
     color: '#FFFFFF',
-    marginTop: 4,
+    lineHeight: 18,
+    fontWeight: '600',
+  },
+  paymentPlan: {
+    fontSize: 13,
+    color: '#FFFFFF',
+    lineHeight: 16,
+    opacity: 0.9,
   },
   favoriteButton: {
     position: 'absolute',

@@ -66,5 +66,19 @@ export class FavoritesService {
 
     return !!favorite;
   }
+
+  async getFavoriteIds(userId: string): Promise<{ success: boolean; data: { favoriteIds: string[] } }> {
+    const favorites = await this.favoriteRepository.find({
+      where: { userId },
+      select: ['propertyId'],
+    });
+
+    const favoriteIds = favorites.map((fav) => fav.propertyId);
+
+    return {
+      success: true,
+      data: { favoriteIds },
+    };
+  }
 }
 

@@ -3,7 +3,6 @@
  */
 
 export enum UserRole {
-  CLIENT = 'CLIENT',
   BROKER = 'BROKER',
   INVESTOR = 'INVESTOR',
   ADMIN = 'ADMIN',
@@ -12,14 +11,15 @@ export enum UserRole {
 export interface User {
   id: string;
   email: string;
-  firstName: string | null;
-  lastName: string | null;
-  phone: string | null;
-  whatsapp: string | null;
-  telegram: string | null;
+  phone: string;
+  firstName: string;
+  lastName: string;
   role: UserRole;
-  isActive: boolean;
-  isEmailVerified: boolean;
+  status?: 'PENDING' | 'ACTIVE' | 'BLOCKED' | 'REJECTED'; // Адмін-панель використовує status
+  isActive?: boolean; // Застаріле, використовується status
+  isEmailVerified?: boolean;
+  licenseNumber?: string | null;
+  avatar?: string | null;
   createdAt: string;
   updatedAt: string;
   
@@ -32,7 +32,8 @@ export interface User {
   
   // Broker specific
   fieldOfExpertise?: string;
-  licenseNumber?: string;
+  whatsapp?: string | null;
+  telegram?: string | null;
 }
 
 export interface AuthTokens {

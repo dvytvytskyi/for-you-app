@@ -1,9 +1,11 @@
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/utils/theme';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { coursesApi } from '@/api/courses';
 
 interface Topic {
   id: string;
@@ -28,59 +30,48 @@ const TOPICS: Topic[] = [
   { id: 'ethics', name: 'Investor Ethics' },
 ];
 
-const MOCK_MODULES: Module[] = [
-  {
-    id: '1',
-    title: 'Introduction to Dubai Market',
-    author: 'Made by ForYou Real Estate',
-    completion: 84,
-    status: 'completed',
-    topicId: 'intro',
-    isFeatured: true,
-    createdAt: '2024-01-15',
-  },
-  {
-    id: '2',
-    title: 'Documents, signing them etc.',
-    author: 'Made by ForYou Real Estate',
-    completion: 100,
-    status: 'completed',
-    topicId: 'docs',
-    createdAt: '2024-02-20',
-  },
-  {
-    id: '3',
-    title: 'Documents, signing them etc.',
-    author: 'Made by ForYou Real Estate',
-    completion: 40,
-    status: 'in-progress',
-    topicId: 'docs',
-    createdAt: '2024-03-10',
-  },
-  {
-    id: '4',
-    title: 'Documents, signing them etc.',
-    author: 'Made by ForYou Real Estate',
-    completion: 40,
-    status: 'in-progress',
-    topicId: 'docs',
-    createdAt: '2024-04-05',
-  },
-  {
-    id: '5',
-    title: 'Documents, signing them etc.',
-    author: 'Made by ForYou Real Estate',
-    completion: 0,
-    status: 'in-progress',
-    topicId: 'docs',
-    createdAt: '2024-05-12',
-  },
-];
-
 export default function KnowledgeBaseScreen() {
   const { theme } = useTheme();
   const router = useRouter();
   const [selectedTopics, setSelectedTopics] = useState<string[]>(['all']);
+
+  // Завантаження курсів з API
+  const { data: coursesResponse, isLoading, error } = useQuery({
+    queryKey: ['knowledge-base-courses'],
+    queryFn: async () => {
+      console.log('🔄 Завантаження курсів для knowledge base...');
+      try {
+        const response = await coursesApi.getAll();
+        console.log('✅ Курси завантажено:', response?.data?.length || 0);
+        return response;
+      } catch (error: any) {
+        console.error('❌ Помилка завантаження курсів:', error);
+        throw error;
+      }
+    },
+    retry: 1,
+  });
+
+  // Конвертуємо курси в формат Module для UI
+  const modules = useMemo(() => {
+    if (!coursesResponse?.data) {
+      return [];
+    }
+    
+    return coursesResponse.data.map((course) => {
+      // Для теперішньої версії, всі курси мають статус 'in-progress' та completion 0
+      // В майбутньому можна додати логіку відстеження прогресу користувача
+      return {
+        id: course.id,
+        title: course.title,
+        author: 'Made by ForYou Real Estate',
+        completion: 0, // TODO: додати відстеження прогресу
+        status: 'in-progress' as const,
+        topicId: 'all', // TODO: додати категорії/топи для курсів
+        createdAt: course.createdAt || new Date().toISOString(),
+      };
+    });
+  }, [coursesResponse]);
 
   const toggleTopic = (topicId: string) => {
     if (topicId === 'all') {
@@ -103,12 +94,14 @@ export default function KnowledgeBaseScreen() {
   };
 
   const filteredModules = selectedTopics.includes('all')
-    ? MOCK_MODULES
-    : MOCK_MODULES.filter(module => selectedTopics.includes(module.topicId));
+    ? modules
+    : modules.filter(module => selectedTopics.includes(module.topicId));
 
-  const completedCount = MOCK_MODULES.filter(m => m.status === 'completed').length;
-  const totalModules = MOCK_MODULES.length;
-  const overallProgress = Math.round((MOCK_MODULES.reduce((sum, m) => sum + m.completion, 0) / MOCK_MODULES.length));
+  const completedCount = modules.filter(m => m.status === 'completed').length;
+  const totalModules = modules.length;
+  const overallProgress = totalModules > 0 
+    ? Math.round((modules.reduce((sum, m) => sum + m.completion, 0) / totalModules))
+    : 0;
   const totalPoints = completedCount * 20;
 
   const formatDate = (dateString: string) => {
@@ -207,34 +200,60 @@ export default function KnowledgeBaseScreen() {
 
         {/* Modules List */}
         <View style={styles.modulesContainer}>
-          {filteredModules.map((module, index) => (
-            <Pressable
-              key={module.id}
-              style={[
-                styles.moduleCard,
-                { backgroundColor: theme.card, borderColor: theme.border },
-              ]}
-              onPress={() => router.push(`/profile/module/${module.id}`)}
-            >
-              <View style={styles.moduleContent}>
-                <Text style={[styles.moduleTitle, { color: theme.text }]} numberOfLines={2}>
-                  {module.title}
-                </Text>
-                <View style={[
-                  styles.statusBadge,
-                  { backgroundColor: module.status === 'completed' ? '#4CAF50' : '#FF9800' }
-                ]}>
-                  <Text style={styles.statusBadgeText}>
-                    {module.status === 'completed' ? 'Completed' : 'In Progress'}
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={theme.primary} />
+              <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+                Loading courses...
+              </Text>
+            </View>
+          ) : error ? (
+            <View style={styles.errorContainer}>
+              <Ionicons name="alert-circle-outline" size={48} color={theme.textTertiary} />
+              <Text style={[styles.errorText, { color: theme.text }]}>
+                Failed to load courses
+              </Text>
+              <Text style={[styles.errorSubtext, { color: theme.textSecondary }]}>
+                Please try again later
+              </Text>
+            </View>
+          ) : filteredModules.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="book-outline" size={48} color={theme.textTertiary} />
+              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+                No courses available
+              </Text>
+            </View>
+          ) : (
+            filteredModules.map((module) => (
+              <Pressable
+                key={module.id}
+                style={[
+                  styles.moduleCard,
+                  { backgroundColor: theme.card, borderColor: theme.border },
+                ]}
+                onPress={() => router.push(`/profile/module/${module.id}`)}
+              >
+                <View style={styles.moduleContent}>
+                  <Text style={[styles.moduleTitle, { color: theme.text }]} numberOfLines={2}>
+                    {module.title}
+                  </Text>
+                  <View style={[
+                    styles.statusBadge,
+                    { backgroundColor: module.status === 'completed' ? '#4CAF50' : '#FF9800' }
+                  ]}>
+                    <Text style={styles.statusBadgeText}>
+                      {module.status === 'completed' ? 'Completed' : 'In Progress'}
+                    </Text>
+                  </View>
+                  <Text style={[styles.moduleAuthor, { color: theme.textSecondary }]}>
+                    {module.author} • {formatDate(module.createdAt)}
                   </Text>
                 </View>
-                <Text style={[styles.moduleAuthor, { color: theme.textSecondary }]}>
-                  {module.author} • {formatDate(module.createdAt)}
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward-outline" size={20} color={theme.textSecondary} />
-            </Pressable>
-          ))}
+                <Ionicons name="chevron-forward-outline" size={20} color={theme.textSecondary} />
+              </Pressable>
+            ))
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -342,6 +361,37 @@ const styles = StyleSheet.create({
   moduleAuthor: {
     fontSize: 12,
     fontWeight: '400',
+  },
+  loadingContainer: {
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+  },
+  errorContainer: {
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  errorText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  errorSubtext: {
+    fontSize: 14,
+  },
+  emptyContainer: {
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  emptyText: {
+    fontSize: 14,
   },
 });
 

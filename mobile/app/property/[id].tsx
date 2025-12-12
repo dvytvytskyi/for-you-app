@@ -1,5 +1,5 @@
-import { View, Text, StyleSheet, ScrollView, Pressable, Image, Dimensions, NativeScrollEvent, NativeSyntheticEvent, Modal, Animated } from 'react-native';
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Image, Dimensions, NativeScrollEvent, NativeSyntheticEvent, Modal, Animated, ActivityIndicator } from 'react-native';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '@/utils/theme';
@@ -8,7 +8,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { useQuery } from '@tanstack/react-query';
 import MapView from '@/components/ui/MapView';
+import { propertiesApi, Property, OffPlanProperty, SecondaryProperty } from '@/api/properties';
+import { formatPrice } from '@/utils/property-utils';
+import { useFavoritesStore } from '@/store/favoritesStore';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -17,12 +21,33 @@ export default function PropertyDetailScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { fromCollection } = useLocalSearchParams();
+  const { id, fromCollection } = useLocalSearchParams();
   const isFromCollection = Boolean(fromCollection);
   
+  // Завантаження property з API
+  const { data: propertyResponse, isLoading, error } = useQuery({
+    queryKey: ['property', id],
+    queryFn: async () => {
+      if (!id || typeof id !== 'string') {
+        throw new Error('Property ID is required');
+      }
+      console.log('🔄 Завантаження property за ID:', id);
+      const response = await propertiesApi.getById(id);
+      console.log('✅ Property завантажено:', response?.data?.name);
+      console.log('📋 Full API Response:', JSON.stringify(response, null, 2).substring(0, 3000));
+      return response;
+    },
+    enabled: !!id && typeof id === 'string',
+    retry: 1,
+  });
+  
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
+  
+  // Favorites store
+  const { isFavorite, toggleFavorite: toggleFavoriteInStore } = useFavoritesStore();
+  const propertyId = typeof id === 'string' ? id : null;
+  const isFavoriteProperty = propertyId ? isFavorite(propertyId) : false;
   const slideAnim = useRef(new Animated.Value(0)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
 
@@ -61,84 +86,295 @@ export default function PropertyDetailScreen() {
     }
   }, [menuVisible]);
 
-  // Mock data
-  const property = {
-    id: '1',
-    title: 'Lovely apartment with 2 bedrooms',
-    price: '249 932',
-    currency: '$',
-    location: 'Dubai land Islands, Dubai, UAE',
-    latitude: 25.2048,
-    longitude: 55.2708,
-    bedrooms: 3,
-    bathrooms: 2,
-    size: 2660,
-    sizeUnit: 'sq ft',
-    handoverDate: '25 Mar 2027',
-    images: [
-      'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800',
-      'https://images.unsplash.com/photo-1502672260066-6bc35f0a5c1a?w=800',
-      'https://images.unsplash.com/photo-1600210492493-0946911123ea?w=800',
-      'https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=800',
-      'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800',
-    ],
+  // Конвертація property з API в формат для UI
+  const property = useMemo(() => {
+    if (!propertyResponse?.data) return null;
+
+    const apiProperty = propertyResponse.data;
+    if (!apiProperty) return null;
+    
+    const isOffPlan = apiProperty.propertyType === 'off-plan';
+    const offPlan = isOffPlan ? (apiProperty as OffPlanProperty) : null;
+    const secondary = !isOffPlan ? (apiProperty as SecondaryProperty) : null;
+    
+    console.log('📦 API Property Full:', JSON.stringify(apiProperty, null, 2).substring(0, 2000));
+    console.log('📦 API Property Summary:', {
+      id: apiProperty.id,
+      name: apiProperty.name,
+      propertyType: apiProperty.propertyType,
+      isOffPlan,
+      hasFacilities: !!(apiProperty as any).facilities || !!(apiProperty as any).amenities,
+      facilitiesCount: (apiProperty as any).facilities?.length || (apiProperty as any).amenities?.length || 0,
+      hasUnits: !!(apiProperty as any).units || !!(apiProperty as any).propertyUnits || !!(offPlan as any)?.units,
+      unitsCount: (apiProperty as any).units?.length || (apiProperty as any).propertyUnits?.length || (offPlan as any)?.units?.length || 0,
+      offPlanUnits: (offPlan as any)?.units?.length || 0,
+      directUnits: (apiProperty as any).units?.length || 0,
+      propertyUnits: (apiProperty as any).propertyUnits?.length || 0,
+    });
+    
+    console.log('🔍 Property type check:', {
+      propertyType: apiProperty.propertyType,
+      isOffPlan,
+      hasOffPlanUnits: !!(offPlan as any)?.units,
+      offPlanKeys: offPlan ? Object.keys(offPlan) : [],
+    });
+
+    // Обробка ціни
+    let price: number;
+    let priceFormatted: string;
+    if (isOffPlan && offPlan) {
+      price = typeof offPlan.priceFrom === 'string' 
+        ? parseFloat(offPlan.priceFrom) || 0
+        : (offPlan.priceFrom as number);
+      priceFormatted = formatPrice(price, 'USD');
+    } else if (secondary) {
+      price = typeof secondary.price === 'string'
+        ? parseFloat(secondary.price) || 0
+        : secondary.price;
+      priceFormatted = formatPrice(price, 'USD');
+    } else {
+      price = 0;
+      priceFormatted = formatPrice(0, 'USD');
+    }
+
+    // Обробка локації
+    let location: string;
+    if (isOffPlan && offPlan) {
+      // Для off-plan area може бути рядком або об'єктом
+      let areaStr: string;
+      if (typeof offPlan.area === 'string') {
+        areaStr = offPlan.area;
+      } else if (typeof offPlan.area === 'object' && offPlan.area && 'nameEn' in offPlan.area) {
+        // Якщо area - об'єкт, витягуємо nameEn
+        areaStr = `${(offPlan.area as any).nameEn}, ${offPlan.city?.nameEn || ''}`;
+      } else {
+        areaStr = offPlan.city?.nameEn || '';
+      }
+      location = areaStr;
+    } else if (secondary) {
+      // Для secondary area - це об'єкт
+      const area = typeof secondary.area === 'object' && secondary.area
+        ? secondary.area.nameEn 
+        : String(secondary.area || '');
+      location = area ? `${area}, ${secondary.city?.nameEn || ''}` : secondary.city?.nameEn || '';
+    } else {
+      location = '';
+    }
+    
+    // Переконуємося, що location - це завжди рядок
+    location = String(location || '');
+    console.log('📍 Location string:', location, 'Type:', typeof location);
+
+    // Обробка координат
+    const latitude = typeof apiProperty.latitude === 'string'
+      ? parseFloat(apiProperty.latitude) || 0
+      : apiProperty.latitude;
+    const longitude = typeof apiProperty.longitude === 'string'
+      ? parseFloat(apiProperty.longitude) || 0
+      : apiProperty.longitude;
+
+    // Обробка спалень та ванних
+    let bedrooms: number | string = 0;
+    let bathrooms: number | string = 0;
+    let size: number = 0;
+    let sizeUnit: string = 'sq ft';
+    
+    if (isOffPlan && offPlan) {
+      // Для off-plan показуємо діапазон "1 - 3"
+      if (offPlan.bedroomsFrom === offPlan.bedroomsTo) {
+        bedrooms = offPlan.bedroomsFrom || 0;
+      } else {
+        bedrooms = `${offPlan.bedroomsFrom || 0} - ${offPlan.bedroomsTo || 0}`;
+      }
+      
+      if (offPlan.bathroomsFrom === offPlan.bathroomsTo) {
+        bathrooms = offPlan.bathroomsFrom || 0;
+      } else {
+        bathrooms = `${offPlan.bathroomsFrom || 0} - ${offPlan.bathroomsTo || 0}`;
+      }
+      
+      const sizeFrom = typeof offPlan.sizeFrom === 'string'
+        ? parseFloat(offPlan.sizeFrom) || 0
+        : (offPlan.sizeFrom as number) || 0;
+      size = Math.round(offPlan.sizeFromSqft || (sizeFrom * 10.764));
+    } else if (secondary) {
+      bedrooms = secondary.bedrooms || 0;
+      bathrooms = secondary.bathrooms || 0;
+      size = Math.round(secondary.sizeSqft || ((secondary.size || 0) * 10.764));
+    }
+
+    // Конвертація facilities - перевіряємо різні можливі поля
+    let facilities = [];
+    if (apiProperty.facilities && Array.isArray(apiProperty.facilities) && apiProperty.facilities.length > 0) {
+      facilities = apiProperty.facilities.map((facility: any) => ({
+        id: facility.id || String(Math.random()),
+        name: facility.nameEn || facility.nameRu || facility.nameAr || facility.name || 'Facility',
+        icon: facility.iconName || facility.icon || 'square-outline',
+      }));
+    } else if ((apiProperty as any).amenities && Array.isArray((apiProperty as any).amenities)) {
+      // Якщо facilities немає, але є amenities
+      facilities = (apiProperty as any).amenities.map((amenity: any) => ({
+        id: amenity.id || amenity.amenityId || String(Math.random()),
+        name: amenity.nameEn || amenity.nameRu || amenity.nameAr || amenity.name || amenity.amenityType || 'Facility',
+        icon: amenity.iconName || amenity.icon || 'home',
+      }));
+    }
+    console.log('🏢 Facilities processed:', {
+      count: facilities.length,
+      facilities: facilities,
+      rawFacilities: (apiProperty as any).facilities,
+      rawAmenities: (apiProperty as any).amenities,
+    });
+
+    // Конвертація units для off-plan - згідно з API schema
+    // Units можуть бути в property або в area
+    let availableUnits = [];
+    if (isOffPlan && offPlan) {
+      // Перевіряємо різні можливі поля для units
+      const unitsData = (offPlan as any)?.units 
+        || (apiProperty as any)?.units 
+        || (apiProperty as any)?.propertyUnits 
+        || (areaInfo as any)?.units
+        || [];
+      
+      console.log('🔍 Units data check:', {
+        isOffPlan,
+        hasOffPlanUnits: !!offPlan.units,
+        hasDirectUnits: !!(apiProperty as any).units,
+        hasPropertyUnits: !!(apiProperty as any).propertyUnits,
+        hasAreaUnits: !!(areaInfo as any)?.units,
+        unitsDataLength: Array.isArray(unitsData) ? unitsData.length : 0,
+        unitsDataSample: Array.isArray(unitsData) && unitsData.length > 0 ? unitsData[0] : null,
+      });
+      
+      if (Array.isArray(unitsData) && unitsData.length > 0) {
+        availableUnits = unitsData.map((unit: any) => {
+          // Обробка ціни згідно з API schema
+          // Public API має priceAED, Properties API - тільки price (USD)
+          const unitPrice = typeof unit.price === 'string' 
+            ? parseFloat(unit.price) 
+            : (unit.price as number) || 0;
+          
+          // Якщо є priceAED (з Public API) - використовуємо його, інакше конвертуємо
+          const priceAED = unit.priceAED || (unitPrice * 3.673);
+          
+          // Обробка розміру згідно з API schema
+          // totalSize в м² (оригінальне значення)
+          const totalSize = typeof unit.totalSize === 'string'
+            ? parseFloat(unit.totalSize)
+            : (unit.totalSize as number) || 0;
+          
+          // balconySize в м² (nullable)
+          const balconySize = unit.balconySize 
+            ? (typeof unit.balconySize === 'string'
+              ? parseFloat(unit.balconySize)
+              : unit.balconySize)
+            : null;
+          
+          // Обробка типу згідно з API schema
+          const unitType = (unit.type || 'apartment').toLowerCase();
+          const typeMap: Record<string, string> = {
+            'apartment': 'Apartment',
+            'villa': 'Villa',
+            'penthouse': 'Penthouse',
+            'townhouse': 'Townhouse',
+            'office': 'Office',
+          };
+          
+          return {
+            id: unit.id || String(Math.random()),
+            unitId: unit.unitId || '', // unitId згідно з API schema
+            type: typeMap[unitType] || 'Apartment',
+            price: formatPrice(priceAED, 'AED'),
+            totalSize: Math.round(totalSize * 10) / 10, // Зберігаємо один знак після коми
+            balconySize: balconySize ? Math.round(balconySize * 10) / 10 : null,
+            planImage: unit.planImage || null, // planImage згідно з API schema
+            photos: (unit as any).photos || (unit as any).images || [],
+          };
+        });
+      }
+    }
+    console.log('🏠 Available Units processed:', {
+      count: availableUnits.length,
+      units: availableUnits,
+      isOffPlan: isOffPlan,
+      rawUnits: (offPlan as any)?.units,
+      rawPropertyUnits: (apiProperty as any)?.propertyUnits,
+      rawUnitsDirect: (apiProperty as any)?.units,
+    });
+
+    // Обробка інформації про район (area)
+    // Перевіряємо різні можливі місця, де може бути area info
+    const areaInfo = (apiProperty as any)?.areaInfo 
+      || (isOffPlan && offPlan && typeof offPlan.area === 'object' ? offPlan.area : null)
+      || (!isOffPlan && secondary && typeof secondary.area === 'object' ? secondary.area : null)
+      || (apiProperty as any)?.area
+      || null;
+    
+    const areaDescription = areaInfo?.description 
+      || areaInfo?.descriptionEn 
+      || areaInfo?.descriptionRu 
+      || areaInfo?.descriptionAr 
+      || '';
+    const areaPhotos = areaInfo?.photos 
+      || areaInfo?.images 
+      || areaInfo?.photoUrls 
+      || [];
+    const areaAmenities = areaInfo?.amenities 
+      || areaInfo?.facilities 
+      || [];
+    
+    // Якщо area - це об'єкт з деталями
+    let areaDetails = null;
+    if (areaInfo && typeof areaInfo === 'object' && !Array.isArray(areaInfo)) {
+      areaDetails = {
+        id: areaInfo.id || '',
+        name: areaInfo.nameEn || areaInfo.nameRu || areaInfo.nameAr || areaInfo.name || location.split(',')[0] || '',
+        description: areaDescription,
+        photos: Array.isArray(areaPhotos) ? areaPhotos.filter((p: any) => p && typeof p === 'string') : [],
+        amenities: Array.isArray(areaAmenities) ? areaAmenities.map((amenity: any) => ({
+          id: amenity.id || amenity.amenityId || String(Math.random()),
+          name: amenity.nameEn || amenity.nameRu || amenity.nameAr || amenity.name || amenity.amenityType || 'Amenity',
+          icon: amenity.iconName || amenity.icon || 'home',
+        })) : [],
+      };
+    }
+    
+    console.log('📍 Area info processed:', {
+      hasAreaInfo: !!areaInfo,
+      hasAreaDetails: !!areaDetails,
+      areaInfoType: typeof areaInfo,
+      areaInfoKeys: areaInfo ? Object.keys(areaInfo) : [],
+      areaDescription: areaDescription?.substring(0, 100),
+      areaPhotosCount: areaDetails?.photos?.length || 0,
+      areaAmenitiesCount: areaDetails?.amenities?.length || 0,
+      areaDetails: areaDetails,
+    });
+
+    return {
+      id: apiProperty.id,
+      title: apiProperty.name,
+      price: priceFormatted, // Вже містить $ символ
+      currency: '', // Не потрібен, бо priceFormatted вже має символ
+      location,
+      latitude,
+      longitude,
+      bedrooms,
+      bathrooms,
+      size,
+      sizeUnit,
+      handoverDate: '', // TODO: додати handoverDate якщо є в API
+      images: apiProperty.photos || [],
     description: {
-      text: 'Brabus Island Chapter Two - The Villas is a project designed for those who demand uncompromising luxury and individuality. Here, the world-renowned brand has translated its vision into an exclusive residential development that redefines waterfront living.',
-    },
-    facilities: [
-      { id: '1', name: 'Internet', icon: 'wifi-outline' },
-      { id: '2', name: 'Parking', icon: 'car-outline' },
-      { id: '3', name: 'Gym', icon: 'fitness-outline' },
-      { id: '4', name: 'Pool', icon: 'water-outline' },
-      { id: '5', name: 'Security', icon: 'shield-checkmark-outline' },
-      { id: '6', name: 'Elevator', icon: 'arrow-up-circle-outline' },
-    ],
-    availableUnits: [
-      {
-        id: '1',
-        type: 'Apartment',
-        price: '615 850 AED',
-        totalSize: 33.2,
-        balconySize: 6,
-        floorPlan: {
-          balcony: { width: 3.40, height: 1.50 },
-          bedroom: { width: 4.20, height: 3.00 },
-          sitting: { width: 4.20, height: 2.90 },
-          kitchen: { width: 1.90, height: 3.30 },
-          toilet: { width: 1.60, height: 2.60 },
-        },
+        text: apiProperty.description || '',
       },
-      {
-        id: '2',
-        type: 'Apartment',
-        price: '725 000 AED',
-        totalSize: 42.5,
-        balconySize: 8,
-        floorPlan: {
-          balcony: { width: 4.20, height: 1.80 },
-          bedroom: { width: 5.00, height: 3.50 },
-          sitting: { width: 5.00, height: 3.20 },
-          kitchen: { width: 2.20, height: 3.80 },
-          toilet: { width: 1.80, height: 2.80 },
-        },
-      },
-      {
-        id: '3',
-        type: 'Apartment',
-        price: '895 000 AED',
-        totalSize: 55.0,
-        balconySize: 10,
-        floorPlan: {
-          balcony: { width: 5.00, height: 2.00 },
-          bedroom: { width: 5.50, height: 4.00 },
-          sitting: { width: 6.00, height: 3.50 },
-          kitchen: { width: 2.50, height: 4.00 },
-          toilet: { width: 2.00, height: 3.00 },
-        },
-      },
-    ],
-    developer: 'BRABUS',
-  };
+      facilities,
+      availableUnits,
+      developer: isOffPlan && offPlan?.developer ? offPlan.developer.name : null,
+      propertyType: apiProperty.propertyType,
+      areaDetails, // Додаємо інформацію про район
+    };
+  }, [propertyResponse]);
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
@@ -147,8 +383,46 @@ export default function PropertyDetailScreen() {
   };
 
   const toggleFavorite = () => {
-    setIsFavorite(!isFavorite);
+    if (propertyId) {
+      toggleFavoriteInStore(propertyId);
+    }
   };
+
+  // Стан завантаження
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
+        <Text style={[styles.loadingText, { color: theme.textSecondary, marginTop: 16 }]}>
+          {t('properties.loading')}
+        </Text>
+      </View>
+    );
+  }
+
+  // Стан помилки
+  if (error || !property) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center', padding: 20 }]}>
+        <Ionicons name="alert-circle-outline" size={64} color={theme.textTertiary} />
+        <Text style={[styles.errorTitle, { color: theme.text, marginTop: 16 }]}>
+          {t('properties.errorLoading')}
+        </Text>
+        <Text style={[styles.errorText, { color: theme.textSecondary, marginTop: 8, textAlign: 'center' }]}>
+          {(error as any)?.message || 'Property not found'}
+        </Text>
+        <Pressable
+          style={({ pressed }) => [
+            styles.retryButton,
+            { backgroundColor: theme.primary, opacity: pressed ? 0.8 : 1, marginTop: 20 }
+          ]}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.retryButtonText}>Go Back</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -168,13 +442,16 @@ export default function PropertyDetailScreen() {
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
               >
-                {property.images.map((image, index) => (
-                  <Image
-                    key={index}
-                    source={{ uri: image }}
-                    style={styles.image}
-                  />
-                ))}
+                {property.images
+                  .filter(img => img && typeof img === 'string' && img.trim().length > 0)
+                  .filter(img => img.startsWith('http://') || img.startsWith('https://') || img.startsWith('data:') || img.startsWith('file://'))
+                  .map((image, index) => (
+                    <Image
+                      key={index}
+                      source={{ uri: image }}
+                      style={styles.image}
+                    />
+                  ))}
               </ScrollView>
 
               {/* Top Gradient */}
@@ -201,9 +478,9 @@ export default function PropertyDetailScreen() {
                 >
                   <BlurView intensity={20} tint="light" style={styles.blurButton}>
                     <Ionicons 
-                      name={isFavorite ? "heart" : "heart-outline"} 
+                      name={isFavoriteProperty ? "heart" : "heart-outline"} 
                       size={24} 
-                      color={isFavorite ? "#FF3B30" : "#FFFFFF"} 
+                      color={isFavoriteProperty ? "#FF3B30" : "#FFFFFF"} 
                     />
                   </BlurView>
                 </Pressable>
@@ -232,7 +509,7 @@ export default function PropertyDetailScreen() {
                 {property.title}
               </Text>
               <Text style={[styles.price, { color: '#FF6B35' }]}>
-                {property.currency} {property.price}
+                {property.price}
               </Text>
             </View>
 
@@ -282,76 +559,210 @@ export default function PropertyDetailScreen() {
               <Text style={[styles.newsText, { color: theme.textSecondary }]}>
                 {property.description.text}
               </Text>
-              <Pressable>
-                <Text style={[styles.readMore, { color: theme.primary }]}>
-                  Read more
+              {property.description.text && (
+                <Pressable disabled={!property.description.text || property.description.text.length <= 150}>
+                  <Text style={[
+                    styles.readMore, 
+                    { 
+                      color: property.description.text.length > 150 
+                        ? theme.primary 
+                        : theme.textTertiary 
+                    }
+                  ]}>
+                    Read more
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+
+            {/* Area Information - завжди показуємо для тестування */}
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: theme.text, marginBottom: 8 }]}>
+                Area Information {property.areaDetails ? `(Found)` : '(Not found)'}
+              </Text>
+              {property.areaDetails ? (
+                <>
+                  {/* Area Description */}
+                  {property.areaDetails.description && (
+                    <>
+                      <Text style={[styles.sectionTitle, { color: theme.text, marginBottom: 8, fontSize: 14 }]}>
+                        About {property.areaDetails.name}
+                      </Text>
+                      <Text style={[styles.newsText, { color: theme.textSecondary }]}>
+                        {property.areaDetails.description}
+                      </Text>
+                    </>
+                  )}
+
+                  {/* Area Photos */}
+                  {property.areaDetails.photos && property.areaDetails.photos.length > 0 ? (
+                    <>
+                      <Text style={[styles.sectionTitle, { color: theme.text, marginBottom: 12, marginTop: 16, fontSize: 14 }]}>
+                        Area Photos ({property.areaDetails.photos.length})
+                      </Text>
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={styles.areaPhotosScroll}
+                        contentContainerStyle={styles.areaPhotosContent}
+                      >
+                        {property.areaDetails.photos.map((photo: string, index: number) => (
+                          <Image
+                            key={index}
+                            source={{ uri: photo }}
+                            style={styles.areaPhoto}
+                            resizeMode="cover"
+                          />
+                        ))}
+                      </ScrollView>
+                    </>
+                  ) : (
+                    <Text style={[styles.newsText, { color: theme.textTertiary, fontStyle: 'italic' }]}>
+                      No area photos available
+                    </Text>
+                  )}
+
+                  {/* Area Amenities */}
+                  {property.areaDetails.amenities && property.areaDetails.amenities.length > 0 ? (
+                    <>
+                      <Text style={[styles.sectionTitle, { color: theme.text, marginBottom: 12, marginTop: 16, fontSize: 14 }]}>
+                        Area Amenities ({property.areaDetails.amenities.length})
+                      </Text>
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={styles.facilitiesScroll}
+                        contentContainerStyle={styles.facilitiesContent}
+                      >
+                        {property.areaDetails.amenities.map((amenity: any) => (
+                          <View key={amenity.id} style={styles.facilityItem}>
+                            <View style={[styles.facilityIcon, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                              <Ionicons 
+                                name={(amenity.icon as any) || 'square-outline'} 
+                                size={24} 
+                                color={theme.primary} 
+                              />
+                            </View>
+                            <Text style={[styles.facilityName, { color: theme.textSecondary }]}>
+                              {amenity.name}
+                            </Text>
+                          </View>
+                        ))}
+                      </ScrollView>
+                    </>
+                  ) : (
+                    <Text style={[styles.newsText, { color: theme.textTertiary, fontStyle: 'italic', marginTop: 16 }]}>
+                      No area amenities available
+                    </Text>
+                  )}
+                </>
+              ) : (
+                <Text style={[styles.newsText, { color: theme.textTertiary, fontStyle: 'italic' }]}>
+                  Area information not available in API response. Check console logs for details.
                 </Text>
-              </Pressable>
+              )}
             </View>
 
             {/* Facilities */}
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: theme.text, marginBottom: 12 }]}>
-                Facilities
+                Facilities {property.facilities ? `(${property.facilities.length})` : '(0)'}
               </Text>
               
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.facilitiesScroll}
-                contentContainerStyle={styles.facilitiesContent}
-              >
-                {property.facilities.map((facility) => (
-                  <View key={facility.id} style={styles.facilityItem}>
-                    <View style={[styles.facilityIcon, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                      <Ionicons name={facility.icon as any} size={24} color={theme.primary} />
+              {property.facilities && property.facilities.length > 0 ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.facilitiesScroll}
+                  contentContainerStyle={styles.facilitiesContent}
+                >
+                  {property.facilities.map((facility) => (
+                    <View key={facility.id} style={styles.facilityItem}>
+                      <View style={[styles.facilityIcon, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                        <Ionicons 
+                          name={(facility.icon as any) || 'square-outline'} 
+                          size={24} 
+                          color={theme.primary} 
+                        />
+                      </View>
+                      <Text style={[styles.facilityName, { color: theme.textSecondary }]}>
+                        {facility.name}
+                      </Text>
                     </View>
-                    <Text style={[styles.facilityName, { color: theme.textSecondary }]}>
-                      {facility.name}
-                    </Text>
-                  </View>
-                ))}
-              </ScrollView>
+                  ))}
+                </ScrollView>
+              ) : (
+                <Text style={[styles.newsText, { color: theme.textTertiary, fontStyle: 'italic' }]}>
+                  No facilities available
+                </Text>
+              )}
             </View>
 
-            {/* Available Units */}
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: theme.text, marginBottom: 12 }]}>
-                Available units
-              </Text>
+            {/* Available Units - тільки для off-plan, після area information */}
+            {property.propertyType === 'off-plan' && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: theme.text, marginBottom: 12 }]}>
+                  Available Units {property.availableUnits ? `(${property.availableUnits.length})` : '(0)'}
+                </Text>
 
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.unitsScroll}
-                contentContainerStyle={styles.unitsContent}
-              >
-                {property.availableUnits.map((unit) => (
-                  <View key={unit.id} style={[styles.unitCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                    <Text style={[styles.unitType, { color: theme.text }]}>
-                      {unit.type}
-                    </Text>
-                    <Text style={[styles.unitPrice, { color: theme.text }]}>
-                      {unit.price}
-                    </Text>
-                    <Text style={[styles.unitSize, { color: theme.textSecondary }]}>
-                      Total size: {unit.totalSize} m²
-                    </Text>
-                    <Text style={[styles.unitSize, { color: theme.textSecondary }]}>
-                      Balcony: {unit.balconySize} m²
-                    </Text>
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
+                {property.availableUnits && property.availableUnits.length > 0 ? (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.unitsScroll}
+                    contentContainerStyle={styles.unitsContent}
+                  >
+                    {property.availableUnits.map((unit) => (
+                      <View key={unit.id} style={[styles.unitCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                        {/* Unit Plan Image */}
+                        {unit.planImage && (
+                          <Image
+                            source={{ uri: unit.planImage }}
+                            style={styles.unitImage}
+                            resizeMode="cover"
+                          />
+                        )}
+                        
+                        <View style={styles.unitInfo}>
+                          <Text style={[styles.unitType, { color: theme.text }]}>
+                            {unit.type}
+                          </Text>
+                          {unit.unitId && (
+                            <Text style={[styles.unitSize, { color: theme.textSecondary, fontSize: 12, marginBottom: 4 }]}>
+                              Unit ID: {unit.unitId}
+                            </Text>
+                          )}
+                          <Text style={[styles.unitPrice, { color: theme.text }]}>
+                            {unit.price}
+                          </Text>
+                          <Text style={[styles.unitSize, { color: theme.textSecondary }]}>
+                            Total size: {unit.totalSize} m²
+                          </Text>
+                          {unit.balconySize && (
+                            <Text style={[styles.unitSize, { color: theme.textSecondary }]}>
+                              Balcony: {unit.balconySize} m²
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+                    ))}
+                  </ScrollView>
+                ) : (
+                  <Text style={[styles.newsText, { color: theme.textTertiary, fontStyle: 'italic' }]}>
+                    No units available
+                  </Text>
+                )}
+              </View>
+            )}
 
-            {/* Reportage Banner */}
+            {/* Developer Banner */}
+            {property.developer && (
             <View style={styles.section}>
               <View style={[styles.reportageBanner, { backgroundColor: theme.primary }]}>
                 <View style={styles.reportageContent}>
                   <View style={styles.reportageTextContainer}>
-                    <Text style={styles.reportageTitle}>Reportage</Text>
-                    <Text style={styles.reportageSubtitle}>Developer of this building</Text>
+                      <Text style={styles.reportageTitle}>{property.developer}</Text>
+                      <Text style={styles.reportageSubtitle}>Learn more about developer</Text>
                   </View>
                   <Pressable style={[styles.exploreButton, { backgroundColor: '#FFFFFF' }]}>
                     <Text style={[styles.exploreButtonText, { color: theme.primary }]}>
@@ -361,6 +772,7 @@ export default function PropertyDetailScreen() {
                 </View>
               </View>
             </View>
+            )}
 
             {/* Location Map */}
             <View style={styles.section}>
@@ -639,6 +1051,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 16,
   },
+  areaPhotosScroll: {
+    marginHorizontal: -16,
+  },
+  areaPhotosContent: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  areaPhoto: {
+    width: 280,
+    height: 200,
+    borderRadius: 12,
+    backgroundColor: '#f0f0f0',
+  },
   facilityItem: {
     alignItems: 'center',
   },
@@ -664,9 +1089,17 @@ const styles = StyleSheet.create({
   },
   unitCard: {
     width: 200,
-    padding: 16,
     borderRadius: 12,
     borderWidth: 1,
+    overflow: 'hidden',
+  },
+  unitImage: {
+    width: '100%',
+    height: 120,
+    backgroundColor: '#f0f0f0',
+  },
+  unitInfo: {
+    padding: 16,
   },
   unitType: {
     fontSize: 16,
@@ -793,6 +1226,27 @@ const styles = StyleSheet.create({
   menuItemText: {
     fontSize: 16,
     fontWeight: '400',
+  },
+  loadingText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  errorText: {
+    fontSize: 14,
+  },
+  retryButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
 

@@ -2,7 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
-import { Cron, CronExpression } from '@nestjs/schedule';
+// ТИМЧАСОВО ВИМКНЕНО через проблему з crypto
+// import { Cron, CronExpression } from '@nestjs/schedule';
 import axios from 'axios';
 import * as xml2js from 'xml2js';
 import { In } from 'typeorm';
@@ -61,7 +62,9 @@ export class DataSyncService {
   /**
    * Автоматична синхронізація (щоденно о 3:00)
    */
-  @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  // ТИМЧАСОВО ВИМКНЕНО через проблему з crypto
+  // @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async handleScheduledSync() {
     if (!this.xmlFeedUrl) {
       this.logger.warn('XML sync skipped: XML_FEED_URL not configured');

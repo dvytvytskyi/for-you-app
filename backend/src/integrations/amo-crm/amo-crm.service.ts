@@ -2,7 +2,8 @@ import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
-import { Cron, CronExpression } from '@nestjs/schedule';
+// ТИМЧАСОВО ВИМКНЕНО через проблему з crypto
+// import { Cron, CronExpression } from '@nestjs/schedule';
 import axios, { AxiosInstance } from 'axios';
 import { AmoToken } from '../../database/entities/amo-token.entity';
 import { AmoPipeline } from '../../database/entities/amo-pipeline.entity';
@@ -65,6 +66,53 @@ export class AmoCrmService {
         'Content-Type': 'application/json',
       },
     });
+  }
+
+  /**
+   * Обмін API ключа на authorization code
+   * POST /oauth2/exchange_api_key
+   */
+  async exchangeApiKeyForCode(
+    login: string,
+    apiKey: string,
+    state?: string,
+  ): Promise<void> {
+    try {
+      this.logger.log(`Exchanging API key for authorization code`);
+      this.logger.log(`Login: ${login}`);
+      this.logger.log(`Domain: ${this.domain}`);
+      this.logger.log(`Client UUID: ${this.clientId}`);
+      this.logger.log(`Redirect URI: ${this.redirectUri}`);
+
+      const response = await axios.post(
+        `https://${this.domain}/oauth2/exchange_api_key`,
+        {
+          login,
+          api_key: apiKey,
+          client_uuid: this.clientId,
+          client_secret: this.clientSecret,
+          ...(state && { state }),
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      // Метод повертає 202 Accepted, код авторизації прийде на redirect_uri
+      this.logger.log('API key exchange request accepted. Authorization code will be sent to redirect URI.');
+      return;
+    } catch (error: any) {
+      this.logger.error(
+        'Помилка обміну API ключа:',
+        JSON.stringify(error.response?.data || error.message),
+      );
+      throw new HttpException(
+        error.response?.data?.message || 'Failed to exchange API key',
+        error.response?.status || HttpStatus.BAD_REQUEST,
+      );
+    }
   }
 
   /**
@@ -1233,7 +1281,9 @@ export class AmoCrmService {
   /**
    * CRON job для автоматичної синхронізації pipelines кожні 6 годин
    */
-  @Cron(CronExpression.EVERY_6_HOURS)
+  // ТИМЧАСОВО ВИМКНЕНО через проблему з crypto
+  // @Cron(CronExpression.EVERY_6_HOURS)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async handlePipelinesSyncCron() {
     this.logger.log('⏰ Запуск автоматичної синхронізації pipelines...');
     try {
@@ -1247,7 +1297,9 @@ export class AmoCrmService {
   /**
    * CRON job для синхронізації leads кожні 30 хвилин
    */
-  @Cron(CronExpression.EVERY_30_MINUTES)
+  // ТИМЧАСОВО ВИМКНЕНО через проблему з crypto
+  // @Cron(CronExpression.EVERY_30_MINUTES)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async handleLeadsSyncCron() {
     this.logger.log('⏰ Запуск автоматичної синхронізації leads...');
     try {
@@ -1265,27 +1317,54 @@ export class AmoCrmService {
     try {
       const accessToken = await this.getAccessToken();
 
-      // Отримати leads з AMO CRM
-      const response = await this.axiosInstance.get<{ _embedded: { leads: AmoLead[] } }>(
-        '/api/v4/leads',
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-          params: {
-            limit,
-            order: {
-              updated_at: 'desc',
+      let allLeads: AmoLead[] = [];
+      let page = 1;
+      const pageSize = limit > 250 ? 250 : limit; // AMO CRM має ліміт 250 на сторінку
+      let hasMore = true;
+
+      // Отримати всі leads з AMO CRM (з пагінацією)
+      while (hasMore && (limit === 0 || allLeads.length < limit)) {
+        const response = await this.axiosInstance.get<{ _embedded: { leads: AmoLead[] } }>(
+          '/api/v4/leads',
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+            params: {
+              limit: pageSize,
+              page: page,
+              order: {
+                updated_at: 'desc',
+              },
             },
           },
-        },
-      );
+        );
 
-      const amoLeads = response.data._embedded?.leads || [];
+        const leads = response.data._embedded?.leads || [];
+        if (leads.length === 0) {
+          hasMore = false;
+        } else {
+          allLeads = allLeads.concat(leads);
+          page++;
+          
+          // Якщо отримали менше ніж pageSize, це остання сторінка
+          if (leads.length < pageSize || (limit > 0 && allLeads.length >= limit)) {
+            hasMore = false;
+          }
+        }
+      }
+
+      // Обмежити до вказаного ліміту
+      if (limit > 0 && allLeads.length > limit) {
+        allLeads = allLeads.slice(0, limit);
+      }
+
       let synced = 0;
       let errors = 0;
 
-      for (const amoLead of amoLeads) {
+      this.logger.log(`Початок синхронізації ${allLeads.length} leads з AMO CRM...`);
+
+      for (const amoLead of allLeads) {
         try {
           this.logger.debug(`AMO Lead data: id=${amoLead.id}, responsible=${amoLead.responsible_user_id}, status=${amoLead.status_id}`);
           await this.importLeadFromAmo(amoLead);
@@ -1458,6 +1537,60 @@ export class AmoCrmService {
 
     this.logger.log(`Автоматичний мапінг: ${updated} оновлено, ${skipped} пропущено`);
     return { updated, skipped };
+  }
+
+  /**
+   * Перевірка статусу підключення до AMO CRM
+   */
+  async getConnectionStatus(): Promise<{
+    connected: boolean;
+    hasTokens: boolean;
+    tokenValid: boolean;
+    tokenExpiresAt?: Date;
+    domain: string;
+    accountId: string;
+    canCreateLead: boolean;
+    error?: string;
+  }> {
+    try {
+      const tokenData = await this.amoTokenRepository.findOne({
+        where: { accountId: this.accountId },
+      });
+
+      const hasTokens = !!tokenData;
+      const tokenValid = hasTokens && Date.now() < tokenData.expiresAt - 300000; // з запасом 5 хвилин
+      let canCreateLead = false;
+
+      if (hasTokens && tokenValid) {
+        try {
+          // Спробуємо отримати access token (він автоматично оновиться якщо потрібно)
+          await this.getAccessToken();
+          canCreateLead = true;
+        } catch (error) {
+          this.logger.error('Помилка отримання токену:', error.message);
+        }
+      }
+
+      return {
+        connected: hasTokens && tokenValid,
+        hasTokens,
+        tokenValid,
+        tokenExpiresAt: tokenData?.expiresAt ? new Date(tokenData.expiresAt) : undefined,
+        domain: this.domain,
+        accountId: this.accountId,
+        canCreateLead,
+      };
+    } catch (error: any) {
+      return {
+        connected: false,
+        hasTokens: false,
+        tokenValid: false,
+        domain: this.domain,
+        accountId: this.accountId,
+        canCreateLead: false,
+        error: error.message,
+      };
+    }
   }
 }
 

@@ -13,9 +13,13 @@
   
   "myLeads": "Мої ліди",
   "properties": "Нерухомість",
+  "collections": "Колекції",
   "offers": "Пропозиції",
   
   "recentMarketNews": "Останні новини ринку",
+  "knowledgeBase": "База знань",
+  "viewAll": "Переглянути все",
+  "noProperties": "Нерухомість не знайдено",
   
   "propertyTypes": {
     "apartment": "Апартаменти",

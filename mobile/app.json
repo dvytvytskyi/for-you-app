@@ -7,6 +7,33 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "scheme": "foryoure",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.foryou.realestate",
+      "associatedDomains": ["applinks:foryoure.com"]
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A0A0A"
+      },
+      "package": "com.foryou.realestate",
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "foryoure",
+              "host": "amo-crm",
+              "pathPrefix": "/callback"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
     "newArchEnabled": true,
     "plugins": [
       "expo-router",
@@ -17,7 +44,19 @@
           "cameraPermission": "Allow For You Real Estate to access your camera to take a profile picture."
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow For You Real Estate to use your location to show properties on the map."
+        }
+      ],
+      [
+        "react-native-maps",
+        {
+          "googleMapsApiKey": ""
+        }
+      ]
     ],
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -26,7 +65,8 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.foryou.realestate"
+      "bundleIdentifier": "com.foryou.realestate",
+      "associatedDomains": ["applinks:foryoure.com"]
     },
     "android": {
       "adaptiveIcon": {
@@ -35,7 +75,20 @@
       },
       "package": "com.foryou.realestate",
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "foryoure",
+              "host": "amo-crm",
+              "pathPrefix": "/callback"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",

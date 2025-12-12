@@ -19,6 +19,10 @@ interface InputProps {
   keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
   secureTextEntry?: boolean;
   rightIcon?: React.ReactNode;
+  inputBackgroundColor?: string;
+  inputBorderColor?: string;
+  inputTextColor?: string;
+  inputPlaceholderColor?: string;
 }
 
 const Input = forwardRef<TextInput, InputProps>(({
@@ -37,6 +41,10 @@ const Input = forwardRef<TextInput, InputProps>(({
   keyboardType,
   secureTextEntry: secureTextEntryProp,
   rightIcon,
+  inputBackgroundColor,
+  inputBorderColor,
+  inputTextColor,
+  inputPlaceholderColor,
 }, ref) => {
   const [showPassword, setShowPassword] = useState(false);
   const inputRef = useRef<TextInput>(null);
@@ -75,8 +83,8 @@ const Input = forwardRef<TextInput, InputProps>(({
         style={[
           styles.inputContainer, 
           { 
-            backgroundColor: theme.inputBackground, 
-            borderColor: error ? theme.error : theme.inputBorder 
+            backgroundColor: inputBackgroundColor || theme.inputBackground, 
+            borderColor: error ? theme.error : (inputBorderColor || theme.inputBorder)
           },
           error && styles.inputError
         ]}
@@ -85,9 +93,9 @@ const Input = forwardRef<TextInput, InputProps>(({
       >
         <TextInput
           ref={inputRef}
-          style={[styles.input, { color: theme.text }]}
+          style={[styles.input, { color: inputTextColor || theme.text }]}
           placeholder={placeholder || label}
-          placeholderTextColor={theme.inputPlaceholder}
+          placeholderTextColor={inputPlaceholderColor || theme.inputPlaceholder}
           value={value}
           onChangeText={onChangeText}
           secureTextEntry={secureTextEntry}

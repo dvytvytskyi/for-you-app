@@ -18,6 +18,13 @@ export class FavoritesController {
     return this.favoritesService.getUserFavorites(user.id);
   }
 
+  @Get('ids')
+  @ApiOperation({ summary: 'Отримати тільки ID улюблених об\'єктів (для швидкої синхронізації)' })
+  @ApiResponse({ status: 200, description: 'Масив ID улюблених об\'єктів' })
+  async getFavoriteIds(@CurrentUser() user: any) {
+    return this.favoritesService.getFavoriteIds(user.id);
+  }
+
   @Post(':propertyId')
   @ApiOperation({ summary: 'Додати об\'єкт в улюблені' })
   @ApiResponse({ status: 201, description: 'Об\'єкт додано в улюблені' })

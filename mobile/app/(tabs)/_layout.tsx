@@ -1,10 +1,24 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native';
+import { useEffect } from 'react';
 import { useTheme } from '@/utils/theme';
+import { useAuthStore } from '@/store/authStore';
+import { UserRole } from '@/types/user';
 
 export default function TabsLayout() {
   const { theme, isDark } = useTheme();
+  const user = useAuthStore((state) => state.user);
+  // Явна перевірка ролі
+  const isInvestor = user?.role === 'INVESTOR' || user?.role === UserRole.INVESTOR;
+  
+  // Debug: log user role
+  useEffect(() => {
+    console.log('=== TABS LAYOUT ===');
+    console.log('User role:', user?.role);
+    console.log('Is Investor:', isInvestor);
+    console.log('Should hide CRM tab:', !isInvestor);
+  }, [user?.role, isInvestor]);
 
   return (
     <Tabs
@@ -50,15 +64,17 @@ export default function TabsLayout() {
         }}
       />
       
-      <Tabs.Screen
-        name="crm"
-        options={{
-          title: 'CRM',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'people' : 'people-outline'} size={24} color={color} />
-          ),
-        }}
-      />
+      {!isInvestor && (
+        <Tabs.Screen
+          name="crm"
+          options={{
+            title: 'CRM',
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons name={focused ? 'people' : 'people-outline'} size={24} color={color} />
+            ),
+          }}
+        />
+      )}
       
       <Tabs.Screen
         name="collections"
@@ -70,13 +86,6 @@ export default function TabsLayout() {
         }}
       />
       
-      {/* Hide from tabs but keep accessible */}
-      <Tabs.Screen
-        name="map"
-        options={{
-          href: null,
-        }}
-      />
     </Tabs>
   );
 }

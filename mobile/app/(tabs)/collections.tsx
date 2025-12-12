@@ -1,92 +1,77 @@
 import { View, Text, StyleSheet, FlatList, Pressable, Image, ActivityIndicator, Dimensions, Modal, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Header, SearchBar } from '@/components/ui';
 import { useTheme } from '@/utils/theme';
 import { useTranslation } from '@/utils/i18n';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Animated } from 'react-native';
+import { useCollectionsStore, Collection } from '@/store/collectionsStore';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_PADDING = 16;
 const CARD_GAP = 12;
 const CARD_WIDTH = (SCREEN_WIDTH - (CARD_PADDING * 2) - CARD_GAP) / 2;
 
-interface Collection {
-  id: string;
-  title: string;
-  description: string;
-  image: string;
-  propertyCount: number;
-  createdDate: string;
-}
-
-// Mock data
-const MOCK_COLLECTIONS: Collection[] = [
-  {
-    id: '1',
-    title: 'Collection #12024',
-    description: 'Burj Apartment, Address Bay, Palm...',
-    image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400',
-    propertyCount: 12,
-    createdDate: '3 weeks ago',
-  },
-  {
-    id: '2',
-    title: 'Collection #4322',
-    description: 'Villa Collection, Dubai Hills...',
-    image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400',
-    propertyCount: 8,
-    createdDate: '2 weeks ago',
-  },
-  {
-    id: '3',
-    title: 'Collection #7856',
-    description: 'Marina Properties, Luxury...',
-    image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400',
-    propertyCount: 15,
-    createdDate: '1 month ago',
-  },
-  {
-    id: '4',
-    title: 'Collection #9021',
-    description: 'Downtown Collection, Modern...',
-    image: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=400',
-    propertyCount: 6,
-    createdDate: '1 week ago',
-  },
-  {
-    id: '5',
-    title: 'Collection #3456',
-    description: 'Business Bay, Office Spaces...',
-    image: 'https://images.unsplash.com/photo-1600210492493-0946911123ea?w=400',
-    propertyCount: 9,
-    createdDate: '4 days ago',
-  },
-  {
-    id: '6',
-    title: 'Collection #6789',
-    description: 'Palm Jumeirah, Waterfront...',
-    image: 'https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=400',
-    propertyCount: 20,
-    createdDate: '2 months ago',
-  },
-];
-
 export default function CollectionsScreen() {
   const { theme } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const [collections, setCollections] = useState<Collection[]>(MOCK_COLLECTIONS);
-  const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [collectionName, setCollectionName] = useState('');
   const [collectionDescription, setCollectionDescription] = useState('');
   const slideAnim = useRef(new Animated.Value(0)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
+  
+  // Collections store (реактивно)
+  const collectionsFromStore = useCollectionsStore((state) => state.collections);
+  const { 
+    createCollection: createCollectionInStore,
+    updateCollection,
+    deleteCollection 
+  } = useCollectionsStore();
+  
+  // Форматування дати
+  const formatDate = useCallback((dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Just now';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) {
+      const weeks = Math.floor(diffDays / 7);
+      return `${weeks} ${weeks === 1 ? 'week' : 'weeks'} ago`;
+    }
+    if (diffDays < 365) {
+      const months = Math.floor(diffDays / 30);
+      return `${months} ${months === 1 ? 'month' : 'months'} ago`;
+    }
+    const years = Math.floor(diffDays / 365);
+    return `${years} ${years === 1 ? 'year' : 'years'} ago`;
+  }, []);
+
+  const collections = useMemo(() => {
+    console.log('📦 Processing collections from store:', {
+      count: collectionsFromStore.length,
+      collections: collectionsFromStore.map(c => ({ id: c.id, title: c.title, propertyCount: c.propertyIds.length })),
+    });
+    
+    // Додаємо propertyCount та formatted date
+    return collectionsFromStore.map(c => ({
+      ...c,
+      propertyCount: c.propertyIds.length,
+      createdDate: formatDate(c.createdAt),
+      // Якщо немає image і немає properties - показуємо placeholder
+      image: c.image || (c.propertyIds.length === 0 
+        ? 'https://via.placeholder.com/400x300?text=No+Properties' 
+        : 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400'),
+    }));
+  }, [collectionsFromStore, formatDate]);
 
   const filteredCollections = collections.filter(collection => {
     const matchesSearch = collection.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -94,38 +79,6 @@ export default function CollectionsScreen() {
     return matchesSearch;
   });
 
-  const loadMore = async () => {
-    if (loading || !hasMore) return;
-    
-    setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const newCollections: Collection[] = [
-      {
-        id: `${collections.length + 1}`,
-        title: 'Collection #2341',
-        description: 'Dynamic Collection, Added...',
-        image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400',
-        propertyCount: 5,
-        createdDate: 'Just now',
-      },
-      {
-        id: `${collections.length + 2}`,
-        title: 'Collection #5678',
-        description: 'Luxury Collection, Premium...',
-        image: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400',
-        propertyCount: 11,
-        createdDate: 'Yesterday',
-      },
-    ];
-    
-    setCollections(prev => [...prev, ...newCollections]);
-    setLoading(false);
-    
-    if (collections.length >= 8) {
-      setHasMore(false);
-    }
-  };
 
   const handleCollectionPress = (collectionId: string) => {
     router.push(`/collections/${collectionId}`);
@@ -169,18 +122,43 @@ export default function CollectionsScreen() {
   }, [modalVisible]);
 
   const handleSave = () => {
-    if (collectionName.trim() && collectionDescription.trim()) {
-      const newCollection: Collection = {
-        id: `${collections.length + 1}`,
-        title: collectionName,
-        description: collectionDescription,
-        image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400',
-        propertyCount: 0,
-        createdDate: 'Just now',
-      };
-      setCollections(prev => [newCollection, ...prev]);
+    const trimmedName = collectionName.trim();
+    const trimmedDescription = collectionDescription.trim();
+    
+    if (!trimmedName || !trimmedDescription) {
+      console.warn('⚠️ Collection name or description is empty');
+      return;
+    }
+    
+    console.log('➕ Creating collection:', {
+      name: trimmedName,
+      description: trimmedDescription,
+    });
+    
+    try {
+      const newCollection = createCollectionInStore(trimmedName, trimmedDescription);
+      console.log('✅ Collection created:', {
+        id: newCollection.id,
+        title: newCollection.title,
+        propertyIds: newCollection.propertyIds.length,
+      });
+      
+      // Перевіряємо, чи колекція дійсно створилася
+      const allCollections = getCollections();
+      const foundCollection = allCollections.find(c => c.id === newCollection.id);
+      console.log('🔍 Collection in store:', {
+        found: !!foundCollection,
+        totalCollections: allCollections.length,
+      });
+      
       closeModal();
-      router.push(`/collections/${newCollection.id}`);
+      
+      // Невелика затримка перед навігацією, щоб store встиг оновитися
+      setTimeout(() => {
+        router.push(`/collections/${newCollection.id}`);
+      }, 100);
+    } catch (error) {
+      console.error('❌ Error creating collection:', error);
     }
   };
 
@@ -234,21 +212,7 @@ export default function CollectionsScreen() {
             theme={theme}
           />
         )}
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={
-          loading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={theme.primary} />
-            </View>
-          ) : !hasMore && filteredCollections.length > 0 ? (
-            <View style={styles.endContainer}>
-              <Text style={[styles.endText, { color: theme.textTertiary }]}>
-                No more collections to load
-              </Text>
-            </View>
-          ) : null
-        }
+        ListFooterComponent={null}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Ionicons name="folder-outline" size={64} color={theme.textTertiary} />
@@ -391,8 +355,13 @@ function CollectionCard({ collection, onPress, theme }: CollectionCardProps) {
       onPress={onPress}
     >
       <Image
-        source={{ uri: collection.image }}
+        source={{ 
+          uri: collection.image && collection.image.trim().length > 0 
+            ? collection.image 
+            : 'https://via.placeholder.com/400x300?text=No+Image'
+        }}
         style={styles.collectionImage}
+        defaultSource={require('@/assets/images/gradient-1.png')}
       />
       <View style={styles.collectionContent}>
         <Text style={[styles.collectionTitle, { color: theme.text }]} numberOfLines={2}>

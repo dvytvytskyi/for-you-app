@@ -13,9 +13,13 @@
   
   "myLeads": "My Leads",
   "properties": "Properties",
+  "collections": "Collections",
   "offers": "Offers",
   
   "recentMarketNews": "Recent market news",
+  "knowledgeBase": "Knowledge base",
+  "viewAll": "View all",
+  "noProperties": "No properties found",
   
   "propertyTypes": {
     "apartment": "Apartment",

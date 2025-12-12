@@ -1,3 +1,13 @@
+// Додаємо crypto глобально ПЕРЕД усіма імпортами
+if (typeof globalThis.crypto === 'undefined') {
+  const nodeCrypto = require('crypto');
+  globalThis.crypto = nodeCrypto.webcrypto || nodeCrypto;
+  // Також для застарілих модулів
+  if (typeof global.crypto === 'undefined') {
+    global.crypto = nodeCrypto.webcrypto || nodeCrypto;
+  }
+}
+
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
@@ -61,4 +71,3 @@ async function bootstrap() {
 }
 
 bootstrap();
-

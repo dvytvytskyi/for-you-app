@@ -28,6 +28,9 @@
   "propertyType": "Property type",
   "location": "Location",
   "selectFromList": "Select from list",
-  "applyFilters": "Apply filters"
+  "applyFilters": "Apply filters",
+  "loading": "Loading properties...",
+  "loadingMore": "Loading more...",
+  "errorLoading": "Error loading properties"
 }
 

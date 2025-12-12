@@ -1,10 +1,8 @@
-import { View, Text, StyleSheet, ScrollView, FlatList, Pressable, Image, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ScrollView, Pressable, Image, ActivityIndicator, Dimensions, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const CARD_WIDTH = SCREEN_WIDTH - 32; // padding left + right
+import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '@/utils/theme';
 import { useTranslation } from '@/utils/i18n';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -12,244 +10,21 @@ import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { SearchBar } from '@/components/ui';
 import PropertyFiltersModal, { PropertyFilters } from '@/components/ui/PropertyFilters';
+import { propertiesApi, Property } from '@/api/properties';
+import { convertPropertyToCard, convertFiltersToAPI, formatPrice, PropertyCardData } from '@/utils/property-utils';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useFavoritesStore } from '@/store/favoritesStore';
 
-type PropertyType = 'all' | 'apartment' | 'villa' | 'penthouse' | 'townhouse' | 'studio';
-
-interface Property {
-  id: string;
-  title: string;
-  location: string;
-  price: number;
-  bedrooms: number;
-  type: PropertyType;
-  images: string[];
-  handoverDate: string;
-  isFavorite: boolean;
-}
-
-// Mock data
-const MOCK_PROPERTIES: Property[] = [
-  {
-    id: '1',
-    title: 'Lovely apartment with 2 bedrooms',
-    location: 'Downtown Dubai',
-    price: 1300000,
-    bedrooms: 3,
-    type: 'apartment',
-    images: [
-      'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800',
-      'https://images.unsplash.com/photo-1502672260066-6bc35f0a5c1a?w=800',
-      'https://images.unsplash.com/photo-1600210492493-0946911123ea?w=800',
-    ],
-    handoverDate: '25 Mar 2027',
-    isFavorite: false,
-  },
-  {
-    id: '2',
-    title: 'Luxury villa with pool',
-    location: 'Palm Jumeirah',
-    price: 5800000,
-    bedrooms: 5,
-    type: 'villa',
-    images: [
-      'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800',
-      'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800',
-      'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800',
-    ],
-    handoverDate: '15 Dec 2026',
-    isFavorite: false,
-  },
-  {
-    id: '3',
-    title: 'Modern penthouse with sea view',
-    location: 'Dubai Marina',
-    price: 3200000,
-    bedrooms: 4,
-    type: 'penthouse',
-    images: [
-      'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800',
-      'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800',
-      'https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=800',
-    ],
-    handoverDate: '10 Jan 2027',
-    isFavorite: true,
-  },
-  {
-    id: '4',
-    title: 'Spacious townhouse in community',
-    location: 'Arabian Ranches',
-    price: 2100000,
-    bedrooms: 4,
-    type: 'townhouse',
-    images: ['https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800'],
-    handoverDate: '20 Aug 2027',
-    isFavorite: false,
-  },
-  {
-    id: '5',
-    title: 'Cozy studio apartment',
-    location: 'Business Bay',
-    price: 850000,
-    bedrooms: 1,
-    type: 'studio',
-    images: ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'],
-    handoverDate: '05 Nov 2026',
-    isFavorite: false,
-  },
-  {
-    id: '6',
-    title: 'Elegant villa with garden',
-    location: 'Emirates Hills',
-    price: 7200000,
-    bedrooms: 6,
-    type: 'villa',
-    images: ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800'],
-    handoverDate: '15 Feb 2027',
-    isFavorite: false,
-  },
-  {
-    id: '7',
-    title: 'Contemporary apartment',
-    location: 'Jumeirah Lake Towers',
-    price: 1450000,
-    bedrooms: 2,
-    type: 'apartment',
-    images: ['https://images.unsplash.com/photo-1502672260066-6bc35f0a5c1a?w=800'],
-    handoverDate: '30 Apr 2027',
-    isFavorite: true,
-  },
-  {
-    id: '8',
-    title: 'Sky-high penthouse',
-    location: 'Business Bay',
-    price: 4800000,
-    bedrooms: 5,
-    type: 'penthouse',
-    images: ['https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800'],
-    handoverDate: '12 Jun 2027',
-    isFavorite: false,
-  },
-  {
-    id: '9',
-    title: 'Family townhouse',
-    location: 'Dubai Hills Estate',
-    price: 2350000,
-    bedrooms: 3,
-    type: 'townhouse',
-    images: ['https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800'],
-    handoverDate: '08 Sep 2027',
-    isFavorite: false,
-  },
-  {
-    id: '10',
-    title: 'Modern studio with balcony',
-    location: 'Dubai Marina',
-    price: 920000,
-    bedrooms: 1,
-    type: 'studio',
-    images: ['https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800'],
-    handoverDate: '25 Oct 2026',
-    isFavorite: false,
-  },
-  {
-    id: '11',
-    title: 'Bright apartment with city view',
-    location: 'Sheikh Zayed Road',
-    price: 1680000,
-    bedrooms: 3,
-    type: 'apartment',
-    images: ['https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800'],
-    handoverDate: '18 Dec 2026',
-    isFavorite: false,
-  },
-  {
-    id: '12',
-    title: 'Beachfront villa',
-    location: 'Jumeirah Beach',
-    price: 9500000,
-    bedrooms: 7,
-    type: 'villa',
-    images: ['https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800'],
-    handoverDate: '03 May 2027',
-    isFavorite: true,
-  },
-  {
-    id: '13',
-    title: 'Chic penthouse loft',
-    location: 'DIFC',
-    price: 5200000,
-    bedrooms: 4,
-    type: 'penthouse',
-    images: ['https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=800'],
-    handoverDate: '22 Jul 2027',
-    isFavorite: false,
-  },
-  {
-    id: '14',
-    title: 'Corner townhouse',
-    location: 'Reem',
-    price: 1950000,
-    bedrooms: 3,
-    type: 'townhouse',
-    images: ['https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800'],
-    handoverDate: '14 Nov 2026',
-    isFavorite: false,
-  },
-  {
-    id: '15',
-    title: 'Minimalist studio',
-    location: 'Downtown Dubai',
-    price: 780000,
-    bedrooms: 1,
-    type: 'studio',
-    images: ['https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=800'],
-    handoverDate: '06 Jan 2027',
-    isFavorite: false,
-  },
-  {
-    id: '16',
-    title: 'Spacious 3BR apartment',
-    location: 'Dubai Creek Harbour',
-    price: 1820000,
-    bedrooms: 3,
-    type: 'apartment',
-    images: ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'],
-    handoverDate: '19 Mar 2027',
-    isFavorite: false,
-  },
-  {
-    id: '17',
-    title: 'Mediterranean villa',
-    location: 'The Villa',
-    price: 6800000,
-    bedrooms: 5,
-    type: 'villa',
-    images: ['https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800'],
-    handoverDate: '11 Aug 2027',
-    isFavorite: true,
-  },
-  {
-    id: '18',
-    title: 'Luxurious penthouse suite',
-    location: 'Palm Jumeirah',
-    price: 8900000,
-    bedrooms: 6,
-    type: 'penthouse',
-    images: ['https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800'],
-    handoverDate: '27 Sep 2027',
-    isFavorite: false,
-  },
-];
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const CARD_WIDTH = SCREEN_WIDTH - 32; // padding left + right
 
 export default function PropertiesScreen() {
   const { theme } = useTheme();
   const { t } = useTranslation();
+  const router = useRouter();
   
-  const [selectedTypes, setSelectedTypes] = useState<PropertyType[]>(['all']);
   const [searchQuery, setSearchQuery] = useState('');
-  const [properties, setProperties] = useState(MOCK_PROPERTIES);
-  const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+  const debouncedSearch = useDebounce(searchQuery, 500);
   const [scrollEnabled, setScrollEnabled] = useState(true);
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [filters, setFilters] = useState<PropertyFilters>({
@@ -260,100 +35,150 @@ export default function PropertiesScreen() {
     bedrooms: 'any',
     location: 'any',
   });
+  const [page, setPage] = useState(1);
+  const [allProperties, setAllProperties] = useState<Property[]>([]);
 
-  const propertyTypes: PropertyType[] = ['all', 'apartment', 'villa', 'penthouse', 'townhouse'];
+  // Конвертуємо UI фільтри в API фільтри
+  const apiFilters = useMemo(() => {
+    const baseFilters = convertFiltersToAPI(filters);
+    return {
+      ...baseFilters,
+      search: debouncedSearch || undefined,
+      page,
+      limit: 20,
+      sortBy: 'createdAt' as const,
+      sortOrder: 'DESC' as const,
+    };
+  }, [filters, debouncedSearch, page]);
 
-  const toggleFavorite = (id: string) => {
-    setProperties(prev =>
-      prev.map(p => (p.id === id ? { ...p, isFavorite: !p.isFavorite } : p))
-    );
-  };
-
-  const toggleType = (type: PropertyType) => {
-    if (type === 'all') {
-      setSelectedTypes(['all']);
-    } else {
-      setSelectedTypes(prev => {
-        // Remove 'all' if it was selected
-        const withoutAll = prev.filter(t => t !== 'all');
-        
-        // Toggle the selected type
-        if (prev.includes(type)) {
-          const newTypes = withoutAll.filter(t => t !== type);
-          // If no types selected, default to 'all'
-          return newTypes.length === 0 ? ['all'] : newTypes;
-        } else {
-          return [...withoutAll, type];
-        }
-      });
-    }
-  };
-
-  const handleApplyFilters = (newFilters: PropertyFilters) => {
-    setFilters(newFilters);
-    // Here you would typically filter properties based on the new filters
-    // For now, we'll just close the modal
-  };
-
-  const filteredProperties = properties.filter(property => {
-    const matchesType = selectedTypes.includes('all') || selectedTypes.includes(property.type);
-    const matchesSearch = property.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         property.location.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesType && matchesSearch;
+  // Завантаження properties з API
+  const { data: propertiesResponse, isLoading, error, refetch, isRefetching } = useQuery({
+    queryKey: ['properties', apiFilters],
+    queryFn: async () => {
+      console.log('🔄 Завантаження properties з API...', apiFilters);
+      try {
+        const response = await propertiesApi.getAll(apiFilters);
+        console.log('✅ API Response received:', {
+          success: response?.success,
+          hasData: !!response?.data,
+          hasProperties: !!response?.data?.data,
+          propertiesCount: response?.data?.data?.length || 0,
+          firstProperty: response?.data?.data?.[0]?.name || 'none',
+        });
+        return response;
+      } catch (error: any) {
+        console.error('❌ Помилка завантаження properties:', error);
+        console.error('Error response:', error?.response?.data);
+        console.error('Error status:', error?.response?.status);
+        throw error;
+      }
+    },
+    staleTime: 0, // Дані вважаються застарілими одразу
+    cacheTime: 0, // Не кешуємо дані
+    refetchOnMount: true, // Завжди завантажуємо при монтуванні
+    refetchOnWindowFocus: false,
   });
 
-  const loadMore = useCallback(async () => {
-    if (loading || !hasMore) return;
-    
-    setLoading(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Generate more properties (in real app, this would be an API call)
-    const newProperties: Property[] = [
-      {
-        id: `${properties.length + 1}`,
-        title: 'Spacious townhouse in community',
-        location: 'Arabian Ranches',
-        price: 2100000,
-        bedrooms: 4,
-        type: 'townhouse',
-        images: ['https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800'],
-        handoverDate: '20 Aug 2027',
-        isFavorite: false,
-      },
-      {
-        id: `${properties.length + 2}`,
-        title: 'Cozy studio apartment',
-        location: 'Business Bay',
-        price: 850000,
-        bedrooms: 1,
-        type: 'studio',
-        images: ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'],
-        handoverDate: '05 Nov 2026',
-        isFavorite: false,
-      },
-    ];
-    
-    setProperties(prev => [...prev, ...newProperties]);
-    setLoading(false);
-    
-    // Simulate end of data after 3 loads (24 items total: 18 initial + 6 more)
-    if (properties.length >= 22) {
-      setHasMore(false);
+  // Обробка даних
+  const properties = useMemo(() => {
+    console.log('📦 Обробка properties:', {
+      hasResponse: !!propertiesResponse,
+      hasData: !!propertiesResponse?.data,
+      hasProperties: !!propertiesResponse?.data?.data,
+      propertiesCount: propertiesResponse?.data?.data?.length || 0,
+      page,
+      allPropertiesCount: allProperties.length,
+    });
+
+    if (!propertiesResponse?.data?.data) {
+      console.warn('⚠️ Немає даних для properties');
+      return [];
     }
-  }, [loading, hasMore, properties.length]);
+    
+    const newPropertiesList = propertiesResponse.data.data;
+    console.log('📋 Новий список properties:', newPropertiesList.length);
+    console.log('📋 Перший property:', newPropertiesList[0]?.name || 'none');
+    
+    // Якщо перша сторінка - замінюємо весь список
+    if (page === 1) {
+      setAllProperties(newPropertiesList);
+      return newPropertiesList;
+    }
+    
+    // Якщо наступна сторінка - додаємо до існуючих
+    const combinedProperties = [...allProperties, ...newPropertiesList];
+    setAllProperties(combinedProperties);
+    return combinedProperties;
+  }, [propertiesResponse, page]);
+
+  // Favorites store
+  const { isFavorite: isFavoriteInStore, favoriteIds } = useFavoritesStore();
+  
+  // Конвертуємо properties для UI
+  const cardProperties = useMemo(() => {
+    console.log('🎨 Конвертація properties для UI:', properties.length);
+    const converted = properties.map(prop => {
+      const card = convertPropertyToCard(prop);
+      return {
+        ...card,
+        isFavorite: isFavoriteInStore(card.id),
+      };
+    });
+    console.log('✅ Конвертовано:', converted.length, 'properties');
+    console.log('📝 Перший конвертований:', converted[0]?.title || 'none');
+    return converted;
+  }, [properties, favoriteIds, isFavoriteInStore]);
+
+  const pagination = propertiesResponse?.data?.pagination;
+  const hasMore = pagination ? page < pagination.totalPages : false;
+
+  // Завантаження наступної сторінки
+  const loadMore = useCallback(() => {
+    if (!isLoading && hasMore) {
+      setPage(prev => prev + 1);
+    }
+  }, [isLoading, hasMore]);
+
+  // Оновлення фільтрів
+  const handleApplyFilters = (newFilters: PropertyFilters) => {
+    setFilters(newFilters);
+    setPage(1); // Скидаємо на першу сторінку
+    setAllProperties([]); // Очищаємо список
+  };
+
+  // Оновлення пошуку
+  const handleSearchChange = (text: string) => {
+    setSearchQuery(text);
+    setPage(1); // Скидаємо на першу сторінку
+    setAllProperties([]); // Очищаємо список
+  };
+
+  // Favorites store
+  const { toggleFavorite: toggleFavoriteInStore } = useFavoritesStore();
+  
+  // Перемикання улюбленого
+  const toggleFavorite = (id: string) => {
+    toggleFavoriteInStore(id);
+  };
+
+  // Pull to refresh
+  const handleRefresh = useCallback(() => {
+    setPage(1);
+    setAllProperties([]);
+    refetch();
+  }, [refetch]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
       {/* Search Bar */}
-      <View style={styles.searchSection}>
+      <View style={styles.searchSection} onStartShouldSetResponder={() => false}>
+        <View style={styles.searchBarWrapper}>
         <SearchBar 
           value={searchQuery}
-          onChangeText={setSearchQuery}
+            onChangeText={handleSearchChange}
           placeholder={t('properties.searchPlaceholder')}
         />
+        </View>
         <Pressable 
           style={({ pressed }) => [
             styles.filterButton,
@@ -374,51 +199,47 @@ export default function PropertiesScreen() {
         onApply={handleApplyFilters}
       />
 
-      {/* Property Type Filters */}
-      <View style={styles.filtersWrapper}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filtersContent}
-          style={styles.filtersContainer}
-        >
-        {propertyTypes.map((type) => {
-          const isSelected = selectedTypes.includes(type);
-          return (
-            <Pressable
-              key={type}
-              style={({ pressed }) => [
-                styles.filterChip,
-                {
-                  backgroundColor: isSelected ? theme.primary : theme.card,
-                  borderColor: isSelected ? theme.primary : theme.border,
-                  opacity: pressed ? 0.8 : 1,
-                }
-              ]}
-              onPress={() => toggleType(type)}
-            >
-              <Text
-                style={[
-                  styles.filterChipText,
-                  { color: isSelected ? '#FFFFFF' : theme.text }
-                ]}
-                numberOfLines={1}
-              >
-                {t(`properties.propertyTypes.${type}`)}
-              </Text>
-            </Pressable>
-          );
-        })}
-        </ScrollView>
-      </View>
-
       {/* Properties List */}
+      {isLoading && page === 1 ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.primary} />
+          <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+            {t('properties.loading')}
+          </Text>
+        </View>
+      ) : error ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="alert-circle-outline" size={64} color={theme.textTertiary} />
+          <Text style={[styles.emptyTitle, { color: theme.text }]}>
+            {t('properties.errorLoading')}
+          </Text>
+          <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
+            {(error as any)?.message || 'Unknown error'}
+          </Text>
+            <Pressable
+              style={({ pressed }) => [
+              styles.retryButton,
+              { backgroundColor: theme.primary, opacity: pressed ? 0.8 : 1 }
+            ]}
+            onPress={() => refetch()}
+          >
+            <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
+            </Pressable>
+      </View>
+      ) : (
       <FlatList
-        data={filteredProperties}
+          data={cardProperties}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         scrollEnabled={scrollEnabled}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={handleRefresh}
+              tintColor={theme.primary}
+            />
+          }
         renderItem={({ item }) => (
           <PropertyCard
             property={item}
@@ -427,25 +248,20 @@ export default function PropertiesScreen() {
             onScrollEnd={() => setScrollEnabled(true)}
             theme={theme}
             t={t}
+              router={router}
           />
         )}
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
         ListFooterComponent={
-          loading ? (
+            isLoading && page > 1 ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={theme.primary} />
               <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
-                Loading more properties...
+                  {t('properties.loadingMore')}
               </Text>
             </View>
-          ) : !hasMore && filteredProperties.length > 0 ? (
-            <View style={styles.endContainer}>
-              <Text style={[styles.endText, { color: theme.textTertiary }]}>
-                No more properties to load
-              </Text>
-            </View>
-          ) : null
+            ) : null
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
@@ -459,22 +275,56 @@ export default function PropertiesScreen() {
           </View>
         }
       />
+      )}
     </SafeAreaView>
   );
 }
 
 interface PropertyCardProps {
-  property: Property;
+  property: PropertyCardData;
   onToggleFavorite: () => void;
   onScrollStart: () => void;
   onScrollEnd: () => void;
   theme: any;
   t: any;
+  router: any;
 }
 
-function PropertyCard({ property, onToggleFavorite, onScrollStart, onScrollEnd, theme, t }: PropertyCardProps) {
+function PropertyCard({ property, onToggleFavorite, onScrollStart, onScrollEnd, theme, t, router }: PropertyCardProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const router = useRouter();
+  
+  // Валідація URI для зображень
+  const getValidImages = (images: string[] | undefined): string[] => {
+    if (!images || images.length === 0) {
+      return ['https://via.placeholder.com/400x300?text=No+Image'];
+    }
+    return images
+      .filter(img => img && typeof img === 'string' && img.trim().length > 0)
+      .filter(img => {
+        // Перевіряємо, чи це валідний URI
+        return img.startsWith('http://') || img.startsWith('https://') || img.startsWith('data:') || img.startsWith('file://');
+      })
+      .map(img => img.trim());
+  };
+  
+  const images = getValidImages(property.images);
+  
+  const bedroomsLabel = typeof property.bedrooms === 'string'
+    ? property.bedrooms
+    : property.bedrooms === 1
+    ? t('properties.bedroom')
+    : `${property.bedrooms} ${t('properties.bedrooms')}`;
+  
+  // Форматуємо payment plan (до 2 рядків, без агресивного обрізання)
+  const getShortPaymentPlan = (paymentPlan: string | null | undefined): string | null => {
+    if (!paymentPlan) return null;
+    
+    // Видаляємо всі переноси рядків і зайві пробіли, але залишаємо текст для 2 рядків
+    const singleLine = paymentPlan.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+    
+    // Не обрізаємо - дозволяємо React Native автоматично переносити на 2 рядки
+    return singleLine;
+  };
   
   return (
     <View style={styles.propertyCard}>
@@ -493,7 +343,7 @@ function PropertyCard({ property, onToggleFavorite, onScrollStart, onScrollEnd, 
         scrollEventThrottle={16}
         style={styles.imageScroller}
       >
-        {property.images.map((image, index) => (
+        {images.map((image, index) => (
           <Image
             key={`${property.id}-image-${index}`}
             source={{ uri: image }}
@@ -510,31 +360,57 @@ function PropertyCard({ property, onToggleFavorite, onScrollStart, onScrollEnd, 
         pointerEvents="none"
       />
       
-      {/* Pagination Dots */}
-      {property.images.length > 1 && (
-        <View style={styles.paginationContainer} pointerEvents="none">
-          {property.images.map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.paginationDot,
-                index === currentImageIndex && styles.paginationDotActive
-              ]}
-            />
-          ))}
-        </View>
-      )}
+      {/* Pagination Dots - завжди показуємо максимум 4 крапки, які рухаються при скролі */}
+      {images.length > 1 && (() => {
+        const maxDots = 4;
+        const totalImages = images.length;
+        
+        // Розраховуємо, які крапки показувати та яка активна
+        let dotIndices: number[] = [];
+        let activeDotIndex = 0;
+        
+        if (totalImages <= maxDots) {
+          // Якщо фото 4 або менше, показуємо всі
+          dotIndices = Array.from({ length: totalImages }, (_, i) => i);
+          activeDotIndex = currentImageIndex;
+        } else {
+          // Якщо фото більше 4, крапки рухаються
+          // Розраховуємо відносні позиції (0%, 33%, 67%, 100%)
+          dotIndices = [0, Math.floor(totalImages / 3), Math.floor((totalImages * 2) / 3), totalImages - 1];
+          
+          // Знаходимо найближчу крапку до поточного фото
+          activeDotIndex = dotIndices.reduce((closest, pos, idx) => {
+            return Math.abs(pos - currentImageIndex) < Math.abs(dotIndices[closest] - currentImageIndex) 
+              ? idx 
+              : closest;
+          }, 0);
+        }
+        
+        return (
+          <View style={styles.paginationContainer} pointerEvents="none">
+            {dotIndices.map((imageIndex, displayIndex) => (
+              <View
+                key={displayIndex}
+                style={[
+                  styles.paginationDot,
+                  displayIndex === activeDotIndex && styles.paginationDotActive
+                ]}
+              />
+            ))}
+          </View>
+        );
+      })()}
       
       {/* Tags */}
       <View style={styles.tagsContainer} pointerEvents="none">
         <BlurView intensity={20} tint="light" style={styles.tag}>
           <Text style={[styles.tagText, { color: '#FFFFFF' }]}>
-            {t(`properties.propertyTypes.${property.type}`)}
+            {property.type === 'off-plan' ? 'Off-Plan' : 'Secondary'}
           </Text>
         </BlurView>
         <BlurView intensity={20} tint="light" style={styles.tag}>
           <Text style={[styles.tagText, { color: '#FFFFFF' }]}>
-            {property.bedrooms} {property.bedrooms === 1 ? t('properties.bedroom') : t('properties.bedrooms')}
+            {bedroomsLabel}
           </Text>
         </BlurView>
       </View>
@@ -556,9 +432,20 @@ function PropertyCard({ property, onToggleFavorite, onScrollStart, onScrollEnd, 
           <Text style={styles.propertyLocation} numberOfLines={1}>
             {property.location}
           </Text>
-          <Text style={styles.propertyPrice}>
-            {property.price.toLocaleString()}$ • {t('properties.handover')} {property.handoverDate}
-          </Text>
+          <View style={styles.priceContainer}>
+            <Text style={styles.propertyPrice} numberOfLines={1}>
+              {formatPrice(property.price, 'USD')}{property.bedrooms ? ` | ${bedroomsLabel}` : ''}
+            </Text>
+            {getShortPaymentPlan(property.paymentPlan) && (
+              <Text 
+                style={styles.paymentPlan} 
+                numberOfLines={1} 
+                ellipsizeMode="tail"
+              >
+                {getShortPaymentPlan(property.paymentPlan)}
+              </Text>
+            )}
+          </View>
         </View>
 
         {/* Favorite Button */}
@@ -567,7 +454,10 @@ function PropertyCard({ property, onToggleFavorite, onScrollStart, onScrollEnd, 
             styles.favoriteButton,
             { opacity: pressed ? 0.7 : 1 }
           ]}
-          onPress={onToggleFavorite}
+          onPress={(e) => {
+            e?.stopPropagation?.();
+            onToggleFavorite();
+          }}
         >
           <Ionicons
             name={property.isFavorite ? 'heart' : 'heart-outline'}
@@ -587,45 +477,25 @@ const styles = StyleSheet.create({
   searchSection: {
     flexDirection: 'row',
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
+    paddingTop: 4,
+    paddingBottom: 4,
     gap: 8,
     alignItems: 'center',
+    zIndex: 10,
+    width: '100%',
+  },
+  searchBarWrapper: {
+    flex: 1,
+    minWidth: 0,
   },
   filterButton: {
     width: 44,
-    height: 44,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 10,
     borderWidth: 1,
-  },
-  filtersWrapper: {
-    width: '100%',
-    overflow: 'hidden',
-  },
-  filtersContainer: {
-    maxHeight: 48,
-  },
-  filtersContent: {
-    paddingLeft: 16,
-    paddingRight: 8,
-    paddingBottom: 12,
-    gap: 8,
-  },
-  filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    borderRadius: 8,
-    borderWidth: 1,
-    height: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  filterChipText: {
-    fontSize: 14,
-    fontWeight: '500',
-    textAlignVertical: 'center',
+    flexShrink: 0,
   },
   listContent: {
     paddingHorizontal: 16,
@@ -680,9 +550,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: '60%',
-    padding: 16,
+    height: '45%',
+    paddingBottom: 13, // Збільшено на 5px (було 8)
+    paddingHorizontal: 16,
+    paddingTop: 0,
     justifyContent: 'flex-end',
+    alignItems: 'flex-start',
   },
   tagsContainer: {
     position: 'absolute',
@@ -705,7 +578,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   propertyDetails: {
-    gap: 4,
+    gap: 3,
+    paddingRight: 56, // Залишаємо місце для сердечка (40px button + 16px margin)
+    flexShrink: 1,
+    marginBottom: 0,
+    alignSelf: 'flex-start', // Вирівнюємо по низу
   },
   propertyTitle: {
     fontSize: 18,
@@ -717,10 +594,23 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     opacity: 0.9,
   },
+  priceContainer: {
+    marginTop: 4,
+    flexShrink: 1,
+    width: CARD_WIDTH - 32 - 56, // Ширина картки - padding - місце для сердечка
+    gap: 2,
+  },
   propertyPrice: {
     fontSize: 14,
     color: '#FFFFFF',
-    marginTop: 4,
+    lineHeight: 18,
+    fontWeight: '600',
+  },
+  paymentPlan: {
+    fontSize: 13,
+    color: '#FFFFFF',
+    lineHeight: 16,
+    opacity: 0.9,
   },
   favoriteButton: {
     position: 'absolute',
@@ -736,19 +626,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 80,
+    paddingHorizontal: 32,
   },
   emptyTitle: {
     fontSize: 20,
     fontWeight: '600',
     marginTop: 16,
     marginBottom: 8,
+    textAlign: 'center',
   },
   emptySubtitle: {
     fontSize: 15,
+    textAlign: 'center',
+    marginBottom: 24,
   },
   loadingContainer: {
-    paddingVertical: 24,
+    flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 24,
     gap: 12,
   },
   loadingText: {
@@ -762,5 +658,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontStyle: 'italic',
   },
+  retryButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
-
