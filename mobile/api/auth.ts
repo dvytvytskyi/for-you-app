@@ -35,138 +35,48 @@ export interface LoginDto {
 export const authApi = {
   // Login
   login: async (data: LoginDto): Promise<any> => {
-    // Спочатку пробуємо локальний бекенд (він повертає { user, accessToken })
     try {
-      console.log('🔄 Trying local backend for login...');
-      const backendResponse = await backendApiClient.post('/auth/login', {
-        emailOrPhone: data.email, // Backend очікує emailOrPhone
+      const loginPayload = {
+        email: data.email,
         password: data.password,
-      });
-      
-      console.log('✅ Local backend login response:', {
-        status: backendResponse.status,
-        hasData: !!backendResponse.data,
-        dataKeys: backendResponse.data ? Object.keys(backendResponse.data) : [],
-        hasUser: !!backendResponse.data?.user,
-        hasAccessToken: !!backendResponse.data?.accessToken,
-      });
-      
-      // Локальний бекенд повертає: { user, accessToken, refreshToken? }
-      // Конвертуємо в формат, який очікує authStore
-      const responseData = backendResponse.data;
-      if (responseData && responseData.user && responseData.accessToken) {
-        return {
-          success: true,
-          message: 'Login successful',
-          data: {
-            token: responseData.accessToken,
-            refreshToken: responseData.refreshToken || responseData.accessToken, // Використовуємо refreshToken якщо є, інакше accessToken
-            user: responseData.user,
-          },
-        };
+      };
+
+      console.log('📤 Sending login request to admin panel');
+      console.log('🔗 URL:', `${apiClient.defaults.baseURL}/auth/login`);
+      console.log('📦 Payload keys:', Object.keys(loginPayload));
+
+      const response = await apiClient.post('/auth/login', loginPayload);
+      return response.data;
+    } catch (error: any) {
+      if (error.response) {
+        console.error('❌ Login Error Status:', error.response.status);
+        console.error('❌ Login Error Data:', JSON.stringify(error.response.data, null, 2));
+        console.error('❌ Request Config:', {
+          url: error.config?.url,
+          baseURL: error.config?.baseURL,
+          method: error.config?.method,
+          data: JSON.parse(error.config?.data || '{}')
+        });
       }
-      
-      return backendResponse.data;
-    } catch (backendError: any) {
-      console.warn('⚠️ Local backend login failed, trying admin panel:', backendError.message);
-      
-      // Fallback на адмін-панель
-      // Адмін-панель повертає: { success: true, message: "...", data: { token: "...", user: {...} } }
-      const response = await apiClient.post('/auth/login', data);
-      return response.data; // Повертаємо весь response.data
+      throw error;
     }
   },
 
   // Sign up - General
   signUpGeneral: async (data: SignUpGeneralDto): Promise<AuthResponse> => {
-    console.log('📤 Sending sign up general request:', { ...data, password: '***' });
-    
-    // Спочатку пробуємо локальний бекенд (він повертає { user, accessToken })
-    try {
-      console.log('🔄 Trying local backend first...');
-      const requestData = {
-        email: data.email,
-        password: data.password,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        phone: data.phone,
-        role: data.role,
-      };
-      
-      console.log('📤 Backend request data:', {
-        ...requestData,
-        password: '***',
-        phoneLength: requestData.phone?.length,
-        firstNameLength: requestData.firstName?.length,
-        lastNameLength: requestData.lastName?.length,
-      });
-      
-      const backendResponse = await backendApiClient.post('/auth/register', requestData);
-      
-      console.log('✅ Local backend response:', {
-        status: backendResponse.status,
-        statusText: backendResponse.statusText,
-        hasData: !!backendResponse.data,
-        dataType: typeof backendResponse.data,
-        dataKeys: backendResponse.data ? Object.keys(backendResponse.data) : [],
-        fullResponseData: JSON.stringify(backendResponse.data, null, 2),
-        hasUser: !!backendResponse.data?.user,
-        hasAccessToken: !!backendResponse.data?.accessToken,
-        accessTokenType: typeof backendResponse.data?.accessToken,
-        userType: typeof backendResponse.data?.user,
-      });
-      
-      // Локальний бекенд повертає: { user, accessToken }
-      // Axios автоматично обгортає в response.data
-      const responseData = backendResponse.data;
-      
-      console.log('🔍 Extracted response data:', {
-        hasResponseData: !!responseData,
-        responseDataType: typeof responseData,
-        responseDataKeys: responseData ? Object.keys(responseData) : [],
-        hasUser: !!responseData?.user,
-        hasAccessToken: !!responseData?.accessToken,
-        hasData: !!responseData?.data,
-        hasDataUser: !!responseData?.data?.user,
-        hasDataAccessToken: !!responseData?.data?.accessToken,
-        fullResponseData: JSON.stringify(responseData, null, 2),
-      });
-      
-      // Перевіряємо, чи дані вже в правильному форматі
-      if (responseData && (responseData.user || responseData.accessToken)) {
-        console.log('✅ Response data is in correct format');
-        return responseData;
-      }
-      
-      // Якщо дані обгорнуті в інший формат, намагаємося їх витягнути
-      if (responseData?.data && (responseData.data.user || responseData.data.accessToken)) {
-        console.log('✅ Extracting data from nested structure');
-        return responseData.data;
-      }
-      
-      console.warn('⚠️ Response data format unexpected');
-      return responseData;
-    } catch (backendError: any) {
-      console.warn('⚠️ Local backend failed, trying admin panel:', backendError.message);
-      
-      // Fallback на адмін-панель
-      const response = await apiClient.post('/auth/register', {
-        email: data.email,
-        password: data.password,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        phone: data.phone,
-        role: data.role,
-      });
-      
-      console.log('📥 Admin panel response:', {
-        status: response.status,
-        hasData: !!response.data,
-        dataKeys: response.data ? Object.keys(response.data) : [],
-      });
-      
-      return response.data;
-    }
+    console.log('📤 Sending sign up general request to admin panel:', { ...data, password: '***' });
+
+    // Використовуємо тільки адмін-панель
+    const response = await apiClient.post('/auth/register', {
+      email: data.email,
+      password: data.password,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phone: data.phone,
+      role: data.role,
+    });
+
+    return response.data;
   },
 
   // Sign up - Investor
@@ -180,53 +90,22 @@ export const authApi = {
 
   // Sign up - Agent/Broker
   signUpAgent: async (data: SignUpAgentDto): Promise<AuthResponse> => {
-    console.log('📤 Sending sign up agent request:', { ...data, password: '***' });
-    
+    console.log('📤 Sending sign up agent request to admin panel:', { ...data, password: '***' });
+
     const licenseNumber = data.licenseNumber || `BROKER-${Date.now()}`;
-    
-    // Спочатку пробуємо локальний бекенд (він повертає { user, accessToken })
-    try {
-      console.log('🔄 Trying local backend first...');
-      const backendResponse = await backendApiClient.post('/auth/register', {
-        email: data.email,
-        password: data.password,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        phone: data.phone,
-        role: UserRole.BROKER,
-        licenseNumber: licenseNumber,
-      });
-      
-      console.log('✅ Local backend response:', {
-        status: backendResponse.status,
-        hasData: !!backendResponse.data,
-        dataKeys: backendResponse.data ? Object.keys(backendResponse.data) : [],
-      });
-      
-      // Локальний бекенд повертає: { user, accessToken }
-      return backendResponse.data;
-    } catch (backendError: any) {
-      console.warn('⚠️ Local backend failed, trying admin panel:', backendError.message);
-      
-      // Fallback на адмін-панель
-      const response = await apiClient.post('/auth/register', {
-        email: data.email,
-        password: data.password,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        phone: data.phone,
-        role: UserRole.BROKER,
-        licenseNumber: licenseNumber,
-      });
-      
-      console.log('📥 Admin panel response:', {
-        status: response.status,
-        hasData: !!response.data,
-        dataKeys: response.data ? Object.keys(response.data) : [],
-      });
-      
-      return response.data;
-    }
+
+    // Використовуємо тільки адмін-панель
+    const response = await apiClient.post('/auth/register', {
+      email: data.email,
+      password: data.password,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phone: data.phone,
+      role: UserRole.BROKER,
+      licenseNumber: licenseNumber,
+    });
+
+    return response.data;
   },
 
   // Get current user
@@ -260,33 +139,33 @@ export const authApi = {
     avatar?: string;
   }): Promise<User> => {
     console.log('📤 Updating profile:', { ...data, avatar: data.avatar ? '***' : undefined });
-    
+
     // Використовуємо backendApiClient (admin.foryou-realestate.com/api/v1)
     const response = await backendApiClient.patch('/auth/profile', data);
-    
+
     console.log('✅ Profile update response:', {
       status: response.status,
       hasData: !!response.data,
       hasUser: !!response.data?.user,
     });
-    
+
     const responseData = response.data;
-    
+
     // Локальний бекенд повертає: { user }
     if (responseData?.user) {
       return responseData.user;
     }
-    
+
     // Якщо дані обгорнуті в data
     if (responseData?.data?.user) {
       return responseData.data.user;
     }
-    
+
     // Якщо повертається безпосередньо user
     if (responseData && !responseData.user && !responseData.data) {
       return responseData;
     }
-    
+
     throw new Error('Invalid response format from server');
   },
 };

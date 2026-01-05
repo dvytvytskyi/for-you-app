@@ -33,10 +33,10 @@ export const developersApi = {
     console.log('🔄 Завантаження developers...');
     try {
       const response = await publicApiClient.get<DevelopersResponse>('/public/developers');
-      const fullResponseStr = response.data 
+      const fullResponseStr = response.data
         ? JSON.stringify(response.data, null, 2).substring(0, 500)
         : 'null';
-      
+
       console.log('✅ Developers API Response:', {
         status: response.status,
         success: response.data?.success,
@@ -46,9 +46,8 @@ export const developersApi = {
       });
       return response.data;
     } catch (error: any) {
-      console.error('❌ Помилка завантаження developers:', error);
-      console.error('Error response:', error?.response?.data);
-      console.error('Error status:', error?.response?.status);
+      console.warn('❌ Помилка завантаження developers:', error.message);
+      console.warn('Error response details logged in interceptor');
       throw error;
     }
   },

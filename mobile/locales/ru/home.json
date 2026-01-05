@@ -2,25 +2,20 @@
   "dashboard": "Панель управления",
   "search": "Поиск",
   "searchPlaceholder": "Поиск недвижимости...",
-  
-  "newLeads": "Новые лиды",
+  "newLeads": "Всего лидов",
   "explore": "Просмотреть",
   "activeDeals": "Активные сделки",
   "totalAmount": "Общая сумма",
-  
   "yourLikedProjects": "Ваши избранные проекты",
   "collectionDescription": "Это коллекция ваших избранных",
-  
   "myLeads": "Мои лиды",
   "properties": "Недвижимость",
   "collections": "Коллекции",
   "offers": "Предложения",
-  
   "recentMarketNews": "Последние новости рынка",
   "knowledgeBase": "База знаний",
   "viewAll": "Посмотреть все",
   "noProperties": "Недвижимость не найдена",
-  
   "propertyTypes": {
     "apartment": "Апартаменты",
     "villa": "Вилла",
@@ -28,7 +23,5 @@
     "penthouse": "Пентхаус",
     "office": "Офис"
   },
-  
   "handoverDate": "Сдача: {{date}}"
 }
-

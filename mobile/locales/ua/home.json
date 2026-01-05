@@ -2,25 +2,20 @@
   "dashboard": "Панель керування",
   "search": "Пошук",
   "searchPlaceholder": "Пошук нерухомості...",
-  
-  "newLeads": "Нові ліди",
+  "newLeads": "Усього лідів",
   "explore": "Переглянути",
   "activeDeals": "Активні угоди",
   "totalAmount": "Загальна сума",
-  
   "yourLikedProjects": "Ваші вподобані проєкти",
   "collectionDescription": "Це колекція ваших вподобань",
-  
   "myLeads": "Мої ліди",
   "properties": "Нерухомість",
   "collections": "Колекції",
   "offers": "Пропозиції",
-  
   "recentMarketNews": "Останні новини ринку",
   "knowledgeBase": "База знань",
   "viewAll": "Переглянути все",
   "noProperties": "Нерухомість не знайдено",
-  
   "propertyTypes": {
     "apartment": "Апартаменти",
     "villa": "Вілла",
@@ -28,7 +23,5 @@
     "penthouse": "Пентхаус",
     "office": "Офіс"
   },
-  
   "handoverDate": "Здача: {{date}}"
 }
-

@@ -15,7 +15,7 @@ export default function EditProfileScreen() {
   const authUser = useAuthStore((state) => state.user);
   const updateProfile = useAuthStore((state) => state.updateProfile);
   const isLoading = useAuthStore((state) => state.isLoading);
-  
+
   // Initial data from authStore (real user data)
   const getInitialData = () => {
     if (!authUser) {
@@ -28,7 +28,7 @@ export default function EditProfileScreen() {
         licenseNumber: '',
       };
     }
-    
+
     return {
       avatar: authUser.avatar || null,
       firstName: authUser.firstName || '',
@@ -38,10 +38,10 @@ export default function EditProfileScreen() {
       licenseNumber: authUser.licenseNumber || '',
     };
   };
-  
+
   // Current form data
   const [formData, setFormData] = useState(getInitialData());
-  
+
   // Update form data when authUser changes
   useEffect(() => {
     if (authUser) {
@@ -55,10 +55,10 @@ export default function EditProfileScreen() {
       });
     }
   }, [authUser]);
-  
+
   // Initial data for comparison
   const initialData = getInitialData();
-  
+
   // Validation errors
   const [errors, setErrors] = useState({
     firstName: '',
@@ -66,27 +66,27 @@ export default function EditProfileScreen() {
     email: '',
     phone: '',
   });
-  
+
   // Check if data has changed
   const hasChanges = JSON.stringify(formData) !== JSON.stringify(initialData);
-  
+
   // Redirect if no user
   useEffect(() => {
     if (!authUser) {
       router.replace('/profile');
     }
   }, [authUser, router]);
-  
+
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
-  
+
   const validatePhone = (phone: string): boolean => {
     const phoneRegex = /^\+?[\d\s-]{10,}$/;
     return phoneRegex.test(phone);
   };
-  
+
   const handleFieldChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error when typing
@@ -94,7 +94,7 @@ export default function EditProfileScreen() {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
-  
+
   const handleChangeAvatar = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -109,7 +109,7 @@ export default function EditProfileScreen() {
       console.log('Error picking image:', error);
     }
   };
-  
+
   const handleBack = () => {
     if (hasChanges) {
       Alert.alert(
@@ -124,10 +124,10 @@ export default function EditProfileScreen() {
       router.back();
     }
   };
-  
+
   const handleSave = async () => {
     if (!hasChanges) return;
-    
+
     // Validate all fields
     const newErrors = {
       firstName: '',
@@ -135,19 +135,19 @@ export default function EditProfileScreen() {
       email: '',
       phone: '',
     };
-    
+
     let hasErrors = false;
-    
+
     if (!formData.firstName.trim()) {
       newErrors.firstName = 'First name is required';
       hasErrors = true;
     }
-    
+
     if (!formData.lastName.trim()) {
       newErrors.lastName = 'Last name is required';
       hasErrors = true;
     }
-    
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
       hasErrors = true;
@@ -155,7 +155,7 @@ export default function EditProfileScreen() {
       newErrors.email = 'Please enter a valid email';
       hasErrors = true;
     }
-    
+
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone number is required';
       hasErrors = true;
@@ -163,12 +163,12 @@ export default function EditProfileScreen() {
       newErrors.phone = 'Please enter a valid phone number';
       hasErrors = true;
     }
-    
+
     if (hasErrors) {
       setErrors(newErrors);
       return;
     }
-    
+
     // Save profile via API
     try {
       await updateProfile({
@@ -179,16 +179,16 @@ export default function EditProfileScreen() {
         licenseNumber: formData.licenseNumber?.trim() || undefined,
         avatar: formData.avatar || undefined,
       });
-      
+
       Alert.alert('Success', 'Profile updated successfully', [
         { text: 'OK', onPress: () => router.back() }
       ]);
     } catch (error: any) {
       console.error('Error updating profile:', error);
       console.error('Error response:', error.response);
-      
+
       let errorMessage = 'Failed to update profile. Please try again.';
-      
+
       if (error.response?.status === 404) {
         errorMessage = 'Profile update is currently unavailable. The feature is being deployed. Please try again later or contact support.';
       } else if (error.response?.status === 409) {
@@ -200,7 +200,7 @@ export default function EditProfileScreen() {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       Alert.alert('Error', errorMessage);
     }
   };
@@ -218,17 +218,17 @@ export default function EditProfileScreen() {
         >
           <Ionicons name="chevron-back" size={20} color={theme.text} />
         </Pressable>
-        
+
         <Text style={[styles.headerTitle, { color: theme.text }]}>Edit Profile</Text>
-        
+
         <View style={styles.backButton} />
       </View>
-      
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <ScrollView 
+        <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
@@ -236,52 +236,56 @@ export default function EditProfileScreen() {
           {/* Avatar Section */}
           <View style={[styles.avatarSection, { borderBottomColor: theme.border }]}>
             {formData.avatar ? (
-              <Image 
-                source={{ uri: formData.avatar }} 
+              <Image
+                source={{ uri: formData.avatar }}
                 style={[styles.avatar, { borderColor: theme.border }]}
               />
             ) : (
-              <View style={[styles.avatarPlaceholder, { borderColor: theme.border, backgroundColor: theme.backgroundSecondary }]}>
-                <Ionicons name="person" size={40} color={theme.textTertiary} />
+              <View style={[styles.avatarPlaceholder, { borderColor: theme.border, backgroundColor: theme.primary }]}>
+                <Text style={{ fontSize: 36, fontWeight: '600', color: '#FFFFFF' }}>
+                  {(formData.firstName[0] || '').toUpperCase()}{(formData.lastName[0] || '').toUpperCase()}
+                </Text>
               </View>
             )}
-            
+
             <View style={styles.avatarActions}>
               <Pressable
                 style={({ pressed }) => [
                   styles.actionButton,
-                  { 
-                    borderColor: theme.border, 
+                  {
+                    borderColor: theme.border,
                     backgroundColor: theme.card,
-                    opacity: pressed ? 0.6 : 1 
+                    opacity: pressed ? 0.6 : 1
                   }
                 ]}
                 onPress={handleChangeAvatar}
               >
                 <Text style={[styles.actionButtonText, { color: theme.text }]}>Change</Text>
               </Pressable>
-              
+
               <Pressable
                 style={({ pressed }) => [
                   styles.actionButton,
-                  { 
-                    borderColor: theme.border, 
+                  {
+                    borderColor: theme.border,
                     backgroundColor: theme.card,
-                    opacity: pressed ? 0.6 : 1 
+                    opacity: pressed ? 0.6 : 1
                   }
                 ]}
                 onPress={() => Alert.alert('Delete Photo', 'Are you sure you want to delete your profile photo?', [
                   { text: 'Cancel', style: 'cancel' },
-                  { text: 'Delete', style: 'destructive', onPress: () => {
-                    setFormData(prev => ({ ...prev, avatar: '' }));
-                  }}
+                  {
+                    text: 'Delete', style: 'destructive', onPress: () => {
+                      setFormData(prev => ({ ...prev, avatar: '' }));
+                    }
+                  }
                 ])}
               >
                 <Text style={styles.actionButtonTextDelete}>Delete</Text>
               </Pressable>
             </View>
           </View>
-          
+
           {/* Form Fields */}
           <View style={styles.formContainer}>
             <Input
@@ -292,7 +296,7 @@ export default function EditProfileScreen() {
               autoCapitalize="words"
               fullWidth
             />
-            
+
             <Input
               label="Last Name"
               value={formData.lastName}
@@ -301,7 +305,7 @@ export default function EditProfileScreen() {
               autoCapitalize="words"
               fullWidth
             />
-            
+
             <Input
               label="Email"
               value={formData.email}
@@ -311,7 +315,7 @@ export default function EditProfileScreen() {
               autoCapitalize="none"
               fullWidth
             />
-            
+
             <Input
               label="Phone Number"
               value={formData.phone}
@@ -320,7 +324,7 @@ export default function EditProfileScreen() {
               keyboardType="phone-pad"
               fullWidth
             />
-            
+
             <Input
               label="License Number (Optional)"
               value={formData.licenseNumber}
@@ -328,7 +332,7 @@ export default function EditProfileScreen() {
               fullWidth
             />
           </View>
-          
+
           {/* Action Button */}
           <View style={styles.buttonContainer}>
             <Pressable
@@ -379,27 +383,27 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 24,
+    paddingTop: 12,
     paddingBottom: 32,
   },
   avatarSection: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 24,
+    paddingBottom: 16,
     borderBottomWidth: 0.5,
-    marginBottom: 24,
+    marginBottom: 16,
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     borderWidth: 0.5,
   },
   avatarPlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     borderWidth: 0.5,
     alignItems: 'center',
     justifyContent: 'center',

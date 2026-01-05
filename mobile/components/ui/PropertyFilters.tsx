@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,23 +6,26 @@ import {
   Modal,
   Pressable,
   ScrollView,
-  SafeAreaView,
   Dimensions,
   Animated,
-  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '@/utils/theme';
 import { useTranslation } from '@/utils/i18n';
+import { propertiesApi } from '@/api/properties';
+import PriceRangeSlider from './PriceRangeSlider';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export interface PropertyFilters {
-  listingType: 'offplan' | 'secondary';
+  listingType: 'all' | 'offplan' | 'secondary';
   minPrice: number | null;
   maxPrice: number | null;
   propertyType: string;
-  bedrooms: string; // Changed from number[] to string ('any' or '1,2,3')
+  bedrooms: string;
   location: string;
 }
 
@@ -33,9 +36,8 @@ interface PropertyFiltersModalProps {
   onApply: (filters: PropertyFilters) => void;
 }
 
-const BEDROOM_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
+const BEDROOM_OPTIONS = ['studio', '1', '2', '3', '4', '5+'];
 
-// Price options from 100K to 30M
 const PRICE_OPTIONS = [
   { value: 100000, label: '$100K' },
   { value: 200000, label: '$200K' },
@@ -64,40 +66,32 @@ const PRICE_OPTIONS = [
   { value: 30000000, label: '$30M' },
 ];
 
-const PROPERTY_TYPES = ['all', 'apartment', 'villa', 'penthouse', 'townhouse', 'studio'];
+const PROPERTY_TYPES = ['apartment', 'villa', 'penthouse', 'townhouse', 'duplex', 'office'];
+
+const PROPERTY_TYPE_ICONS: Record<string, string> = {
+  apartment: 'business-outline',
+  villa: 'home-outline',
+  penthouse: 'layers-outline',
+  townhouse: 'grid-outline',
+  duplex: 'copy-outline',
+  office: 'briefcase-outline',
+};
 
 const DUBAI_LOCATIONS = [
-  { id: 'any', name: 'Any Location' },
-  { id: 'downtown', name: 'Downtown Dubai' },
-  { id: 'marina', name: 'Dubai Marina' },
-  { id: 'jbr', name: 'Jumeirah Beach Residence (JBR)' },
-  { id: 'palm', name: 'Palm Jumeirah' },
-  { id: 'jlt', name: 'Jumeirah Lake Towers (JLT)' },
-  { id: 'business-bay', name: 'Business Bay' },
-  { id: 'difc', name: 'Dubai International Financial Centre (DIFC)' },
-  { id: 'arabian-ranches', name: 'Arabian Ranches' },
-  { id: 'springs', name: 'The Springs' },
-  { id: 'meadows', name: 'The Meadows' },
-  { id: 'lakes', name: 'The Lakes' },
-  { id: 'greens', name: 'The Greens' },
-  { id: 'views', name: 'The Views' },
-  { id: 'dubai-hills', name: 'Dubai Hills Estate' },
-  { id: 'damac-hills', name: 'DAMAC Hills' },
-  { id: 'town-square', name: 'Town Square' },
-  { id: 'motor-city', name: 'Motor City' },
-  { id: 'sports-city', name: 'Sports City' },
-  { id: 'discovery-gardens', name: 'Discovery Gardens' },
-  { id: 'international-city', name: 'International City' },
-  { id: 'silicon-oasis', name: 'Dubai Silicon Oasis' },
-  { id: 'mirdif', name: 'Mirdif' },
-  { id: 'deira', name: 'Deira' },
-  { id: 'bur-dubai', name: 'Bur Dubai' },
-  { id: 'creek-harbour', name: 'Dubai Creek Harbour' },
-  { id: 'bluewaters', name: 'Bluewaters Island' },
-  { id: 'city-walk', name: 'City Walk' },
-  { id: 'la-mer', name: 'La Mer' },
-  { id: 'dubai-south', name: 'Dubai South' },
-  { id: 'expo-city', name: 'Expo City Dubai' },
+  { id: 'Downtown Dubai', name: 'Downtown Dubai' },
+  { id: 'Dubai Marina', name: 'Dubai Marina' },
+  { id: 'Jumeirah Beach Residence (JBR)', name: 'Jumeirah Beach Residence (JBR)' },
+  { id: 'Palm Jumeirah', name: 'Palm Jumeirah' },
+  { id: 'Jumeirah Lake Towers (JLT)', name: 'Jumeirah Lake Towers (JLT)' },
+  { id: 'Business Bay', name: 'Business Bay' },
+  { id: 'Dubai Hills Estate', name: 'Dubai Hills Estate' },
+  { id: 'Dubai Creek Harbour', name: 'Dubai Creek Harbour' },
+  { id: 'Marbella', name: 'Marbella' },
+  { id: 'Golden Mile', name: 'Golden Mile' },
+  { id: 'Puerto Banus', name: 'Puerto Banus' },
+  { id: 'San Pedro de Alcantara', name: 'San Pedro de Alcantara' },
+  { id: 'Zagaleta', name: 'Zagaleta' },
+  { id: 'Sierra Blanca', name: 'Sierra Blanca' },
 ];
 
 export default function PropertyFiltersModal({
@@ -106,22 +100,15 @@ export default function PropertyFiltersModal({
   filters: initialFilters,
   onApply,
 }: PropertyFiltersModalProps) {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   const [filters, setFilters] = useState<PropertyFilters>(initialFilters);
-  const [showMinPriceDropdown, setShowMinPriceDropdown] = useState(false);
-  const [showMaxPriceDropdown, setShowMaxPriceDropdown] = useState(false);
-  const [showPropertyTypeDropdown, setShowPropertyTypeDropdown] = useState(false);
-  const [showBedroomsDropdown, setShowBedroomsDropdown] = useState(false);
-  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
-  
-  const modalSlideAnim = useState(new Animated.Value(SCREEN_HEIGHT * 0.8))[0];
-  const minPriceSlideAnim = useState(new Animated.Value(SCREEN_HEIGHT * 0.6))[0];
-  const maxPriceSlideAnim = useState(new Animated.Value(SCREEN_HEIGHT * 0.6))[0];
-  const propertyTypeSlideAnim = useState(new Animated.Value(SCREEN_HEIGHT * 0.6))[0];
-  const bedroomsSlideAnim = useState(new Animated.Value(SCREEN_HEIGHT * 0.6))[0];
-  const locationSlideAnim = useState(new Animated.Value(SCREEN_HEIGHT * 0.6))[0];
+  const modalSlideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+
+  // Reverted to hardcoded locations due to 404 on API
+  const locations = DUBAI_LOCATIONS;
 
   useEffect(() => {
     if (visible) {
@@ -134,115 +121,10 @@ export default function PropertyFiltersModal({
     }
   }, [visible]);
 
-  useEffect(() => {
-    if (showMinPriceDropdown) {
-      Animated.spring(minPriceSlideAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        damping: 18,
-        stiffness: 120,
-      }).start();
-    }
-  }, [showMinPriceDropdown]);
-
-  useEffect(() => {
-    if (showMaxPriceDropdown) {
-      Animated.spring(maxPriceSlideAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        damping: 18,
-        stiffness: 120,
-      }).start();
-    }
-  }, [showMaxPriceDropdown]);
-
-  useEffect(() => {
-    if (showPropertyTypeDropdown) {
-      Animated.spring(propertyTypeSlideAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        damping: 18,
-        stiffness: 120,
-      }).start();
-    }
-  }, [showPropertyTypeDropdown]);
-
-  useEffect(() => {
-    if (showBedroomsDropdown) {
-      Animated.spring(bedroomsSlideAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        damping: 18,
-        stiffness: 120,
-      }).start();
-    }
-  }, [showBedroomsDropdown]);
-
-  useEffect(() => {
-    if (showLocationDropdown) {
-      Animated.spring(locationSlideAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        damping: 18,
-        stiffness: 120,
-      }).start();
-    }
-  }, [showLocationDropdown]);
-
-  const closeMinPriceDropdown = () => {
-    Animated.timing(minPriceSlideAnim, {
-      toValue: SCREEN_HEIGHT * 0.6,
-      duration: 200,
-      useNativeDriver: true,
-    }).start(() => {
-      setShowMinPriceDropdown(false);
-    });
-  };
-
-  const closeMaxPriceDropdown = () => {
-    Animated.timing(maxPriceSlideAnim, {
-      toValue: SCREEN_HEIGHT * 0.6,
-      duration: 200,
-      useNativeDriver: true,
-    }).start(() => {
-      setShowMaxPriceDropdown(false);
-    });
-  };
-
-  const closePropertyTypeDropdown = () => {
-    Animated.timing(propertyTypeSlideAnim, {
-      toValue: SCREEN_HEIGHT * 0.6,
-      duration: 200,
-      useNativeDriver: true,
-    }).start(() => {
-      setShowPropertyTypeDropdown(false);
-    });
-  };
-
-  const closeBedroomsDropdown = () => {
-    Animated.timing(bedroomsSlideAnim, {
-      toValue: SCREEN_HEIGHT * 0.6,
-      duration: 200,
-      useNativeDriver: true,
-    }).start(() => {
-      setShowBedroomsDropdown(false);
-    });
-  };
-
-  const closeLocationDropdown = () => {
-    Animated.timing(locationSlideAnim, {
-      toValue: SCREEN_HEIGHT * 0.6,
-      duration: 200,
-      useNativeDriver: true,
-    }).start(() => {
-      setShowLocationDropdown(false);
-    });
-  };
-
   const closeModal = () => {
     Animated.timing(modalSlideAnim, {
-      toValue: SCREEN_HEIGHT * 0.8,
-      duration: 200,
+      toValue: SCREEN_HEIGHT,
+      duration: 250,
       useNativeDriver: true,
     }).start(() => {
       onClose();
@@ -251,7 +133,7 @@ export default function PropertyFiltersModal({
 
   const handleReset = () => {
     setFilters({
-      listingType: 'offplan',
+      listingType: 'all',
       minPrice: null,
       maxPrice: null,
       propertyType: 'all',
@@ -265,32 +147,51 @@ export default function PropertyFiltersModal({
     closeModal();
   };
 
-  const getBedroomsLabel = () => {
-    if (!filters.bedrooms || filters.bedrooms === 'any') return 'Any';
-    const bedroomsList = filters.bedrooms.split(',').map(Number);
-    if (bedroomsList.length === 1) return `${bedroomsList[0]}`;
-    return bedroomsList.join(', ');
+  const toggleBedroom = (bedroom: string) => {
+    const current = filters.bedrooms === 'any' ? [] : filters.bedrooms.split(',').filter(Boolean);
+    let newBedrooms: string[];
+
+    if (current.includes(bedroom)) {
+      newBedrooms = current.filter(b => b !== bedroom);
+    } else {
+      newBedrooms = [...current, bedroom];
+    }
+
+    setFilters(prev => ({
+      ...prev,
+      bedrooms: newBedrooms.length === 0 ? 'any' : newBedrooms.join(',')
+    }));
   };
 
-  const toggleBedroom = (bedroom: number | string) => {
-    if (bedroom === 'any') {
-      setFilters(prev => ({ ...prev, bedrooms: 'any' }));
-      return;
-    }
-    
-    const bedroomNum = Number(bedroom);
-    const current = filters.bedrooms === 'any' ? [] : filters.bedrooms.split(',').map(Number).filter(Boolean);
-    
-    let newBedrooms: number[];
-    if (current.includes(bedroomNum)) {
-      newBedrooms = current.filter(b => b !== bedroomNum);
+  const toggleLocation = (locationId: string) => {
+    const current = filters.location === 'any' ? [] : filters.location.split('|').filter(Boolean);
+    let newLocations: string[];
+
+    if (current.includes(locationId)) {
+      newLocations = current.filter(l => l !== locationId);
     } else {
-      newBedrooms = [...current, bedroomNum].sort((a, b) => a - b);
+      newLocations = [...current, locationId];
     }
-    
-    setFilters(prev => ({ 
-      ...prev, 
-      bedrooms: newBedrooms.length === 0 ? 'any' : newBedrooms.join(',')
+
+    setFilters(prev => ({
+      ...prev,
+      location: newLocations.length === 0 ? 'any' : newLocations.join('|')
+    }));
+  };
+
+  const togglePropertyType = (type: string) => {
+    const current = filters.propertyType === 'all' ? [] : filters.propertyType.split(',').filter(Boolean);
+    let newTypes: string[];
+
+    if (current.includes(type)) {
+      newTypes = current.filter(t => t !== type);
+    } else {
+      newTypes = [...current, type];
+    }
+
+    setFilters(prev => ({
+      ...prev,
+      propertyType: newTypes.length === 0 ? 'all' : newTypes.join(',')
     }));
   };
 
@@ -303,30 +204,33 @@ export default function PropertyFiltersModal({
     >
       <View style={styles.modalOverlay}>
         <Pressable style={styles.backdrop} onPress={closeModal} />
-        
-        <Animated.View 
+
+        <Animated.View
           style={[
-            styles.modalContent, 
+            styles.modalContent,
             { backgroundColor: theme.background },
             { transform: [{ translateY: modalSlideAnim }] }
           ]}
         >
-          <SafeAreaView style={styles.safeArea}>
+          <View style={[styles.safeArea, { paddingTop: insets.top }]}>
             {/* Header */}
-            <View style={[styles.header, { borderBottomColor: theme.border }]}>
+            <View style={[styles.headerContainer, { borderBottomColor: theme.border }]}>
               <Pressable
                 onPress={closeModal}
                 style={({ pressed }) => [
-                  styles.closeButton,
-                  { opacity: pressed ? 0.5 : 1 }
+                  styles.styledBackButton,
+                  { backgroundColor: theme.primaryLight },
+                  { opacity: pressed ? 0.7 : 1 }
                 ]}
               >
-                <Ionicons name="chevron-down" size={26} color={theme.text} />
+                <Ionicons name="chevron-back" size={24} color={theme.primary} />
               </Pressable>
-              <Text style={[styles.headerTitle, { color: theme.text }]}>
-                {t('properties.filters')}
-              </Text>
-              <View style={styles.closeButton} />
+
+              <View style={styles.headerTitleWrapper}>
+                <Text style={[styles.headerTitleText, { color: theme.text }]}>
+                  {t('properties.filters')}
+                </Text>
+              </View>
             </View>
 
             <ScrollView
@@ -334,219 +238,91 @@ export default function PropertyFiltersModal({
               contentContainerStyle={styles.scrollContent}
               showsVerticalScrollIndicator={false}
             >
-              {/* Listing Type */}
-              <View style={styles.section}>
-                <View style={styles.toggleContainer}>
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.toggleButton,
-                      {
-                        backgroundColor: filters.listingType === 'offplan'
-                          ? theme.primary
-                          : theme.card,
-                        borderColor: filters.listingType === 'offplan'
-                          ? theme.primary
-                          : theme.border,
-                        opacity: pressed ? 0.8 : 1,
-                      },
-                    ]}
-                    onPress={() => setFilters(prev => ({ ...prev, listingType: 'offplan' }))}
-                  >
-                    <Text
-                      style={[
-                        styles.toggleText,
-                        {
-                          color: filters.listingType === 'offplan'
-                            ? '#FFFFFF'
-                            : theme.text,
-                        },
-                      ]}
-                    >
-                      Off plan
-                    </Text>
-                  </Pressable>
-                  
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.toggleButton,
-                      {
-                        backgroundColor: filters.listingType === 'secondary'
-                          ? theme.primary
-                          : theme.card,
-                        borderColor: filters.listingType === 'secondary'
-                          ? theme.primary
-                          : theme.border,
-                        opacity: pressed ? 0.8 : 1,
-                      },
-                    ]}
-                    onPress={() => setFilters(prev => ({ ...prev, listingType: 'secondary' }))}
-                  >
-                    <Text
-                      style={[
-                        styles.toggleText,
-                        {
-                          color: filters.listingType === 'secondary'
-                            ? '#FFFFFF'
-                            : theme.text,
-                        },
-                      ]}
-                    >
-                      Secondary
-                    </Text>
-                  </Pressable>
-                </View>
-              </View>
-
               {/* Price Range */}
               <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                  {t('properties.priceRange')}
-                </Text>
-                
-                <View style={styles.priceContainer}>
-                  <View style={styles.priceInput}>
-                    <Pressable
-                      style={[
-                        styles.priceButton,
-                        {
-                          backgroundColor: theme.card,
-                          borderColor: theme.border,
-                        },
-                      ]}
-                      onPress={() => setShowMinPriceDropdown(true)}
-                    >
-                      <Text style={[
-                        styles.priceValue,
-                        { color: filters.minPrice ? theme.text : theme.textSecondary }
-                      ]}>
-                        {filters.minPrice 
-                          ? PRICE_OPTIONS.find(p => p.value === filters.minPrice)?.label 
-                          : t('properties.minPrice')}
-                      </Text>
-                      <Ionicons name="chevron-down" size={18} color={theme.textSecondary} />
-                    </Pressable>
-                  </View>
-                  
-                  <View style={styles.priceInput}>
-                    <Pressable
-                      style={[
-                        styles.priceButton,
-                        {
-                          backgroundColor: theme.card,
-                          borderColor: theme.border,
-                        },
-                      ]}
-                      onPress={() => setShowMaxPriceDropdown(true)}
-                    >
-                      <Text style={[
-                        styles.priceValue,
-                        { color: filters.maxPrice ? theme.text : theme.textSecondary }
-                      ]}>
-                        {filters.maxPrice 
-                          ? PRICE_OPTIONS.find(p => p.value === filters.maxPrice)?.label 
-                          : t('properties.maxPrice')}
-                      </Text>
-                      <Ionicons name="chevron-down" size={18} color={theme.textSecondary} />
-                    </Pressable>
-                  </View>
-                </View>
-              </View>
-
-              {/* Property Type */}
-              <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                  {t('properties.propertyType')}
-                </Text>
-                
-                <Pressable
-                  style={[
-                    styles.dropdown,
-                    {
-                      backgroundColor: theme.card,
-                      borderColor: theme.border,
-                    },
-                  ]}
-                  onPress={() => setShowPropertyTypeDropdown(true)}
-                >
-                  <Text style={[
-                    styles.dropdownText, 
-                    { color: filters.propertyType !== 'all' ? theme.text : theme.textSecondary }
-                  ]}>
-                    {t(`properties.propertyTypes.${filters.propertyType}`)}
-                  </Text>
-                  <Ionicons name="chevron-down" size={18} color={theme.textSecondary} />
-                </Pressable>
+                <PriceRangeSlider
+                  minPrice={filters.minPrice}
+                  maxPrice={filters.maxPrice}
+                  priceOptions={PRICE_OPTIONS}
+                  onValueChange={(min, max) => setFilters(prev => ({ ...prev, minPrice: min, maxPrice: max }))}
+                />
               </View>
 
               {/* Bedrooms */}
               <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                <Text style={[styles.sectionTitle, { color: theme.textSecondary, marginBottom: 16 }]}>
                   Bedrooms
                 </Text>
-                
-                <Pressable
-                  style={[
-                    styles.dropdown,
-                    {
-                      backgroundColor: theme.card,
-                      borderColor: theme.border,
-                    },
-                  ]}
-                  onPress={() => setShowBedroomsDropdown(true)}
-                >
-                  <Text style={[
-                    styles.dropdownText, 
-                    { color: filters.bedrooms !== 'any' ? theme.text : theme.textSecondary }
-                  ]}>
-                    {getBedroomsLabel()}
-                  </Text>
-                  <Ionicons name="chevron-down" size={18} color={theme.textSecondary} />
-                </Pressable>
+
+                <View style={styles.bedsGridContainer}>
+                  <View style={styles.bedsRow}>
+                    {['studio', '1', '2'].map((option) => (
+                      <BedOption
+                        key={option}
+                        label={option === 'studio' ? 'Studio' : option}
+                        isSelected={filters.bedrooms !== 'any' && filters.bedrooms.split(',').includes(option)}
+                        onPress={() => toggleBedroom(option)}
+                        theme={theme}
+                      />
+                    ))}
+                  </View>
+                  <View style={styles.bedsRow}>
+                    {['3', '4', '5+'].map((option) => (
+                      <BedOption
+                        key={option}
+                        label={option}
+                        isSelected={filters.bedrooms !== 'any' && filters.bedrooms.split(',').includes(option)}
+                        onPress={() => toggleBedroom(option)}
+                        theme={theme}
+                      />
+                    ))}
+                  </View>
+                </View>
               </View>
 
               {/* Location */}
               <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                <Text style={[styles.sectionTitle, { color: theme.textSecondary, marginBottom: 16 }]}>
                   {t('properties.location')}
                 </Text>
-                
-                <Pressable
-                  style={[
-                    styles.dropdown,
-                    {
-                      backgroundColor: theme.card,
-                      borderColor: theme.border,
-                    },
-                  ]}
-                  onPress={() => setShowLocationDropdown(true)}
-                >
-                  <Text style={[
-                    styles.dropdownText, 
-                    { color: filters.location !== 'any' ? theme.text : theme.textSecondary }
-                  ]}>
-                    {filters.location !== 'any'
-                      ? DUBAI_LOCATIONS.find(loc => loc.id === filters.location)?.name 
-                      : t('properties.selectFromList')}
-                  </Text>
-                  <Ionicons name="chevron-down" size={18} color={theme.textSecondary} />
-                </Pressable>
+
+                <View style={styles.locationsWrapper}>
+                  {locations.map((location) => {
+                    const isSelected = filters.location !== 'any' && filters.location.split('|').includes(location.id);
+                    return (
+                      <LocationOption
+                        key={location.id}
+                        label={location.name}
+                        isSelected={isSelected}
+                        onPress={() => toggleLocation(location.id)}
+                        theme={theme}
+                      />
+                    );
+                  })}
+                </View>
               </View>
             </ScrollView>
 
-            {/* Footer Actions */}
-            <View style={[styles.footer, { borderTopColor: theme.border }]}>
+            {/* Floating Footer Island */}
+            <View style={[styles.footerIsland, { borderColor: theme.border }]}>
+              <BlurView
+                intensity={80}
+                tint={isDark ? 'dark' : 'light'}
+                style={StyleSheet.absoluteFill}
+              />
               <Pressable
                 onPress={handleReset}
                 style={({ pressed }) => [
                   styles.resetButton,
                   {
-                    backgroundColor: theme.background,
-                    borderColor: theme.border,
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
                     opacity: pressed ? 0.7 : 1,
                   },
                 ]}
               >
-                <Ionicons name="reload-outline" size={24} color={theme.textSecondary} />
+                <Text style={[styles.resetButtonText, { color: '#999' }]}>
+                  Reset
+                </Text>
               </Pressable>
 
               <Pressable
@@ -564,302 +340,132 @@ export default function PropertyFiltersModal({
                 </Text>
               </Pressable>
             </View>
-          </SafeAreaView>
+          </View>
         </Animated.View>
       </View>
-
-      {/* Min Price Dropdown Modal */}
-      <Modal
-        visible={showMinPriceDropdown}
-        transparent
-        animationType="none"
-        onRequestClose={closeMinPriceDropdown}
-      >
-        <View style={styles.dropdownModalOverlay}>
-          <Pressable style={styles.dropdownBackdrop} onPress={closeMinPriceDropdown} />
-          <Animated.View 
-            style={[
-              styles.dropdownModalContent, 
-              { backgroundColor: theme.background },
-              { transform: [{ translateY: minPriceSlideAnim }] }
-            ]}
-          >
-            <View style={[styles.dropdownHeader, { borderBottomColor: theme.border }]}>
-              <Text style={[styles.dropdownHeaderTitle, { color: theme.text }]}>
-                {t('properties.minPrice')}
-              </Text>
-              <Pressable onPress={closeMinPriceDropdown}>
-                <Ionicons name="close" size={24} color={theme.text} />
-              </Pressable>
-            </View>
-            <ScrollView style={styles.dropdownScrollView} contentContainerStyle={styles.dropdownScrollContent}>
-              {PRICE_OPTIONS.map((price) => (
-                <Pressable
-                  key={price.value}
-                  style={[
-                    styles.dropdownItem,
-                    { borderBottomColor: theme.border },
-                    filters.minPrice === price.value && { backgroundColor: theme.primaryLight },
-                  ]}
-                  onPress={() => {
-                    setFilters(prev => ({ ...prev, minPrice: price.value }));
-                    closeMinPriceDropdown();
-                  }}
-                >
-                  <Text style={[
-                    styles.dropdownItemText,
-                    { color: filters.minPrice === price.value ? theme.primary : theme.text }
-                  ]}>
-                    {price.label}
-                  </Text>
-                  {filters.minPrice === price.value && (
-                    <Ionicons name="checkmark" size={20} color={theme.primary} />
-                  )}
-                </Pressable>
-              ))}
-            </ScrollView>
-          </Animated.View>
-        </View>
-      </Modal>
-
-      {/* Max Price Dropdown Modal */}
-      <Modal
-        visible={showMaxPriceDropdown}
-        transparent
-        animationType="none"
-        onRequestClose={closeMaxPriceDropdown}
-      >
-        <View style={styles.dropdownModalOverlay}>
-          <Pressable style={styles.dropdownBackdrop} onPress={closeMaxPriceDropdown} />
-          <Animated.View 
-            style={[
-              styles.dropdownModalContent, 
-              { backgroundColor: theme.background },
-              { transform: [{ translateY: maxPriceSlideAnim }] }
-            ]}
-          >
-            <View style={[styles.dropdownHeader, { borderBottomColor: theme.border }]}>
-              <Text style={[styles.dropdownHeaderTitle, { color: theme.text }]}>
-                {t('properties.maxPrice')}
-              </Text>
-              <Pressable onPress={closeMaxPriceDropdown}>
-                <Ionicons name="close" size={24} color={theme.text} />
-              </Pressable>
-            </View>
-            <ScrollView style={styles.dropdownScrollView} contentContainerStyle={styles.dropdownScrollContent}>
-              {PRICE_OPTIONS.map((price) => (
-                <Pressable
-                  key={price.value}
-                  style={[
-                    styles.dropdownItem,
-                    { borderBottomColor: theme.border },
-                    filters.maxPrice === price.value && { backgroundColor: theme.primaryLight },
-                  ]}
-                  onPress={() => {
-                    setFilters(prev => ({ ...prev, maxPrice: price.value }));
-                    closeMaxPriceDropdown();
-                  }}
-                >
-                  <Text style={[
-                    styles.dropdownItemText,
-                    { color: filters.maxPrice === price.value ? theme.primary : theme.text }
-                  ]}>
-                    {price.label}
-                  </Text>
-                  {filters.maxPrice === price.value && (
-                    <Ionicons name="checkmark" size={20} color={theme.primary} />
-                  )}
-                </Pressable>
-              ))}
-            </ScrollView>
-          </Animated.View>
-        </View>
-      </Modal>
-
-      {/* Property Type Dropdown Modal */}
-      <Modal
-        visible={showPropertyTypeDropdown}
-        transparent
-        animationType="none"
-        onRequestClose={closePropertyTypeDropdown}
-      >
-        <View style={styles.dropdownModalOverlay}>
-          <Pressable style={styles.dropdownBackdrop} onPress={closePropertyTypeDropdown} />
-          <Animated.View 
-            style={[
-              styles.dropdownModalContent, 
-              { backgroundColor: theme.background },
-              { transform: [{ translateY: propertyTypeSlideAnim }] }
-            ]}
-          >
-            <View style={[styles.dropdownHeader, { borderBottomColor: theme.border }]}>
-              <Text style={[styles.dropdownHeaderTitle, { color: theme.text }]}>
-                {t('properties.propertyType')}
-              </Text>
-              <Pressable onPress={closePropertyTypeDropdown}>
-                <Ionicons name="close" size={24} color={theme.text} />
-              </Pressable>
-            </View>
-            <ScrollView style={styles.dropdownScrollView} contentContainerStyle={styles.dropdownScrollContent}>
-              {PROPERTY_TYPES.map((type) => (
-                <Pressable
-                  key={type}
-                  style={[
-                    styles.dropdownItem,
-                    { borderBottomColor: theme.border },
-                    filters.propertyType === type && { backgroundColor: theme.primaryLight },
-                  ]}
-                  onPress={() => {
-                    setFilters(prev => ({ ...prev, propertyType: type }));
-                    closePropertyTypeDropdown();
-                  }}
-                >
-                  <Text style={[
-                    styles.dropdownItemText,
-                    { color: filters.propertyType === type ? theme.primary : theme.text }
-                  ]}>
-                    {t(`properties.propertyTypes.${type}`)}
-                  </Text>
-                  {filters.propertyType === type && (
-                    <Ionicons name="checkmark" size={20} color={theme.primary} />
-                  )}
-                </Pressable>
-              ))}
-            </ScrollView>
-          </Animated.View>
-        </View>
-      </Modal>
-
-      {/* Bedrooms Dropdown Modal */}
-      <Modal
-        visible={showBedroomsDropdown}
-        transparent
-        animationType="none"
-        onRequestClose={closeBedroomsDropdown}
-      >
-        <View style={styles.dropdownModalOverlay}>
-          <Pressable style={styles.dropdownBackdrop} onPress={closeBedroomsDropdown} />
-          <Animated.View 
-            style={[
-              styles.dropdownModalContent, 
-              { backgroundColor: theme.background },
-              { transform: [{ translateY: bedroomsSlideAnim }] }
-            ]}
-          >
-            <View style={[styles.dropdownHeader, { borderBottomColor: theme.border }]}>
-              <Text style={[styles.dropdownHeaderTitle, { color: theme.text }]}>
-                Bedrooms
-              </Text>
-              <Pressable onPress={closeBedroomsDropdown}>
-                <Ionicons name="close" size={24} color={theme.text} />
-              </Pressable>
-            </View>
-            <ScrollView style={styles.dropdownScrollView} contentContainerStyle={styles.dropdownScrollContent}>
-              <Pressable
-                style={[
-                  styles.dropdownItem,
-                  { borderBottomColor: theme.border },
-                  filters.bedrooms === 'any' && { backgroundColor: theme.primaryLight },
-                ]}
-                onPress={() => {
-                  toggleBedroom('any');
-                  closeBedroomsDropdown();
-                }}
-              >
-                <Text style={[
-                  styles.dropdownItemText,
-                  { color: filters.bedrooms === 'any' ? theme.primary : theme.text }
-                ]}>
-                  Any
-                </Text>
-                {filters.bedrooms === 'any' && (
-                  <Ionicons name="checkmark" size={20} color={theme.primary} />
-                )}
-              </Pressable>
-              {BEDROOM_OPTIONS.map((bedroom) => {
-                const isSelected = filters.bedrooms !== 'any' && 
-                  filters.bedrooms.split(',').map(Number).includes(bedroom);
-                return (
-                  <Pressable
-                    key={bedroom}
-                    style={[
-                      styles.dropdownItem,
-                      { borderBottomColor: theme.border },
-                      isSelected && { backgroundColor: theme.primaryLight },
-                    ]}
-                    onPress={() => toggleBedroom(bedroom)}
-                  >
-                    <Text style={[
-                      styles.dropdownItemText,
-                      { color: isSelected ? theme.primary : theme.text }
-                    ]}>
-                      {bedroom}
-                    </Text>
-                    {isSelected && (
-                      <Ionicons name="checkmark" size={20} color={theme.primary} />
-                    )}
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </Animated.View>
-        </View>
-      </Modal>
-
-      {/* Location Dropdown Modal */}
-      <Modal
-        visible={showLocationDropdown}
-        transparent
-        animationType="none"
-        onRequestClose={closeLocationDropdown}
-      >
-        <View style={styles.dropdownModalOverlay}>
-          <Pressable style={styles.dropdownBackdrop} onPress={closeLocationDropdown} />
-          <Animated.View 
-            style={[
-              styles.dropdownModalContent, 
-              { backgroundColor: theme.background },
-              { transform: [{ translateY: locationSlideAnim }] }
-            ]}
-          >
-            <View style={[styles.dropdownHeader, { borderBottomColor: theme.border }]}>
-              <Text style={[styles.dropdownHeaderTitle, { color: theme.text }]}>
-                {t('properties.location')}
-              </Text>
-              <Pressable onPress={closeLocationDropdown}>
-                <Ionicons name="close" size={24} color={theme.text} />
-              </Pressable>
-            </View>
-            <ScrollView style={styles.dropdownScrollView} contentContainerStyle={styles.dropdownScrollContent}>
-              {DUBAI_LOCATIONS.map((location) => (
-                <Pressable
-                  key={location.id}
-                  style={[
-                    styles.dropdownItem,
-                    { borderBottomColor: theme.border },
-                    filters.location === location.id && { backgroundColor: theme.primaryLight },
-                  ]}
-                  onPress={() => {
-                    setFilters({ ...filters, location: location.id });
-                    closeLocationDropdown();
-                  }}
-                >
-                  <Text style={[
-                    styles.dropdownItemText,
-                    { color: filters.location === location.id ? theme.primary : theme.text }
-                  ]}>
-                    {location.name}
-                  </Text>
-                  {filters.location === location.id && (
-                    <Ionicons name="checkmark" size={20} color={theme.primary} />
-                  )}
-                </Pressable>
-              ))}
-            </ScrollView>
-          </Animated.View>
-        </View>
-      </Modal>
     </Modal>
+  );
+}
+
+function PropertyTypeButton({ type, label, isSelected, onPress, theme }: any) {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.spring(scaleAnim, {
+      toValue: isSelected ? 1 : 0.95,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 40,
+    }).start();
+  }, [isSelected]);
+
+  const handlePressIn = () => Animated.spring(scaleAnim, { toValue: 0.9, useNativeDriver: true }).start();
+  const handlePressOut = () => Animated.spring(scaleAnim, { toValue: isSelected ? 1 : 0.95, useNativeDriver: true }).start();
+
+  return (
+    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+      <Pressable
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={onPress}
+        style={[
+          styles.propertyChip,
+          {
+            backgroundColor: isSelected ? theme.primary : theme.card,
+            borderColor: isSelected ? theme.primary : theme.border,
+          }
+        ]}
+      >
+        <Ionicons
+          name={PROPERTY_TYPE_ICONS[type] as any}
+          size={20}
+          color={isSelected ? '#FFF' : theme.text}
+          style={styles.propertyChipIcon}
+        />
+        <Text style={[
+          styles.propertyChipText,
+          { color: isSelected ? '#FFF' : theme.textSecondary }
+        ]}>
+          {label}
+        </Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+function BedOption({ label, isSelected, onPress, theme }: any) {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.spring(scaleAnim, {
+      toValue: isSelected ? 1 : 0.98,
+      useNativeDriver: true,
+    }).start();
+  }, [isSelected]);
+
+  const handlePressIn = () => Animated.spring(scaleAnim, { toValue: 0.95, useNativeDriver: true }).start();
+  const handlePressOut = () => Animated.spring(scaleAnim, { toValue: isSelected ? 1 : 0.98, useNativeDriver: true }).start();
+
+  return (
+    <Animated.View style={{ flex: 1, transform: [{ scale: scaleAnim }] }}>
+      <Pressable
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={onPress}
+        style={[
+          styles.bedOption,
+          {
+            backgroundColor: isSelected ? theme.primary : theme.card,
+            borderColor: isSelected ? theme.primary : theme.border,
+          }
+        ]}
+      >
+        <Text style={[
+          styles.bedOptionText,
+          { color: isSelected ? '#FFF' : theme.text }
+        ]}>
+          {label}
+        </Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+function LocationOption({ label, isSelected, onPress, theme }: any) {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.spring(scaleAnim, {
+      toValue: isSelected ? 1 : 0.98,
+      useNativeDriver: true,
+    }).start();
+  }, [isSelected]);
+
+  const handlePressIn = () => Animated.spring(scaleAnim, { toValue: 0.95, useNativeDriver: true }).start();
+  const handlePressOut = () => Animated.spring(scaleAnim, { toValue: isSelected ? 1 : 0.98, useNativeDriver: true }).start();
+
+  return (
+    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+      <Pressable
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={onPress}
+        style={[
+          styles.locationChip,
+          {
+            backgroundColor: isSelected ? theme.primary : theme.card,
+            borderColor: isSelected ? theme.primary : theme.border,
+          }
+        ]}
+      >
+        <Text style={[
+          styles.locationChipText,
+          { color: isSelected ? '#FFF' : theme.text }
+        ]}>
+          {label}
+        </Text>
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -873,167 +479,160 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    height: SCREEN_HEIGHT * 0.8,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    height: '100%',
+    width: '100%',
     overflow: 'hidden',
   },
   safeArea: {
     flex: 1,
   },
-  header: {
+  headerContainer: {
+    height: 56,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.5,
+    position: 'relative',
   },
-  closeButton: {
-    width: 40,
-    height: 40,
+  headerTitleWrapper: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: -8,
+    zIndex: 1,
   },
-  headerTitle: {
+  styledBackButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  headerTitleText: {
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 24,
+    paddingTop: 20,
+    paddingBottom: 140, // Increased to account for floating footer
   },
   section: {
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '500',
     marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
-  toggleContainer: {
-    flexDirection: 'row',
+  propertyTypeScrollContent: {
     gap: 12,
   },
-  toggleButton: {
-    flex: 1,
-    paddingVertical: 14,
+  propertyChip: {
+    width: 100,
+    height: 100,
+    borderRadius: 20,
+    padding: 12,
+    borderWidth: 1,
+    justifyContent: 'space-between',
+  },
+  propertyChipIcon: {
+    alignSelf: 'flex-start',
+  },
+  propertyChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    alignSelf: 'flex-end',
+    textAlign: 'right',
+  },
+  bedsGridContainer: {
+    gap: 8,
+  },
+  bedsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  bedOption: {
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  bedOptionText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  locationsWrapper: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  locationChip: {
+    height: 48,
+    paddingHorizontal: 16,
     borderRadius: 12,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  toggleText: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  priceContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  priceInput: {
-    flex: 1,
-  },
-  priceButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  priceValue: {
-    fontSize: 14,
+  locationChipText: {
+    fontSize: 13,
     fontWeight: '500',
   },
-  dropdown: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  dropdownText: {
-    fontSize: 14,
-  },
-  footer: {
+  footerIsland: {
+    position: 'absolute',
+    bottom: 30,
+    left: 20,
+    right: 20,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingBottom: 16,
-    borderTopWidth: 1,
+    padding: 8,
+    borderRadius: 100,
+    borderWidth: 1,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
   },
   resetButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    borderWidth: 1,
+    paddingHorizontal: 20,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  resetButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
   applyButton: {
     flex: 1,
-    height: 52,
-    borderRadius: 120,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
   applyButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  dropdownModalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  dropdownBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  dropdownModalContent: {
-    maxHeight: SCREEN_HEIGHT * 0.6,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    overflow: 'hidden',
-  },
-  dropdownHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-  },
-  dropdownHeaderTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  dropdownScrollView: {
-    maxHeight: SCREEN_HEIGHT * 0.5,
-  },
-  dropdownScrollContent: {
-    paddingBottom: 16,
-  },
-  dropdownItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 0.5,
-  },
-  dropdownItemText: {
     fontSize: 15,
+    fontWeight: '600',
   },
 });
-

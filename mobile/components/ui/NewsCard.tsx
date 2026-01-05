@@ -11,7 +11,7 @@ interface NewsCardProps {
 
 export default function NewsCard({ image, title, description, timestamp, onPress }: NewsCardProps) {
   const { theme } = useTheme();
-  
+
   return (
     <Pressable
       onPress={onPress}
@@ -24,16 +24,16 @@ export default function NewsCard({ image, title, description, timestamp, onPress
         }
       ]}
     >
-      <Image 
-        source={{ 
-          uri: image && image.trim().length > 0 && (image.startsWith('http://') || image.startsWith('https://') || image.startsWith('data:') || image.startsWith('file://'))
-            ? image 
-            : 'https://via.placeholder.com/400x300?text=No+Image'
-        }} 
+      <Image
+        source={
+          image && image.trim().length > 0 && (image.startsWith('http://') || image.startsWith('https://') || image.startsWith('data:') || image.startsWith('file://'))
+            ? { uri: image }
+            : require('@/assets/images/new logo blue.png')
+        }
         style={styles.thumbnail}
         resizeMode="cover"
       />
-      
+
       <View style={styles.content}>
         <Text style={[styles.title, { color: theme.text }]} numberOfLines={1}>{title}</Text>
         <Text style={[styles.description, { color: theme.textSecondary }]} numberOfLines={2}>{description}</Text>

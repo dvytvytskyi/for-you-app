@@ -1,4 +1,4 @@
-import { backendApiClient } from './backend-client';
+import { apiClient } from './client';
 
 export interface Lead {
   id: string;
@@ -6,11 +6,31 @@ export interface Lead {
   guestPhone?: string;
   guestEmail?: string;
   status: 'NEW' | 'IN_PROGRESS' | 'CLOSED';
+  statusName?: string; // Human readable stage name
   price?: number;
   amoLeadId?: number;
+  pipelineId?: number;
+  stageId?: number;
   responsibleUserId?: number;
   createdAt: string;
   updatedAt: string;
+
+  // Raw AmoCRM Data
+  customFields?: {
+    field_id: number;
+    field_name: string;
+    field_code: string;
+    values: { value: string }[];
+  }[];
+
+  embedded?: {
+    contacts?: {
+      id: number;
+      name: string;
+      custom_fields_values?: any[];
+    }[];
+    tags?: any[];
+  };
 }
 
 export interface LeadFilters {
@@ -32,122 +52,61 @@ export interface LeadsResponse {
   totalPages: number;
 }
 
+export interface Note {
+  id: number;
+  entity_id: number;
+  created_by: number;
+  updated_by: number;
+  created_at: number;
+  updated_at: number;
+  text: string;
+  note_type: string;
+  params?: any;
+}
+
+export interface Event {
+  id: string;
+  type: string;
+  entity_id: number;
+  created_by: number;
+  created_at: number;
+  value_after?: any;
+  value_before?: any;
+}
+
+export interface LeadDetails {
+  lead: Lead;
+  notes: Note[];
+  events: Event[];
+}
+
 export const leadsApi = {
-  /**
-   * Отримати список leads
-   * Endpoint: GET /api/v1/leads (на admin-panel-backend)
-   */
   async getAll(filters?: LeadFilters): Promise<LeadsResponse> {
-    // Очищаємо undefined значення, щоб не передавати їх в query параметрах
-    const cleanFilters: Record<string, any> = {};
-    if (filters) {
-      Object.keys(filters).forEach((key) => {
-        const value = filters[key as keyof LeadFilters];
-        if (value !== undefined && value !== null) {
-          cleanFilters[key] = value;
-        }
-      });
-    }
-    
-    // Формуємо повний URL для логування
-    const queryString = new URLSearchParams(cleanFilters as any).toString();
-    const fullUrl = `${backendApiClient.defaults.baseURL}/leads${queryString ? `?${queryString}` : ''}`;
-    
-    console.log('📤 Leads API Request:', {
-      url: '/leads',
-      method: 'GET',
-      filters: cleanFilters,
-      cleanFiltersKeys: Object.keys(cleanFilters),
-      limit: cleanFilters.limit,
-      page: cleanFilters.page,
-      pipelineId: cleanFilters.pipelineId,
-      stageId: cleanFilters.stageId,
-      status: cleanFilters.status,
-      fullUrl: fullUrl,
+    const response = await apiClient.get<LeadsResponse | any>('/leads', {
+      params: filters,
     });
-    
-    const response = await backendApiClient.get<any>('/leads', {
-      params: cleanFilters,
-    });
-    
-    console.log('📥 Leads API Response:', {
-      status: response.status,
-      hasData: !!response.data,
-      dataKeys: response.data ? Object.keys(response.data) : [],
-      dataLength: response.data?.data?.length || 0,
-      total: response.data?.total || 0,
-      page: response.data?.page || 0,
-      limit: response.data?.limit || 0,
-      totalPages: response.data?.totalPages || 0,
-      hasSuccess: 'success' in (response.data || {}),
-      requestUrl: response.config?.url,
-      requestParams: response.config?.params,
-      fullResponse: JSON.stringify(response.data, null, 2).substring(0, 1000), // Перші 1000 символів
-    });
-    
-    // Попередження, якщо повертається менше лідів, ніж очікувалось
-    if (cleanFilters.limit && response.data?.data?.length < cleanFilters.limit && response.data?.total > response.data?.data?.length) {
-      console.warn('⚠️ Повернуто менше лідів, ніж запитувалось:', {
-        requestedLimit: cleanFilters.limit,
-        received: response.data?.data?.length || 0,
-        total: response.data?.total || 0,
-        page: response.data?.page || 0,
-        totalPages: response.data?.totalPages || 0,
-      });
+
+    const result = response.data;
+
+    // Handing possible double wrapping { success, data: { data, total ... } }
+    if (result && result.success === true && result.data && result.data.data) {
+      return result.data;
     }
-    
-    // Детальне логування структури відповіді
-    if (response.data) {
-      console.log('📋 Response structure:', {
-        isArray: Array.isArray(response.data),
-        hasDataKey: 'data' in response.data,
-        hasTotalKey: 'total' in response.data,
-        dataType: typeof response.data,
-        dataIsArray: Array.isArray(response.data.data),
-        dataLength: response.data.data?.length || 0,
-        total: response.data.total,
-      });
-    }
-    
-    // Перевірка, чи відповідь має формат { success: false, ... }
-    if (response.data && typeof response.data === 'object' && 'success' in response.data) {
-      if (response.data.success === false) {
-        throw new Error(response.data.message || response.data.error || 'Failed to fetch leads');
-      }
-      // Якщо success: true, але дані в response.data.data
-      if (response.data.success === true && response.data.data) {
-        return response.data.data;
-      }
-    }
-    
-    // Звичайний формат { data: [...], total, ... }
-    return response.data;
+
+    return result;
   },
 
-  /**
-   * Отримати деталі lead
-   * Endpoint: GET /api/v1/leads/:id (на admin-panel-backend)
-   */
-  async getById(id: string): Promise<Lead> {
-    const response = await backendApiClient.get<Lead>(`/leads/${id}`);
-    return response.data;
+  async getById(id: string): Promise<LeadDetails> {
+    // Switch to the new live AmoCRM endpoint
+    const response = await apiClient.get<any>(`/amo-crm/leads/${id}`);
+
+    // The structure is { success: true, data: { lead, notes, events } }
+    return response.data?.data;
   },
 
-  /**
-   * Створити новий lead
-   * Endpoint: POST /api/v1/leads (на admin-panel-backend)
-   */
-  async create(data: {
-    guestName?: string;
-    guestPhone?: string;
-    guestEmail?: string;
-    price?: number;
-    pipelineId?: number;
-    stageId?: number;
-    comment?: string;
-  }): Promise<Lead> {
-    const response = await backendApiClient.post<Lead>('/leads', data);
-    return response.data;
+  async create(data: any): Promise<Lead> {
+    const response = await apiClient.post<any>('/leads', data);
+    return response.data?.data || response.data;
   },
 };
 

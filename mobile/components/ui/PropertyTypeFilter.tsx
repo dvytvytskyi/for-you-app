@@ -10,7 +10,7 @@ const propertyTypes = ['Apartment', 'Villa', 'Penthouse', 'Townhouse'];
 
 export default function PropertyTypeFilter({ selectedTypes, onTypesChange }: PropertyTypeFilterProps) {
   const { theme } = useTheme();
-  
+
   const handleTypePress = (type: string) => {
     if (selectedTypes.includes(type)) {
       // Remove type from selection
@@ -22,8 +22,8 @@ export default function PropertyTypeFilter({ selectedTypes, onTypesChange }: Pro
   };
 
   return (
-    <ScrollView 
-      horizontal 
+    <ScrollView
+      horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.container}
     >
@@ -43,7 +43,7 @@ export default function PropertyTypeFilter({ selectedTypes, onTypesChange }: Pro
             ]}
             onPress={() => handleTypePress(type)}
           >
-            <Text style={[styles.buttonText, { color: isSelected ? '#FFFFFF' : theme.text }]}>
+            <Text style={[styles.buttonText, { color: isSelected ? '#FFFFFF' : theme.textTertiary }]}>
               {type}
             </Text>
           </Pressable>
@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   buttonText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '500',
     // color applied dynamically
   },

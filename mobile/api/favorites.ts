@@ -44,11 +44,11 @@ export const favoritesApi = {
    */
   async getAll(): Promise<FavoritesListResponse> {
     const response = await backendApiClient.get<FavoritesListResponse>('/favorites');
-    
+
     if (!response.data.success) {
       throw new Error('Failed to fetch favorites');
     }
-    
+
     return response.data;
   },
 
@@ -57,11 +57,11 @@ export const favoritesApi = {
    */
   async getIds(): Promise<FavoriteIdsResponse> {
     const response = await backendApiClient.get<FavoriteIdsResponse>('/favorites/ids');
-    
+
     if (!response.data.success) {
       throw new Error('Failed to fetch favorite IDs');
     }
-    
+
     return response.data;
   },
 
@@ -72,11 +72,11 @@ export const favoritesApi = {
     const response = await backendApiClient.get<FavoriteStatusResponse>(
       `/favorites/${propertyId}/status`
     );
-    
+
     if (!response.data.success) {
       throw new Error('Failed to check favorite status');
     }
-    
+
     return response.data;
   },
 
@@ -88,11 +88,11 @@ export const favoritesApi = {
       `/favorites/${propertyId}`,
       {}
     );
-    
+
     if (!response.data.success) {
       throw new Error('Failed to add to favorites');
     }
-    
+
     return response.data;
   },
 
@@ -100,17 +100,23 @@ export const favoritesApi = {
    * Видалити property з улюблених
    */
   async remove(propertyId: string): Promise<RemoveFavoriteResponse> {
+    // Змінюємо на передачу propertyId в тілі запиту, як в колекціях
+    // (адже ми не знаємо ID самого об'єкту Favorites, тільки ID властивості)
     const response = await backendApiClient.delete<RemoveFavoriteResponse>(
-      `/favorites/${propertyId}`
+      `/favorites`,
+      { data: { propertyId } }
     );
-    
+
     if (!response.data.success) {
       throw new Error('Failed to remove from favorites');
     }
-    
+
     return response.data;
   },
 };
+
+
+
 
 
 

@@ -10,7 +10,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.foryou.realestate",
-      "associatedDomains": ["applinks:foryoure.com"]
+      "associatedDomains": [
+        "applinks:foryoure.com"
+      ]
     },
     "android": {
       "adaptiveIcon": {
@@ -30,7 +32,10 @@
               "pathPrefix": "/callback"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -50,12 +55,6 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow For You Real Estate to use your location to show properties on the map."
         }
-      ],
-      [
-        "react-native-maps",
-        {
-          "googleMapsApiKey": ""
-        }
       ]
     ],
     "splash": {
@@ -66,7 +65,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.foryou.realestate",
-      "associatedDomains": ["applinks:foryoure.com"]
+      "associatedDomains": [
+        "applinks:foryoure.com"
+      ]
     },
     "android": {
       "adaptiveIcon": {
@@ -86,7 +87,10 @@
               "pathPrefix": "/callback"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },

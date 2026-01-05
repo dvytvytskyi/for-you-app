@@ -7,7 +7,7 @@
     "villa": "Villa",
     "penthouse": "Penthouse",
     "townhouse": "Townhouse",
-    "studio": "Studio"
+    "duplex": "Duplex"
   },
   "bedrooms": "bedrooms",
   "bedroom": "bedroom",
@@ -31,6 +31,6 @@
   "applyFilters": "Apply filters",
   "loading": "Loading properties...",
   "loadingMore": "Loading more...",
+  "allLoaded": "All properties loaded",
   "errorLoading": "Error loading properties"
 }
-

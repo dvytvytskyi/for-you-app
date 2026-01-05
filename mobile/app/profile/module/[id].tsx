@@ -6,6 +6,7 @@ import { useTheme } from '@/utils/theme';
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { coursesApi, CourseContent, CourseLink } from '@/api/courses';
+import { BlurView } from 'expo-blur';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -14,7 +15,8 @@ export default function ModuleDetailScreen() {
   const { theme } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [status, setStatus] = useState<'not-started' | 'in-progress' | 'completed'>('not-started');
+  const [status, setStatus] = useState<'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED'>('NOT_STARTED');
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // Завантаження курсу з API
   const { data: courseResponse, isLoading, error } = useQuery({
@@ -31,6 +33,13 @@ export default function ModuleDetailScreen() {
     enabled: !!id && typeof id === 'string',
     retry: 1,
   });
+
+  // Синхронізація локального статусу з даними з API
+  useMemo(() => {
+    if (courseResponse?.data?.userProgress?.status) {
+      setStatus(courseResponse.data.userProgress.status);
+    }
+  }, [courseResponse?.data]);
 
   const course = courseResponse?.data;
 
@@ -53,32 +62,52 @@ export default function ModuleDetailScreen() {
   };
 
   const getProgressPercentage = () => {
+    if (course?.userProgress?.completionPercentage !== undefined && status === course?.userProgress?.status) {
+      return course.userProgress.completionPercentage;
+    }
     switch (status) {
-      case 'not-started':
+      case 'NOT_STARTED':
         return 0;
-      case 'in-progress':
-        return 76;
-      case 'completed':
+      case 'IN_PROGRESS':
+        return 50;
+      case 'COMPLETED':
         return 100;
     }
   };
 
   const getStatusText = () => {
     switch (status) {
-      case 'not-started':
+      case 'NOT_STARTED':
         return 'Not Started';
-      case 'in-progress':
+      case 'IN_PROGRESS':
         return 'In Progress';
-      case 'completed':
+      case 'COMPLETED':
         return 'Completed';
     }
   };
 
-  const handleStatusChange = () => {
-    if (status === 'not-started') {
-      setStatus('in-progress');
-    } else if (status === 'in-progress') {
-      setStatus('completed');
+  const handleStatusChange = async () => {
+    if (isUpdating) return;
+
+    let nextStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' = 'NOT_STARTED';
+    if (status === 'NOT_STARTED') {
+      nextStatus = 'IN_PROGRESS';
+    } else if (status === 'IN_PROGRESS') {
+      nextStatus = 'COMPLETED';
+    } else {
+      return; // Вже завершено
+    }
+
+    try {
+      setIsUpdating(true);
+      await coursesApi.updateProgress(id as string, nextStatus);
+      setStatus(nextStatus);
+      // Оновлюємо дані в кеші
+      courseResponse?.refetch && courseResponse.refetch();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -97,31 +126,33 @@ export default function ModuleDetailScreen() {
         >
           <Ionicons name="chevron-back" size={20} color={theme.text} />
         </Pressable>
-        
-        <Text style={[styles.headerTitle, { color: theme.text }]}>Course {id}</Text>
-        
+
+        <Text style={[styles.headerTitle, { color: theme.text }]} numberOfLines={1}>
+          Knowledge Base
+        </Text>
+
         <View style={styles.backButton} />
       </View>
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[styles.content, { paddingBottom: 100 }]}
+        contentContainerStyle={[styles.content, { paddingBottom: 140 }]}
       >
         {/* Progress Bar */}
         <View style={styles.progressSection}>
           <View style={styles.progressBarContainer}>
             <View style={[
               styles.progressBarFilled,
-              { 
+              {
                 width: `${progress}%`,
-                backgroundColor: theme.primary 
+                backgroundColor: theme.primary
               }
             ]} />
             <View style={[
               styles.progressBarEmpty,
-              { 
+              {
                 width: `${100 - progress}%`,
-                backgroundColor: theme.backgroundSecondary 
+                backgroundColor: theme.backgroundSecondary
               }
             ]} />
           </View>
@@ -262,24 +293,38 @@ export default function ModuleDetailScreen() {
         )}
       </ScrollView>
 
-      {/* Fixed Status Button */}
-      <View style={[styles.bottomButtonContainer, { borderTopColor: theme.border, backgroundColor: theme.background }]}>
-        <Pressable
-          style={[
-            styles.statusButton,
-            {
-              backgroundColor: theme.primary,
-              opacity: status === 'completed' ? 0.5 : 1
-            }
-          ]}
-          onPress={handleStatusChange}
-          disabled={status === 'completed'}
-        >
-          <Text style={styles.statusButtonText}>
-            {status === 'completed' ? 'Completed' : `Mark as ${status === 'not-started' ? 'In Progress' : 'Completed'}`}
+      {/* Floating Status Button */}
+      <Pressable
+        style={({ pressed }) => [
+          styles.statusButton,
+          {
+            position: 'absolute',
+            bottom: 24,
+            left: 40,
+            right: 40,
+            backgroundColor: status === 'COMPLETED' ? '#2ECC71' : (status === 'IN_PROGRESS' ? '#FFB300' : theme.primary),
+            height: 44,
+            borderRadius: 22,
+            opacity: (status === 'COMPLETED' || isUpdating) ? 1 : (pressed ? 0.8 : 1),
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.15,
+            shadowRadius: 6,
+            elevation: 5,
+            zIndex: 100,
+          }
+        ]}
+        onPress={handleStatusChange}
+        disabled={status === 'COMPLETED' || isUpdating}
+      >
+        {isUpdating ? (
+          <ActivityIndicator color="#FFFFFF" size="small" />
+        ) : (
+          <Text style={[styles.statusButtonText, { fontSize: 13, fontWeight: '600', color: '#FFFFFF' }]}>
+            {status === 'COMPLETED' ? 'Completed' : `Mark as ${status === 'NOT_STARTED' ? 'In Progress' : 'Completed'}`}
           </Text>
-        </Pressable>
-      </View>
+        )}
+      </Pressable>
     </SafeAreaView>
   );
 }

@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>Cannot GET /api/v1/properties/6f14741e-9e28-48db-8d60-e79a77a15583/presentation</pre>
+</body>
+</html>

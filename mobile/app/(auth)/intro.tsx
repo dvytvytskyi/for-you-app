@@ -14,60 +14,52 @@ export default function IntroScreen() {
         style={styles.backgroundImage}
         resizeMode="contain"
       />
-      
+
       {/* Content */}
       <View style={styles.contentWrapper}>
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.contentContainer}>
-              {/* Logo at top */}
-              <View style={styles.logoContainer}>
-                <Logo size="large" variant="white" />
-              </View>
+            {/* Logo at top */}
+            <View style={styles.logoContainer}>
+              <Logo size="large" variant="white" />
+            </View>
 
-              {/* Headline */}
-              <View style={styles.headlineContainer}>
-                <Text style={styles.headline}>
-                  Dozens of homes{'\n'}in one app
+            {/* Headline */}
+            <View style={styles.headlineContainer}>
+              <Text style={styles.headline}>
+                Dozens of homes{'\n'}in one app
+              </Text>
+            </View>
+
+            {/* Buttons at bottom */}
+            <View style={styles.buttonsContainer}>
+              <Button
+                title="Sign up"
+                variant="primary"
+                onPress={() => router.push('/(auth)/sign-up-general')}
+              />
+
+              <Button
+                title="I'm Investor"
+                variant="outline"
+                onPress={() => router.push('/(auth)/login')}
+              />
+
+              <Button
+                title="I'm Real Estate Agent"
+                variant="outline"
+                onPress={() => router.push('/(auth)/login')}
+              />
+
+              {/* Sign in text */}
+              <Pressable onPress={() => router.push('/(auth)/login')} style={styles.signInContainer}>
+                <Text style={styles.signInText}>
+                  Already have an account? <Text style={styles.signInLink}>Sign in</Text>
                 </Text>
-              </View>
+              </Pressable>
 
-              {/* Buttons at bottom */}
-              <View style={styles.buttonsContainer}>
-                <Button
-                  title="Sign up"
-                  variant="primary"
-                  onPress={() => router.push('/(auth)/sign-up-general')}
-                />
 
-                <Button
-                  title="I'm Investor"
-                  variant="outline"
-                  onPress={() => router.push('/(auth)/login')}
-                />
-
-                <Button
-                  title="I'm Real Estate Agent"
-                  variant="outline"
-                  onPress={() => router.push('/(auth)/login')}
-                />
-
-                {/* Sign in text */}
-                <Pressable onPress={() => router.push('/(auth)/login')} style={styles.signInContainer}>
-                  <Text style={styles.signInText}>
-                    Already have an account? <Text style={styles.signInLink}>Sign in</Text>
-                  </Text>
-                </Pressable>
-
-                {/* Social Login */}
-                <View style={styles.socialContainer}>
-                  <TouchableOpacity style={styles.socialButton}>
-                    <Ionicons name="logo-apple" size={24} color="#FFFFFF" />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.socialButton}>
-                    <Ionicons name="logo-google" size={24} color="#FFFFFF" />
-                  </TouchableOpacity>
-                </View>
-              </View>
+            </View>
           </View>
         </SafeAreaView>
       </View>
@@ -86,7 +78,7 @@ const styles = StyleSheet.create({
     left: '50%',
     height: '100%',
     width: '100%',
-    transform: [{ translateX: '-50%' }, { translateY: -180 }, { scale: 1.1}],
+    transform: [{ translateX: '-50%' }, { translateY: -180 }, { scale: 1.1 }],
     transformOrigin: 'top center',
   },
   contentWrapper: {
@@ -141,22 +133,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '600',
   },
-  socialContainer: {
-    flexDirection: 'row',
-    gap: 20,
-    marginTop: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  socialButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 0.5,
-    borderColor: '#616161',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
-  },
+
 });
 

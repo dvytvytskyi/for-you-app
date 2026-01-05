@@ -4,9 +4,8 @@ import * as SecureStore from 'expo-secure-store';
 // Локальний бекенд API URL (для leads та інших endpoints)
 // Для локальної розробки використовуємо локальний backend
 // Для iOS симулятора використовуємо localhost (симулятор має доступ до localhost комп'ютера)
-const BACKEND_API_URL = __DEV__ 
-  ? 'http://localhost:3000/api/v1'
-  : 'https://admin.foryou-realestate.com/api/v1';
+const BACKEND_API_URL = 'https://admin.foryou-realestate.com/api/v1';
+// const BACKEND_API_URL = 'http://localhost:3000/api/v1'; // Localhost for simulator
 
 export const backendApiClient = axios.create({
   baseURL: BACKEND_API_URL,
@@ -24,13 +23,13 @@ backendApiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
+
     // Логування для діагностики
     const fullUrl = `${config.baseURL}${config.url}`;
     console.log('🔗 Backend API Request:', fullUrl);
     console.log('📋 Method:', config.method?.toUpperCase());
     console.log('🔑 Token present:', !!token);
-    
+
     return config;
   },
   (error) => {
@@ -46,33 +45,38 @@ backendApiClient.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
-    
+
     // Безпечне логування помилок
     try {
       if (error.response) {
         const status = error.response.status;
         const url = error.config?.url || 'unknown';
-        const fullUrl = error.config?.baseURL 
-          ? `${error.config.baseURL}${url}` 
+        const fullUrl = error.config?.baseURL
+          ? `${error.config.baseURL}${url}`
           : url;
-        
-        console.error('❌ Backend API Error:', status);
-        console.error('📄 Request URL:', url);
-        console.error('🌐 Full URL:', fullUrl);
-        
-        // Безпечне логування response data
+
+        console.warn('❌ Backend API Error:', status);
+        console.warn('📄 Request URL:', url);
+        console.warn('🌐 Full URL:', fullUrl);
+
+        // Безпечне логування response data - use warn to avoid triggering UI toasts
         if (error.response.data) {
           try {
-            const responseData = typeof error.response.data === 'string'
-              ? error.response.data
-              : JSON.stringify(error.response.data, null, 2);
-            console.error('📋 Response data:', responseData);
+            const isHtml = typeof error.response.data === 'string' && error.response.data.includes('<html');
+            if (isHtml) {
+              console.warn('📋 Response data: [HTML/Error Page]');
+            } else {
+              const responseData = typeof error.response.data === 'string'
+                ? error.response.data
+                : JSON.stringify(error.response.data, null, 2);
+              console.warn('📋 Response data:', responseData);
+            }
           } catch (stringifyError) {
-            console.error('📋 Response data: [Unable to stringify]');
+            console.warn('📋 Response data: [Unable to stringify]');
           }
         }
       } else if (error.request) {
-        console.error('❌ No response received:', error.config?.url || 'unknown');
+        console.warn('⚠️ No response received:', error.config?.url || 'unknown');
       } else {
         console.error('❌ Error setting up request:', error.message || 'Unknown error');
       }
@@ -92,7 +96,7 @@ backendApiClient.interceptors.response.use(
       } catch (storeError) {
         console.error('❌ Error clearing tokens:', storeError);
       }
-      
+
       return Promise.reject(error);
     }
 

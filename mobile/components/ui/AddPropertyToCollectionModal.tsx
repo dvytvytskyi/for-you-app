@@ -19,6 +19,7 @@ import { useQuery } from '@tanstack/react-query';
 import { propertiesApi } from '@/api/properties';
 import { convertPropertyToCard, formatPrice } from '@/utils/property-utils';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useFavoritesStore } from '@/store/favoritesStore';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -115,7 +116,7 @@ export default function AddPropertyToCollectionModal({
     location: 'any',
   });
   const [showFilters, setShowFilters] = useState(false);
-  
+
   const debouncedSearch = useDebounce(searchQuery, 500);
 
   // Завантаження properties з API
@@ -142,6 +143,9 @@ export default function AddPropertyToCollectionModal({
     staleTime: 0,
   });
 
+  // Favorites
+  const { favoriteIds } = useFavoritesStore();
+
   // Конвертуємо properties для UI
   const properties = useMemo(() => {
     console.log('🔄 Processing properties response:', {
@@ -151,16 +155,17 @@ export default function AddPropertyToCollectionModal({
       propertiesCount: propertiesResponse?.data?.data?.length || 0,
       firstProperty: propertiesResponse?.data?.data?.[0] || null,
     });
-    
+
     if (!propertiesResponse?.data?.data) {
       console.warn('⚠️ No properties data in response');
       return [];
     }
-    
+
     const converted = propertiesResponse.data.data
       .map(prop => {
         try {
-          return convertPropertyToCard(prop);
+          // Pass favoriteIds for correct isFavorite status
+          return convertPropertyToCard(prop, favoriteIds);
         } catch (error: any) {
           console.error('❌ Error converting property to card:', error, prop);
           return null;
@@ -168,23 +173,23 @@ export default function AddPropertyToCollectionModal({
       })
       .filter((prop): prop is ReturnType<typeof convertPropertyToCard> => prop !== null)
       .filter(prop => !existingPropertyIds.includes(prop.id)); // Виключаємо вже додані
-    
+
     console.log('✅ Converted properties:', {
       total: converted.length,
       firstConverted: converted[0] || null,
     });
-    
+
     return converted;
-  }, [propertiesResponse, existingPropertyIds]);
+  }, [propertiesResponse, existingPropertyIds, favoriteIds]);
 
   // Фільтрація по location (якщо потрібно)
   const filteredProperties = useMemo(() => {
     if (filters.location === 'any') {
       return properties;
     }
-    
+
     // Простий фільтр по location (можна покращити)
-    return properties.filter(prop => 
+    return properties.filter(prop =>
       prop.location.toLowerCase().includes(filters.location.toLowerCase())
     );
   }, [properties, filters.location]);
@@ -209,7 +214,7 @@ export default function AddPropertyToCollectionModal({
         propertyIds: propertyIdsArray,
         count: propertyIdsArray.length,
       });
-      
+
       onAddProperties(propertyIdsArray);
       setSelectedPropertyIds(new Set());
       onClose();
@@ -252,7 +257,7 @@ export default function AddPropertyToCollectionModal({
 
   const renderPropertyItem = ({ item }: { item: ReturnType<typeof convertPropertyToCard> }) => {
     const isSelected = selectedPropertyIds.has(item.id);
-    
+
     return (
       <Pressable
         style={[
@@ -276,7 +281,7 @@ export default function AddPropertyToCollectionModal({
               {formatPrice(item.price, 'USD')}
             </Text>
           </View>
-          
+
           <View
             style={[
               styles.checkbox,
@@ -304,7 +309,7 @@ export default function AddPropertyToCollectionModal({
     >
       <View style={styles.modalOverlay}>
         <Pressable style={styles.backdrop} onPress={onClose} />
-        
+
         <Animated.View
           style={[
             styles.modalContent,
@@ -387,7 +392,7 @@ export default function AddPropertyToCollectionModal({
                       </Text>
                       <Ionicons name="chevron-down" size={16} color={theme.textSecondary} />
                     </Pressable>
-                    
+
                     <Pressable
                       style={[
                         styles.priceButton,

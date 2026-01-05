@@ -6,6 +6,7 @@ export { default as Logo } from './Logo';
 export { default as Header } from './Header';
 export { default as SearchBar } from './SearchBar';
 export { default as PropertyTypeFilter } from './PropertyTypeFilter';
+export { default as LocationFilter } from './LocationFilter';
 export { default as PropertyCard } from './PropertyCard';
 export { default as PaginationDots } from './PaginationDots';
 export { default as CollectionCard } from './CollectionCard';

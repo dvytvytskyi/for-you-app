@@ -2,25 +2,20 @@
   "dashboard": "Dashboard",
   "search": "Search",
   "searchPlaceholder": "Search properties...",
-  
-  "newLeads": "New Leads",
+  "newLeads": "Total Leads",
   "explore": "Explore",
   "activeDeals": "Active deals",
   "totalAmount": "Total amount",
-  
   "yourLikedProjects": "Your liked projects",
   "collectionDescription": "This is a collection of your likes",
-  
   "myLeads": "My Leads",
   "properties": "Properties",
   "collections": "Collections",
   "offers": "Offers",
-  
   "recentMarketNews": "Recent market news",
   "knowledgeBase": "Knowledge base",
   "viewAll": "View all",
   "noProperties": "No properties found",
-  
   "propertyTypes": {
     "apartment": "Apartment",
     "villa": "Villa",
@@ -28,7 +23,5 @@
     "penthouse": "Penthouse",
     "office": "Office"
   },
-  
   "handoverDate": "Handover: {{date}}"
 }
-

@@ -51,7 +51,7 @@ export interface PropertyUnit {
   id: string;
   propertyId: string;
   unitId: string;
-  type: 'apartment' | 'villa' | 'penthouse' | 'townhouse' | 'office';
+  type: 'apartment' | 'villa' | 'penthouse' | 'townhouse' | 'duplex' | 'office';
   planImage: string | null;
   totalSize: string; // Decimal як string
   balconySize: string | null; // Decimal як string
@@ -89,6 +89,7 @@ export interface OffPlanProperty {
   paymentPlan: string | null;
   units?: PropertyUnit[];
   facilities: Facility[];
+  plannedCompletionAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -125,20 +126,28 @@ export interface SecondaryProperty {
 export type Property = OffPlanProperty | SecondaryProperty;
 
 export interface PropertyFilters {
-  propertyType?: 'off-plan' | 'secondary';
-  developerId?: string;
-  cityId?: string;
-  areaId?: string;
-  bedrooms?: string; // "1,2,3"
-  sizeFrom?: number;
-  sizeTo?: number;
-  priceFrom?: number;
-  priceTo?: number;
-  search?: string;
-  sortBy?: 'createdAt' | 'name' | 'price' | 'priceFrom' | 'size' | 'sizeFrom';
-  sortOrder?: 'ASC' | 'DESC';
   page?: number;
   limit?: number;
+  sortBy?: 'createdAt' | 'price' | 'name' | 'bedrooms';
+  sortOrder?: 'ASC' | 'DESC';
+
+  // Specific filters matching backend requirements (GET /api/v1/properties)
+  propertyType?: 'off-plan' | 'secondary' | 'all';
+  location?: string | string[]; // Dubai Marina, Business Bay
+  town?: string | string[]; // Alias for location
+  bedrooms?: string; // 0, 1, 2, 3, 4, 5+
+  minPrice?: number;
+  maxPrice?: number;
+  priceFrom?: number; // Alias for minPrice
+  priceTo?: number; // Alias for maxPrice
+  minSize?: number;
+  maxSize?: number;
+  sizeFrom?: number; // Alias for minSize
+  sizeTo?: number; // Alias for maxSize
+  search?: string;
+  developerId?: string | number;
+  cityId?: string | number;
+  areaId?: string | number;
 }
 
 export interface PropertiesPagination {
@@ -175,94 +184,143 @@ export interface PropertiesStats {
   };
 }
 
+export interface Location {
+  id: string;
+  name: string;
+  city: string;
+  cityId: string;
+  label: string;
+}
+
 export const propertiesApi = {
+  /**
+   * Get list of available locations (districts/areas)
+   */
+  async getLocations(search?: string): Promise<Location[]> {
+    try {
+      const response = await publicApiClient.get<{ success: boolean; data: Location[] }>('/locations', {
+        params: { search, limit: 100 }
+      });
+      if (response.data.success) {
+        return response.data.data;
+      }
+      return [];
+    } catch (error) {
+      console.warn('Failed to fetch locations:', error);
+      return [];
+    }
+  },
+
   /**
    * Отримати список properties з фільтрами та пагінацією
    */
   async getAll(filters?: PropertyFilters): Promise<PropertiesResponse> {
-    // Використовуємо publicApiClient для публічних properties (з API ключами)
     const params: Record<string, any> = {
       page: filters?.page || 1,
       limit: filters?.limit || 20,
     };
 
-    if (filters?.propertyType) params.propertyType = filters.propertyType;
+    // 1. Listings Status (off-plan / secondary)
+    if (filters?.propertyType && filters.propertyType !== 'all') {
+      params.propertyType = filters.propertyType.toLowerCase();
+    }
+
+    // 3. Bedrooms (0, 1, 2, 3, 4, 5+) - Send as array
+    if (filters?.bedrooms) {
+      params.bedrooms = filters.bedrooms.split(',').map(b => b.trim().toLowerCase());
+    }
+
+    // 4. Location / Town (Dubai Marina, Business Bay) - Send as array
+    if (filters?.location || filters?.town) {
+      const loc = filters.location || filters.town;
+      const locationsList = Array.isArray(loc) ? loc : (typeof loc === 'string' ? loc.split(',').filter(Boolean) : []);
+      const normalizedLoc = locationsList.map(l => l.trim());
+      params.location = normalizedLoc;
+      params.town = normalizedLoc;
+    }
+
+    // 5. Price & Size (Aliasing for safety)
+    const minP = filters?.minPrice ?? filters?.priceFrom;
+    const maxP = filters?.maxPrice ?? filters?.priceTo;
+    if (minP !== undefined && minP !== null) {
+      params.minPrice = minP;
+      params.priceFrom = minP;
+    }
+    if (maxP !== undefined && maxP !== null) {
+      params.maxPrice = maxP;
+      params.priceTo = maxP;
+      params.price = maxP; // extra alias
+    }
+
+    const minS = filters?.minSize ?? filters?.sizeFrom;
+    const maxS = filters?.maxSize ?? filters?.sizeTo;
+    if (minS !== undefined && minS !== null) {
+      params.minSize = minS;
+      params.sizeFrom = minS;
+    }
+    if (maxS !== undefined && maxS !== null) {
+      params.maxSize = maxS;
+      params.sizeTo = maxS;
+    }
+
+    // 6. Sorting
+    params.sortBy = filters?.sortBy || 'createdAt';
+    params.sortOrder = filters?.sortOrder || 'DESC';
+
+    // 7. Search
+    if (filters?.search) {
+      params.search = filters.search.toLowerCase();
+    }
+
     if (filters?.developerId) params.developerId = filters.developerId;
     if (filters?.cityId) params.cityId = filters.cityId;
     if (filters?.areaId) params.areaId = filters.areaId;
-    if (filters?.bedrooms) params.bedrooms = filters.bedrooms;
-    if (filters?.sizeFrom) params.sizeFrom = filters.sizeFrom;
-    if (filters?.sizeTo) params.sizeTo = filters.sizeTo;
-    if (filters?.priceFrom) params.priceFrom = filters.priceFrom;
-    if (filters?.priceTo) params.priceTo = filters.priceTo;
-    if (filters?.search) params.search = filters.search;
-    if (filters?.sortBy) params.sortBy = filters.sortBy;
-    if (filters?.sortOrder) params.sortOrder = filters.sortOrder;
 
-    console.log('🌐 Admin Panel API Request to /properties with params:', params);
-    
+    console.log('🌐 API Request /properties with params:', JSON.stringify(params, null, 2));
+
     try {
-      const response = await publicApiClient.get<PropertiesResponse>('/properties', { params });
-      
-      console.log('📥 Admin Panel API Response:', {
-        status: response.status,
-        success: response.data?.success,
-        hasData: !!response.data?.data,
-        hasProperties: !!response.data?.data?.data,
-        propertiesCount: response.data?.data?.data?.length || 0,
-        fullResponse: response.data ? JSON.stringify(response.data, null, 2).substring(0, 500) : 'null', // Перші 500 символів для діагностики
-      });
-      
-      // Адмін-панель повертає: { success: true, data: { data: [...], pagination: {...} } }
-      if (response.data && response.data.success && response.data.data) {
-        const propertiesCount = response.data.data.data?.length || 0;
-        console.log('✅ Returning properties data from admin panel:', propertiesCount);
-        
-        // Якщо properties є, повертаємо їх
-        if (propertiesCount > 0) {
-          return response.data;
-        } else {
-          console.warn('⚠️ API returned success but no properties in response');
-          // Повертаємо порожню відповідь з правильним форматом
-          return {
-            success: true,
-            data: {
-              data: [],
-              pagination: {
-                total: 0,
-                page: params.page || 1,
-                limit: params.limit || 20,
-                totalPages: 0,
-              },
-            },
-          };
+      const response = await publicApiClient.get<any>('/properties', { params });
+
+      console.log('✅ API Success! URL:', response.config.url);
+
+      const rawData = response.data?.data;
+      let properties: Property[] = [];
+      let pagination: PropertiesPagination = {
+        total: 0,
+        page: params.page || 1,
+        limit: params.limit || 20,
+        totalPages: 1,
+      };
+
+      // Handle different response formats
+      if (rawData) {
+        if (Array.isArray(rawData)) {
+          properties = rawData;
+          pagination.total = properties.length;
+        } else if (rawData.data && Array.isArray(rawData.data)) {
+          properties = rawData.data;
+          if (rawData.pagination) {
+            pagination = rawData.pagination;
+          } else {
+            pagination.total = properties.length;
+          }
         }
       }
-      
-      const unexpectedResponseStr = response.data 
-        ? JSON.stringify(response.data, null, 2).substring(0, 500)
-        : 'null';
-      console.warn('⚠️ Response format unexpected:', unexpectedResponseStr);
-      
-      // Повертаємо порожню відповідь з правильним форматом
+
+      // Log first property for debugging missing fields
+      if (properties.length > 0) {
+        console.log('🔍 PROBE: Raw first property from backend:', JSON.stringify(rawData?.data?.[0] || rawData?.[0], null, 2));
+      }
+
       return {
-        success: false,
+        success: true,
         data: {
-          data: [],
-          pagination: {
-            total: 0,
-            page: params.page || 1,
-            limit: params.limit || 20,
-            totalPages: 0,
-          },
-        },
+          data: properties,
+          pagination: pagination
+        }
       };
-    } catch (error: any) {
-      console.error('❌ Error fetching properties from admin panel:', error);
-      console.error('Error status:', error.response?.status);
-      console.error('Error data:', error.response?.data);
-      
-      // Повертаємо порожню відповідь з правильним форматом
+    } catch (error) {
+      console.error('❌ Properties API Error:', error);
       throw error;
     }
   },
@@ -272,11 +330,6 @@ export const propertiesApi = {
    */
   async getById(id: string): Promise<PropertyResponse> {
     const response = await publicApiClient.get<PropertyResponse>(`/properties/${id}`);
-    
-    if (response.data.success && response.data.data) {
-      return response.data;
-    }
-    
     return response.data;
   },
 
@@ -285,11 +338,6 @@ export const propertiesApi = {
    */
   async getStats(): Promise<PropertiesStats> {
     const response = await publicApiClient.get<PropertiesStats>('/properties/stats');
-    
-    if (response.data.success && response.data.data) {
-      return response.data;
-    }
-    
     return response.data;
   },
 };
@@ -297,14 +345,12 @@ export const propertiesApi = {
 /**
  * Конвертує формат property з локального бекенду в формат адмін-панелі
  */
-function convertBackendPropertyToAdminFormat(backendProp: any): Property {
-  // Локальний бекенд використовує enum типи: residential_complex, villa, apartment, townhouse, penthouse, land
-  // Вважаємо всі properties як off-plan (новобудови), оскільки локальний бекенд не розрізняє off-plan/secondary
-  // Або можна використовувати plannedCompletionAt для визначення
+export function convertBackendPropertyToAdminFormat(backendProp: any): Property {
   const hasCompletionDate = backendProp.plannedCompletionAt && new Date(backendProp.plannedCompletionAt) > new Date();
-  const isOffPlan = hasCompletionDate || true; // Поки що вважаємо всі як off-plan
-  
-  // Обробка images - може бути масив об'єктів або масив рядків
+  const hasPaymentPlans = backendProp.paymentPlans && Array.isArray(backendProp.paymentPlans) && backendProp.paymentPlans.length > 0;
+  const isSoldOut = backendProp.isSoldOut === true;
+  const isOffPlan = (hasCompletionDate || hasPaymentPlans) && !isSoldOut;
+
   let photos: string[] = [];
   if (backendProp.images && Array.isArray(backendProp.images)) {
     photos = backendProp.images.map((img: any) => {
@@ -312,49 +358,29 @@ function convertBackendPropertyToAdminFormat(backendProp: any): Property {
       return img.url || img.fileUrl || img.s3Key || '';
     }).filter((url: string) => url && url.length > 0);
   }
-  if (photos.length === 0 && backendProp.mainPhotoUrl) {
-    photos = [backendProp.mainPhotoUrl];
-  }
-  if (photos.length === 0 && backendProp.logoUrl) {
-    photos = [backendProp.logoUrl];
-  }
-  
-  // Обробка amenities
+  if (photos.length === 0 && backendProp.mainPhotoUrl) photos = [backendProp.mainPhotoUrl];
+
   const facilities = (backendProp.amenities || []).map((amenity: any) => ({
-    id: amenity.id || amenity.amenityId || '',
-    nameEn: amenity.name || amenity.nameEn || amenity.amenityType || '',
+    id: amenity.id || '',
+    nameEn: amenity.name || amenity.nameEn || '',
     nameRu: amenity.nameRu || '',
     nameAr: amenity.nameAr || '',
-    iconName: amenity.icon || amenity.iconName || 'home',
+    iconName: amenity.icon || 'home',
   }));
-  
-  // Обробка address/districts для location
+
   const addressParts = backendProp.address ? backendProp.address.split(',') : [];
   const cityName = addressParts.length > 1 ? addressParts[addressParts.length - 1].trim() : 'Dubai';
-  const areaName = backendProp.districts && Array.isArray(backendProp.districts) && backendProp.districts.length > 0
-    ? backendProp.districts[0]
-    : (addressParts.length > 0 ? addressParts[0].trim() : 'Unknown');
-  
+  const areaName = backendProp.districts?.[0] || addressParts[0]?.trim() || 'Unknown';
+
   if (isOffPlan) {
     return {
       id: backendProp.id,
       propertyType: 'off-plan',
-      name: backendProp.titleEn || backendProp.titleRu || backendProp.titleAr || 'Untitled',
-      description: backendProp.descriptionEn || backendProp.descriptionRu || backendProp.descriptionAr || '',
+      name: backendProp.titleEn || 'Untitled',
+      description: backendProp.descriptionEn || '',
       photos: photos,
-      country: {
-        id: '',
-        nameEn: 'UAE',
-        nameRu: 'ОАЭ',
-        nameAr: 'الإمارات',
-        code: 'AE',
-      },
-      city: {
-        id: '',
-        nameEn: cityName,
-        nameRu: 'Дубай',
-        nameAr: 'دبي',
-      },
+      country: { id: '', nameEn: 'UAE', nameRu: 'ОАЭ', nameAr: '', code: 'AE' },
+      city: { id: '', nameEn: cityName, nameRu: 'Дубай', nameAr: '' },
       area: areaName,
       developer: backendProp.developer ? {
         id: backendProp.developer.id || '',
@@ -364,19 +390,18 @@ function convertBackendPropertyToAdminFormat(backendProp: any): Property {
       } : null,
       latitude: backendProp.latitude || 0,
       longitude: backendProp.longitude || 0,
-      priceFrom: backendProp.minPrice ? parseFloat(String(backendProp.minPrice)) : 0,
-      priceFromAED: backendProp.minPrice ? (parseFloat(String(backendProp.minPrice)) * 3.673) : undefined,
+      priceFrom: backendProp.minPrice || 0,
+      priceFromAED: (backendProp.minPrice || 0) * 3.673,
       bedroomsFrom: 1,
       bedroomsTo: 5,
       bathroomsFrom: 1,
       bathroomsTo: 4,
       sizeFrom: 0,
       sizeTo: 0,
-      paymentPlan: backendProp.paymentPlans && Array.isArray(backendProp.paymentPlans) && backendProp.paymentPlans.length > 0
-        ? (backendProp.paymentPlans[0].name || backendProp.paymentPlans[0].title || null)
-        : null,
-      units: [],
+      paymentPlan: backendProp.paymentPlans?.[0]?.name || null,
+      units: backendProp.units || [],
       facilities: facilities,
+      plannedCompletionAt: backendProp.plannedCompletionAt || null,
       createdAt: backendProp.createdAt || new Date().toISOString(),
       updatedAt: backendProp.updatedAt || new Date().toISOString(),
     };
@@ -384,37 +409,21 @@ function convertBackendPropertyToAdminFormat(backendProp: any): Property {
     return {
       id: backendProp.id,
       propertyType: 'secondary',
-      name: backendProp.titleEn || backendProp.titleRu || backendProp.titleAr || 'Untitled',
-      description: backendProp.descriptionEn || backendProp.descriptionRu || backendProp.descriptionAr || '',
+      name: backendProp.titleEn || 'Untitled',
+      description: backendProp.descriptionEn || '',
       photos: photos,
-      country: {
-        id: '',
-        nameEn: 'UAE',
-        nameRu: 'ОАЭ',
-        nameAr: 'الإمارات',
-        code: 'AE',
-      },
-      city: {
-        id: '',
-        nameEn: cityName,
-        nameRu: 'Дубай',
-        nameAr: 'دبي',
-      },
-      area: {
-        id: '',
-        nameEn: areaName,
-        nameRu: '',
-        nameAr: '',
-      },
+      country: { id: '', nameEn: 'UAE', nameRu: 'ОАЭ', nameAr: '', code: 'AE' },
+      city: { id: '', nameEn: cityName, nameRu: 'Дубай', nameAr: '' },
+      area: { id: '', nameEn: areaName, nameRu: '', nameAr: '' },
       developer: null,
-      latitude: backendProp.latitude ? parseFloat(String(backendProp.latitude)) : 0,
-      longitude: backendProp.longitude ? parseFloat(String(backendProp.longitude)) : 0,
-      price: backendProp.minPrice ? parseFloat(String(backendProp.minPrice)) : (backendProp.maxPrice ? parseFloat(String(backendProp.maxPrice)) : 0),
-      priceAED: backendProp.minPrice ? (parseFloat(String(backendProp.minPrice)) * 3.673) : undefined,
-      bedrooms: 2,
-      bathrooms: 2,
-      size: 0,
-      sizeSqft: 0,
+      latitude: backendProp.latitude || 0,
+      longitude: backendProp.longitude || 0,
+      price: backendProp.minPrice || backendProp.maxPrice || 0,
+      priceAED: (backendProp.minPrice || 0) * 3.673,
+      bedrooms: backendProp.bedrooms || 2,
+      bathrooms: backendProp.bathrooms || 2,
+      size: backendProp.size || 0,
+      sizeSqft: (backendProp.size || 0) * 10.764,
       facilities: facilities,
       createdAt: backendProp.createdAt || new Date().toISOString(),
       updatedAt: backendProp.updatedAt || new Date().toISOString(),

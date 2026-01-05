@@ -30,7 +30,31 @@ export default function DevelopersScreen() {
     retry: 1,
   });
 
-  const developers = developersResponse?.data || [];
+  // ID тестових девелоперів, які мають бути першими
+  const priorityDeveloperIds = [
+    '155eaa8e-3708-449a-8348-16d25d0cf318', // Emaar Properties
+    '15c2c5bc-f653-4991-9220-aa2699b2b8e7', // DAMAC Properties
+  ];
+
+  // Фільтруємо: тільки ті, що мають лого
+  const filteredDevelopers = developersResponse?.data?.filter(d => !!d.logo) || [];
+
+  // Сортуємо: спочатку пріоритетні, потім решта
+  const developers = [...filteredDevelopers].sort((a, b) => {
+    const aIndex = priorityDeveloperIds.indexOf(a.id);
+    const bIndex = priorityDeveloperIds.indexOf(b.id);
+
+    // Якщо обидва в пріоритетних - зберігаємо порядок
+    if (aIndex !== -1 && bIndex !== -1) {
+      return aIndex - bIndex;
+    }
+    // Якщо тільки a в пріоритетних - він перший
+    if (aIndex !== -1) return -1;
+    // Якщо тільки b в пріоритетних - він перший
+    if (bIndex !== -1) return 1;
+    // Інакше зберігаємо оригінальний порядок
+    return 0;
+  });
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
@@ -43,7 +67,7 @@ export default function DevelopersScreen() {
           ]}
           onPress={() => router.back()}
         >
-          <Ionicons name="chevron-back" size={24} color={theme.text} />
+          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
         </Pressable>
         <Text style={[styles.headerTitle, { color: theme.text }]}>Developers</Text>
         <View style={styles.backButton} />
@@ -134,6 +158,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 24,
+    gap: 6,
   },
   loadingContainer: {
     flex: 1,

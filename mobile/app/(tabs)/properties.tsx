@@ -1,19 +1,20 @@
-import { View, Text, StyleSheet, FlatList, ScrollView, Pressable, Image, ActivityIndicator, Dimensions, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ScrollView, Pressable, Image, ActivityIndicator, Dimensions, RefreshControl, Platform, LayoutAnimation, UIManager, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, memo, useRef, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useTheme } from '@/utils/theme';
 import { useTranslation } from '@/utils/i18n';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import { SearchBar } from '@/components/ui';
 import PropertyFiltersModal, { PropertyFilters } from '@/components/ui/PropertyFilters';
-import { propertiesApi, Property } from '@/api/properties';
+import { propertiesApi } from '@/api/properties';
 import { convertPropertyToCard, convertFiltersToAPI, formatPrice, PropertyCardData } from '@/utils/property-utils';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useFavoritesStore } from '@/store/favoritesStore';
+import { TextInput } from 'react-native';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_WIDTH = SCREEN_WIDTH - 32; // padding left + right
@@ -22,173 +23,214 @@ export default function PropertiesScreen() {
   const { theme } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
-  
+  const navigation = useNavigation();
+  const searchInputRef = useRef<TextInput>(null);
+
+  // Reset search on tab change
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('blur', () => {
+      setIsSearchFocused(false);
+      setSearchQuery('');
+    });
+    return unsubscribe;
+  }, [navigation]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 500);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [scrollEnabled, setScrollEnabled] = useState(true);
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [filters, setFilters] = useState<PropertyFilters>({
-    listingType: 'offplan',
+    listingType: 'all', // Default set to 'all' to ensure everything is visible
     minPrice: null,
     maxPrice: null,
     propertyType: 'all',
     bedrooms: 'any',
     location: 'any',
   });
-  const [page, setPage] = useState(1);
-  const [allProperties, setAllProperties] = useState<Property[]>([]);
 
-  // Конвертуємо UI фільтри в API фільтри
-  const apiFilters = useMemo(() => {
+  // Enable LayoutAnimation for Android
+  if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+  }
+
+  // Конвертуємо UI фільтри в API фільтри (стабільні параметри)
+  const baseApiFilters = useMemo(() => {
     const baseFilters = convertFiltersToAPI(filters);
     return {
       ...baseFilters,
       search: debouncedSearch || undefined,
-      page,
       limit: 20,
       sortBy: 'createdAt' as const,
       sortOrder: 'DESC' as const,
     };
-  }, [filters, debouncedSearch, page]);
+  }, [filters, debouncedSearch]);
 
-  // Завантаження properties з API
-  const { data: propertiesResponse, isLoading, error, refetch, isRefetching } = useQuery({
-    queryKey: ['properties', apiFilters],
-    queryFn: async () => {
-      console.log('🔄 Завантаження properties з API...', apiFilters);
+  // Завантаження properties з API через Infinite Query
+  const {
+    data: propertiesInfiniteData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    error,
+    refetch,
+    isRefetching
+  } = useInfiniteQuery({
+    queryKey: ['properties', baseApiFilters],
+    queryFn: async ({ pageParam = 1 }) => {
       try {
-        const response = await propertiesApi.getAll(apiFilters);
-        console.log('✅ API Response received:', {
-          success: response?.success,
-          hasData: !!response?.data,
-          hasProperties: !!response?.data?.data,
-          propertiesCount: response?.data?.data?.length || 0,
-          firstProperty: response?.data?.data?.[0]?.name || 'none',
-        });
+        const response = await propertiesApi.getAll({ ...baseApiFilters, page: pageParam });
         return response;
       } catch (error: any) {
         console.error('❌ Помилка завантаження properties:', error);
-        console.error('Error response:', error?.response?.data);
-        console.error('Error status:', error?.response?.status);
         throw error;
       }
     },
-    staleTime: 0, // Дані вважаються застарілими одразу
-    cacheTime: 0, // Не кешуємо дані
-    refetchOnMount: true, // Завжди завантажуємо при монтуванні
-    refetchOnWindowFocus: false,
+    getNextPageParam: (lastPage) => {
+      const pagination = lastPage.data.pagination;
+      if (!pagination) return undefined;
+      return pagination.page < pagination.totalPages ? pagination.page + 1 : undefined;
+    },
+    initialPageParam: 1,
+    staleTime: 5 * 60 * 1000, // 5 хвилин
   });
 
-  // Обробка даних
+  // Отримуємо плоский список всіх properties з усіх сторінок
   const properties = useMemo(() => {
-    console.log('📦 Обробка properties:', {
-      hasResponse: !!propertiesResponse,
-      hasData: !!propertiesResponse?.data,
-      hasProperties: !!propertiesResponse?.data?.data,
-      propertiesCount: propertiesResponse?.data?.data?.length || 0,
-      page,
-      allPropertiesCount: allProperties.length,
-    });
-
-    if (!propertiesResponse?.data?.data) {
-      console.warn('⚠️ Немає даних для properties');
-      return [];
-    }
-    
-    const newPropertiesList = propertiesResponse.data.data;
-    console.log('📋 Новий список properties:', newPropertiesList.length);
-    console.log('📋 Перший property:', newPropertiesList[0]?.name || 'none');
-    
-    // Якщо перша сторінка - замінюємо весь список
-    if (page === 1) {
-      setAllProperties(newPropertiesList);
-      return newPropertiesList;
-    }
-    
-    // Якщо наступна сторінка - додаємо до існуючих
-    const combinedProperties = [...allProperties, ...newPropertiesList];
-    setAllProperties(combinedProperties);
-    return combinedProperties;
-  }, [propertiesResponse, page]);
+    if (!propertiesInfiniteData?.pages) return [];
+    return propertiesInfiniteData.pages.flatMap(page => page.data?.data || []);
+  }, [propertiesInfiniteData]);
 
   // Favorites store
-  const { isFavorite: isFavoriteInStore, favoriteIds } = useFavoritesStore();
-  
+  const { isFavorite: isFavoriteInStore, favoriteIds, toggleFavorite: toggleFavoriteInStore } = useFavoritesStore();
+
   // Конвертуємо properties для UI
   const cardProperties = useMemo(() => {
-    console.log('🎨 Конвертація properties для UI:', properties.length);
-    const converted = properties.map(prop => {
-      const card = convertPropertyToCard(prop);
-      return {
-        ...card,
-        isFavorite: isFavoriteInStore(card.id),
-      };
+    return properties.map(prop => {
+      // Pass favoriteIds to utility to handle isFavorite check
+      return convertPropertyToCard(prop, favoriteIds);
     });
-    console.log('✅ Конвертовано:', converted.length, 'properties');
-    console.log('📝 Перший конвертований:', converted[0]?.title || 'none');
-    return converted;
-  }, [properties, favoriteIds, isFavoriteInStore]);
-
-  const pagination = propertiesResponse?.data?.pagination;
-  const hasMore = pagination ? page < pagination.totalPages : false;
+  }, [properties, favoriteIds]);
 
   // Завантаження наступної сторінки
   const loadMore = useCallback(() => {
-    if (!isLoading && hasMore) {
-      setPage(prev => prev + 1);
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
     }
-  }, [isLoading, hasMore]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Оновлення фільтрів
   const handleApplyFilters = (newFilters: PropertyFilters) => {
     setFilters(newFilters);
-    setPage(1); // Скидаємо на першу сторінку
-    setAllProperties([]); // Очищаємо список
   };
 
   // Оновлення пошуку
   const handleSearchChange = (text: string) => {
     setSearchQuery(text);
-    setPage(1); // Скидаємо на першу сторінку
-    setAllProperties([]); // Очищаємо список
   };
 
-  // Favorites store
-  const { toggleFavorite: toggleFavoriteInStore } = useFavoritesStore();
-  
-  // Перемикання улюбленого
-  const toggleFavorite = (id: string) => {
-    toggleFavoriteInStore(id);
+  const handleSearchFocus = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setIsSearchFocused(true);
+
+    // Robustly ensure keyboard opens
+    const attemptFocus = (delay: number) => {
+      setTimeout(() => {
+        if (searchInputRef.current && !searchInputRef.current.isFocused()) {
+          searchInputRef.current.focus();
+        }
+      }, delay);
+    };
+
+    attemptFocus(50);
+    attemptFocus(300);
   };
+
+  const handleCancelSearch = () => {
+    Keyboard.dismiss();
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setIsSearchFocused(false);
+    setSearchQuery('');
+  };
+
+  // Перемикання улюбленого
+  const handleToggleFavorite = useCallback((id: string) => {
+    toggleFavoriteInStore(id);
+  }, [toggleFavoriteInStore]);
+
+  const handleScrollStart = useCallback(() => setScrollEnabled(false), []);
+  const handleScrollEnd = useCallback(() => setScrollEnabled(true), []);
 
   // Pull to refresh
   const handleRefresh = useCallback(() => {
-    setPage(1);
-    setAllProperties([]);
     refetch();
   }, [refetch]);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
+    <SafeAreaView style={[{ flex: 1 }, { backgroundColor: theme.background }]} edges={['top']}>
       {/* Search Bar */}
       <View style={styles.searchSection} onStartShouldSetResponder={() => false}>
-        <View style={styles.searchBarWrapper}>
-        <SearchBar 
-          value={searchQuery}
-            onChangeText={handleSearchChange}
-          placeholder={t('properties.searchPlaceholder')}
-        />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+          <View style={styles.searchBarWrapper}>
+            <SearchBar
+              inputRef={searchInputRef as any}
+              value={searchQuery}
+              onChangeText={handleSearchChange}
+              placeholder={t('properties.searchPlaceholder')}
+              onFocus={handleSearchFocus}
+            />
+          </View>
+
+          {isSearchFocused ? (
+            <Pressable onPress={handleCancelSearch} style={{ paddingHorizontal: 4, justifyContent: 'center' }}>
+              <Text style={{ color: theme.primary, fontSize: 14 }}>{t('common.cancel') || 'Cancel'}</Text>
+            </Pressable>
+          ) : (
+            <>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.filterButton,
+                  { backgroundColor: theme.primaryLight, borderColor: theme.primary },
+                  { opacity: pressed ? 0.7 : 1 }
+                ]}
+                onPress={() => router.push('/liked')}
+              >
+                <Ionicons name="heart-outline" size={20} color={theme.primary} />
+                {favoriteIds.length > 0 && (
+                  <View style={{
+                    position: 'absolute',
+                    top: -4,
+                    right: -4,
+                    backgroundColor: '#FF3B30',
+                    borderRadius: 8,
+                    minWidth: 16,
+                    height: 16,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    paddingHorizontal: 4,
+                    zIndex: 10,
+                  }}>
+                    <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>
+                      {favoriteIds.length}
+                    </Text>
+                  </View>
+                )}
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.filterButton,
+                  { backgroundColor: theme.primaryLight, borderColor: theme.primary },
+                  { opacity: pressed ? 0.7 : 1 }
+                ]}
+                onPress={() => setFiltersVisible(true)}
+              >
+                <Ionicons name="options-outline" size={20} color={theme.primary} />
+              </Pressable>
+            </>
+          )}
         </View>
-        <Pressable 
-          style={({ pressed }) => [
-            styles.filterButton,
-            { backgroundColor: theme.primaryLight, borderColor: theme.primary },
-            { opacity: pressed ? 0.7 : 1 }
-          ]}
-          onPress={() => setFiltersVisible(true)}
-        >
-          <Ionicons name="options-outline" size={20} color={theme.primary} />
-        </Pressable>
       </View>
 
       {/* Filters Modal */}
@@ -200,7 +242,7 @@ export default function PropertiesScreen() {
       />
 
       {/* Properties List */}
-      {isLoading && page === 1 ? (
+      {isLoading && !isRefetching ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.primary} />
           <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
@@ -216,23 +258,27 @@ export default function PropertiesScreen() {
           <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
             {(error as any)?.message || 'Unknown error'}
           </Text>
-            <Pressable
-              style={({ pressed }) => [
+          <Pressable
+            style={({ pressed }) => [
               styles.retryButton,
               { backgroundColor: theme.primary, opacity: pressed ? 0.8 : 1 }
             ]}
             onPress={() => refetch()}
           >
             <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
-            </Pressable>
-      </View>
+          </Pressable>
+        </View>
       ) : (
-      <FlatList
+        <FlatList
           data={cardProperties}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        scrollEnabled={scrollEnabled}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={scrollEnabled}
+          initialNumToRender={5}
+          maxToRenderPerBatch={10}
+          windowSize={10}
+          removeClippedSubviews={Platform.OS === 'android'}
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}
@@ -240,41 +286,47 @@ export default function PropertiesScreen() {
               tintColor={theme.primary}
             />
           }
-        renderItem={({ item }) => (
-          <PropertyCard
-            property={item}
-            onToggleFavorite={() => toggleFavorite(item.id)}
-            onScrollStart={() => setScrollEnabled(false)}
-            onScrollEnd={() => setScrollEnabled(true)}
-            theme={theme}
-            t={t}
+          renderItem={({ item }) => (
+            <PropertyCard
+              property={item}
+              onToggleFavorite={handleToggleFavorite}
+              onScrollStart={handleScrollStart}
+              onScrollEnd={handleScrollEnd}
+              theme={theme}
+              t={t}
               router={router}
-          />
-        )}
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={
-            isLoading && page > 1 ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={theme.primary} />
-              <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+            />
+          )}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            isFetchingNextPage ? (
+              <View style={styles.loadingMoreFooter}>
+                <ActivityIndicator size="small" color={theme.primary} />
+                <Text style={[styles.loadingMoreText, { color: theme.textSecondary }]}>
                   {t('properties.loadingMore')}
+                </Text>
+              </View>
+            ) : !hasNextPage && cardProperties.length > 0 ? (
+              <View style={styles.endContainer}>
+                <Text style={[styles.endText, { color: theme.textTertiary }]}>
+                  {t('properties.allLoaded')}
+                </Text>
+              </View>
+            ) : null
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons name="home-outline" size={64} color={theme.textTertiary} />
+              <Text style={[styles.emptyTitle, { color: theme.text }]}>
+                {t('properties.noProperties')}
+              </Text>
+              <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
+                {t('properties.tryAdjustFilters')}
               </Text>
             </View>
-            ) : null
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="home-outline" size={64} color={theme.textTertiary} />
-            <Text style={[styles.emptyTitle, { color: theme.text }]}>
-              {t('properties.noProperties')}
-            </Text>
-            <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
-              {t('properties.tryAdjustFilters')}
-            </Text>
-          </View>
-        }
-      />
+          }
+        />
       )}
     </SafeAreaView>
   );
@@ -282,7 +334,7 @@ export default function PropertiesScreen() {
 
 interface PropertyCardProps {
   property: PropertyCardData;
-  onToggleFavorite: () => void;
+  onToggleFavorite: (id: string) => void;
   onScrollStart: () => void;
   onScrollEnd: () => void;
   theme: any;
@@ -290,9 +342,9 @@ interface PropertyCardProps {
   router: any;
 }
 
-function PropertyCard({ property, onToggleFavorite, onScrollStart, onScrollEnd, theme, t, router }: PropertyCardProps) {
+const PropertyCard = memo(({ property, onToggleFavorite, onScrollStart, onScrollEnd, theme, t, router }: PropertyCardProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  
+
   // Валідація URI для зображень
   const getValidImages = (images: string[] | undefined): string[] => {
     if (!images || images.length === 0) {
@@ -306,26 +358,26 @@ function PropertyCard({ property, onToggleFavorite, onScrollStart, onScrollEnd, 
       })
       .map(img => img.trim());
   };
-  
+
   const images = getValidImages(property.images);
-  
+
   const bedroomsLabel = typeof property.bedrooms === 'string'
     ? property.bedrooms
     : property.bedrooms === 1
-    ? t('properties.bedroom')
-    : `${property.bedrooms} ${t('properties.bedrooms')}`;
-  
+      ? t('properties.bedroom')
+      : `${property.bedrooms} ${t('properties.bedrooms')}`;
+
   // Форматуємо payment plan (до 2 рядків, без агресивного обрізання)
   const getShortPaymentPlan = (paymentPlan: string | null | undefined): string | null => {
     if (!paymentPlan) return null;
-    
+
     // Видаляємо всі переноси рядків і зайві пробіли, але залишаємо текст для 2 рядків
     const singleLine = paymentPlan.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-    
+
     // Не обрізаємо - дозволяємо React Native автоматично переносити на 2 рядки
     return singleLine;
   };
-  
+
   return (
     <View style={styles.propertyCard}>
       <ScrollView
@@ -341,34 +393,41 @@ function PropertyCard({ property, onToggleFavorite, onScrollStart, onScrollEnd, 
           setCurrentImageIndex(index);
         }}
         scrollEventThrottle={16}
+        snapToInterval={CARD_WIDTH}
+        decelerationRate="fast"
         style={styles.imageScroller}
       >
         {images.map((image, index) => (
-          <Image
+          <Pressable
             key={`${property.id}-image-${index}`}
-            source={{ uri: image }}
-            style={styles.propertyImage}
-            resizeMode="cover"
-          />
+            onPress={() => router.push(`/property/${property.id}`)}
+            style={{ width: CARD_WIDTH, height: 280 }}
+          >
+            <Image
+              source={{ uri: image }}
+              style={styles.propertyImage}
+              resizeMode="cover"
+            />
+          </Pressable>
         ))}
       </ScrollView>
-      
+
       {/* Top Gradient */}
       <LinearGradient
         colors={['rgba(0,0,0,0.4)', 'transparent']}
         style={styles.topGradient}
         pointerEvents="none"
       />
-      
+
       {/* Pagination Dots - завжди показуємо максимум 4 крапки, які рухаються при скролі */}
       {images.length > 1 && (() => {
         const maxDots = 4;
         const totalImages = images.length;
-        
+
         // Розраховуємо, які крапки показувати та яка активна
         let dotIndices: number[] = [];
         let activeDotIndex = 0;
-        
+
         if (totalImages <= maxDots) {
           // Якщо фото 4 або менше, показуємо всі
           dotIndices = Array.from({ length: totalImages }, (_, i) => i);
@@ -377,15 +436,15 @@ function PropertyCard({ property, onToggleFavorite, onScrollStart, onScrollEnd, 
           // Якщо фото більше 4, крапки рухаються
           // Розраховуємо відносні позиції (0%, 33%, 67%, 100%)
           dotIndices = [0, Math.floor(totalImages / 3), Math.floor((totalImages * 2) / 3), totalImages - 1];
-          
+
           // Знаходимо найближчу крапку до поточного фото
           activeDotIndex = dotIndices.reduce((closest, pos, idx) => {
-            return Math.abs(pos - currentImageIndex) < Math.abs(dotIndices[closest] - currentImageIndex) 
-              ? idx 
+            return Math.abs(pos - currentImageIndex) < Math.abs(dotIndices[closest] - currentImageIndex)
+              ? idx
               : closest;
           }, 0);
         }
-        
+
         return (
           <View style={styles.paginationContainer} pointerEvents="none">
             {dotIndices.map((imageIndex, displayIndex) => (
@@ -400,7 +459,7 @@ function PropertyCard({ property, onToggleFavorite, onScrollStart, onScrollEnd, 
           </View>
         );
       })()}
-      
+
       {/* Tags */}
       <View style={styles.tagsContainer} pointerEvents="none">
         <BlurView intensity={20} tint="light" style={styles.tag}>
@@ -414,18 +473,16 @@ function PropertyCard({ property, onToggleFavorite, onScrollStart, onScrollEnd, 
           </Text>
         </BlurView>
       </View>
-      
+
       <LinearGradient
         colors={['transparent', 'rgba(0,0,0,0.85)']}
         style={styles.gradient}
         pointerEvents="box-none"
       >
         <Pressable
-          style={StyleSheet.absoluteFill}
+          style={styles.propertyDetails}
           onPress={() => router.push(`/property/${property.id}`)}
-        />
-        {/* Property Details */}
-        <View style={styles.propertyDetails} pointerEvents="none">
+        >
           <Text style={styles.propertyTitle} numberOfLines={2}>
             {property.title}
           </Text>
@@ -437,16 +494,16 @@ function PropertyCard({ property, onToggleFavorite, onScrollStart, onScrollEnd, 
               {formatPrice(property.price, 'USD')}{property.bedrooms ? ` | ${bedroomsLabel}` : ''}
             </Text>
             {getShortPaymentPlan(property.paymentPlan) && (
-              <Text 
-                style={styles.paymentPlan} 
-                numberOfLines={1} 
+              <Text
+                style={styles.paymentPlan}
+                numberOfLines={1}
                 ellipsizeMode="tail"
               >
                 {getShortPaymentPlan(property.paymentPlan)}
               </Text>
             )}
           </View>
-        </View>
+        </Pressable>
 
         {/* Favorite Button */}
         <Pressable
@@ -456,7 +513,7 @@ function PropertyCard({ property, onToggleFavorite, onScrollStart, onScrollEnd, 
           ]}
           onPress={(e) => {
             e?.stopPropagation?.();
-            onToggleFavorite();
+            onToggleFavorite(property.id);
           }}
         >
           <Ionicons
@@ -468,12 +525,9 @@ function PropertyCard({ property, onToggleFavorite, onScrollStart, onScrollEnd, 
       </LinearGradient>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   searchSection: {
     flexDirection: 'row',
     paddingHorizontal: 16,
@@ -668,5 +722,15 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  loadingMoreFooter: {
+    paddingVertical: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  loadingMoreText: {
+    fontSize: 14,
   },
 });

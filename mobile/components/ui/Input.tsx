@@ -69,21 +69,21 @@ const Input = forwardRef<TextInput, InputProps>(({
 
   const isPassword = type === 'password';
   // Use explicit secureTextEntry prop if provided, otherwise fallback to password type logic
-  const secureTextEntry = secureTextEntryProp !== undefined 
-    ? secureTextEntryProp 
+  const secureTextEntry = secureTextEntryProp !== undefined
+    ? secureTextEntryProp
     : (isPassword && !showPassword);
 
   return (
     <View style={[styles.container, fullWidth ? styles.fullWidth : styles.fixedWidth]}>
       {label && (
-        <Text style={[styles.label, { color: theme.text }]}>{label}</Text>
+        <Text style={[styles.label, { color: theme.textTertiary }]}>{label}</Text>
       )}
-      
-      <Pressable 
+
+      <Pressable
         style={[
-          styles.inputContainer, 
-          { 
-            backgroundColor: inputBackgroundColor || theme.inputBackground, 
+          styles.inputContainer,
+          {
+            backgroundColor: inputBackgroundColor || theme.inputBackground,
             borderColor: error ? theme.error : (inputBorderColor || theme.inputBorder)
           },
           error && styles.inputError
@@ -106,7 +106,7 @@ const Input = forwardRef<TextInput, InputProps>(({
           returnKeyType={returnKeyType}
           blurOnSubmit={blurOnSubmit}
         />
-        
+
         {/* Show custom rightIcon if provided, otherwise show default password toggle for password type */}
         {rightIcon ? (
           <View style={styles.iconWrapper}>{rightIcon}</View>
@@ -124,7 +124,7 @@ const Input = forwardRef<TextInput, InputProps>(({
           </Pressable>
         )}
       </Pressable>
-      
+
       {error && (
         <Text style={styles.errorText}>{error}</Text>
       )}
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   label: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500',
     marginBottom: 6,
   },
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 15,
   },
   iconWrapper: {
     justifyContent: 'center',

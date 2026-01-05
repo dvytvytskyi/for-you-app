@@ -2,7 +2,7 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
 // Backend API URL (адмін-панель)
-const API_URL = 'https://admin.foryou-realestate.com/api';
+const API_URL = 'https://admin.foryou-realestate.com/api/v1';
 
 export const apiClient = axios.create({
   baseURL: API_URL,
@@ -19,21 +19,39 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Log request for debugging
+    console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+    if (config.data) {
+      const logData = { ...config.data };
+      if (logData.password) logData.password = '***';
+      console.log('📦 Data:', logData);
+    }
+
     return config;
   },
   (error) => {
+    console.error('❌ Request Error:', error);
     return Promise.reject(error);
   }
 );
 
 // Response interceptor - handle token refresh
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log(`✅ API Response: ${response.status} from ${response.config.url}`);
+    return response;
+  },
   async (error) => {
+    console.warn(`❌ API Error: ${error.response?.status} from ${error.config?.url}`);
+    if (error.response?.data) {
+      console.warn('📋 Error Data:', JSON.stringify(error.response.data, null, 2));
+    }
+
     const originalRequest = error.config;
 
-    // If 401 and not already retried
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // If 401 and not already retried, and NOT login request
+    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth/login')) {
       originalRequest._retry = true;
 
       try {

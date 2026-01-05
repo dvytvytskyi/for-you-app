@@ -8,6 +8,7 @@ import enHome from '@/locales/en/home.json';
 import enAuth from '@/locales/en/auth.json';
 import enTabs from '@/locales/en/tabs.json';
 import enProperties from '@/locales/en/properties.json';
+import enCrm from '@/locales/en/crm.json';
 
 import uaCommon from '@/locales/ua/common.json';
 import uaProfile from '@/locales/ua/profile.json';
@@ -15,6 +16,7 @@ import uaHome from '@/locales/ua/home.json';
 import uaAuth from '@/locales/ua/auth.json';
 import uaTabs from '@/locales/ua/tabs.json';
 import uaProperties from '@/locales/ua/properties.json';
+import uaCrm from '@/locales/ua/crm.json';
 
 import ruCommon from '@/locales/ru/common.json';
 import ruProfile from '@/locales/ru/profile.json';
@@ -22,6 +24,7 @@ import ruHome from '@/locales/ru/home.json';
 import ruAuth from '@/locales/ru/auth.json';
 import ruTabs from '@/locales/ru/tabs.json';
 import ruProperties from '@/locales/ru/properties.json';
+import ruCrm from '@/locales/ru/crm.json';
 
 // Create i18n instance
 export const i18n = new I18n({
@@ -32,6 +35,7 @@ export const i18n = new I18n({
     auth: enAuth,
     tabs: enTabs,
     properties: enProperties,
+    crm: enCrm,
   },
   ua: {
     common: uaCommon,
@@ -40,6 +44,7 @@ export const i18n = new I18n({
     auth: uaAuth,
     tabs: uaTabs,
     properties: uaProperties,
+    crm: uaCrm,
   },
   ru: {
     common: ruCommon,
@@ -48,6 +53,7 @@ export const i18n = new I18n({
     auth: ruAuth,
     tabs: ruTabs,
     properties: ruProperties,
+    crm: ruCrm,
   },
 });
 

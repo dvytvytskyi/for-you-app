@@ -20,60 +20,60 @@ const getRoleConfig = (themePrimary: string) => ({
 
 export default function ProfileHeader({ avatar, firstName, lastName, email, role, onEditPress, onAvatarPress }: ProfileHeaderProps) {
   const { theme } = useTheme();
-  
+
   // Нормалізуємо роль (uppercase) і додаємо fallback
   const normalizedRole = role?.toUpperCase() as 'BROKER' | 'INVESTOR' | 'ADMIN';
   const roleConfigs = getRoleConfig(theme.primary);
   const config = roleConfigs[normalizedRole] || roleConfigs.BROKER; // Fallback на BROKER, якщо роль невідома
-  
+
   return (
     <>
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         <View style={styles.avatarContainer}>
-        <Pressable 
-          onPress={onAvatarPress}
-          style={({ pressed }) => [
-            { opacity: pressed ? 0.8 : 1 }
-          ]}
-        >
-          {avatar ? (
-            <Image source={{ uri: avatar }} style={styles.avatar} />
-          ) : (
-            <View style={[styles.avatarPlaceholder, { backgroundColor: theme.primary }]}>
-              <Text style={[styles.avatarText, { color: theme.textInverse }]}>
-                {firstName[0]}{lastName[0]}
-              </Text>
-            </View>
-          )}
-        </Pressable>
-        
-        <Pressable
-          style={({ pressed }) => [
-            styles.editButton,
-            { 
-              backgroundColor: theme.primary,
-              borderColor: theme.background,
-              opacity: pressed ? 0.7 : 1 
-            }
-          ]}
-          onPress={onEditPress}
-        >
-          <Ionicons name="camera" size={16} color={theme.textInverse} />
-        </Pressable>
+          <Pressable
+            onPress={onAvatarPress}
+            style={({ pressed }) => [
+              { opacity: pressed ? 0.8 : 1 }
+            ]}
+          >
+            {avatar ? (
+              <Image source={{ uri: avatar }} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatarPlaceholder, { backgroundColor: theme.primary }]}>
+                <Text style={[styles.avatarText, { color: theme.textInverse }]}>
+                  {firstName[0]}{lastName[0]}
+                </Text>
+              </View>
+            )}
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.editButton,
+              {
+                backgroundColor: theme.primary,
+                borderColor: theme.background,
+                opacity: pressed ? 0.7 : 1
+              }
+            ]}
+            onPress={onEditPress}
+          >
+            <Ionicons name="camera" size={16} color={theme.textInverse} />
+          </Pressable>
         </View>
       </View>
-      
+
       <View style={styles.infoContainer}>
         <Text style={[styles.name, { color: theme.text }]}>{firstName} {lastName}</Text>
-        
+
         <View style={[styles.roleContainer, { backgroundColor: theme.primaryLight }]}>
           <Ionicons name={config.icon} size={14} color={config.color} />
           <Text style={[styles.roleText, { color: theme.primary }]}>{config.label}</Text>
         </View>
-        
-        <Text style={[styles.email, { color: theme.textTertiary }]}>{email}</Text>
+
+
       </View>
-      
+
       <View style={[styles.separator, { backgroundColor: theme.backgroundSecondary }]}></View>
     </>
   );
@@ -82,8 +82,8 @@ export default function ProfileHeader({ avatar, firstName, lastName, email, role
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    paddingTop: 24,
-    paddingBottom: 24,
+    paddingTop: 0,
+    paddingBottom: 12,
     paddingHorizontal: 16,
     backgroundColor: '#FFFFFF',
   },
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     position: 'relative',
-    marginBottom: 16,
+    marginBottom: 4,
   },
   avatar: {
     width: 100,
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
     backgroundColor: '#F0F4FF',
-    marginBottom: 4,
+    marginBottom: 24,
   },
   roleText: {
     fontSize: 12,

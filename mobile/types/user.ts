@@ -12,8 +12,8 @@ export interface User {
   id: string;
   email: string;
   phone: string;
-  firstName: string;
-  lastName: string;
+  firstName: string | null;
+  lastName: string | null;
   role: UserRole;
   status?: 'PENDING' | 'ACTIVE' | 'BLOCKED' | 'REJECTED'; // Адмін-панель використовує status
   isActive?: boolean; // Застаріле, використовується status
@@ -22,18 +22,19 @@ export interface User {
   avatar?: string | null;
   createdAt: string;
   updatedAt: string;
-  
+
   // Investor specific
   budgetMin?: number;
   budgetMax?: number;
   propertyTypeInterest?: string[];
   purpose?: string;
   preferredLocation?: string;
-  
+
   // Broker specific
   fieldOfExpertise?: string;
   whatsapp?: string | null;
   telegram?: string | null;
+  amoCrmUserId?: string | null; // ID оф AmoCrmUser from backend
 }
 
 export interface AuthTokens {
@@ -42,7 +43,21 @@ export interface AuthTokens {
 }
 
 export interface AuthResponse {
-  user: User;
-  tokens: AuthTokens;
+  user?: User;
+  accessToken?: string;
+  refreshToken?: string;
+  tokens?: AuthTokens;
+  data?: {
+    user?: User;
+    token?: string;
+    accessToken?: string;
+    refreshToken?: string;
+    data?: {
+      user?: User;
+      accessToken?: string;
+    };
+  };
+  success?: boolean;
+  message?: string;
 }
 

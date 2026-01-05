@@ -1,13 +1,14 @@
-import { View, Text, StyleSheet, FlatList, Pressable, Image, ActivityIndicator, Dimensions, Modal, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, Image, ActivityIndicator, Dimensions, Modal, TextInput, KeyboardAvoidingView, Platform, Keyboard, LayoutAnimation } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Header, SearchBar } from '@/components/ui';
 import { useTheme } from '@/utils/theme';
 import { useTranslation } from '@/utils/i18n';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Animated } from 'react-native';
 import { useCollectionsStore, Collection } from '@/store/collectionsStore';
+import { useAuthStore } from '@/store/authStore';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_PADDING = 16;
@@ -18,28 +19,52 @@ export default function CollectionsScreen() {
   const { theme } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
+  const { user } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [collectionName, setCollectionName] = useState('');
   const [collectionDescription, setCollectionDescription] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const searchInputRef = useRef<TextInput>(null);
+
+  // Force blur on screen focus to prevent auto-keyboard
+  useFocusEffect(
+    useCallback(() => {
+      // Small timeout to ensure it runs after any auto-focus attempts
+      const timeout = setTimeout(() => {
+        if (searchInputRef.current) {
+          searchInputRef.current.blur();
+        }
+        Keyboard.dismiss();
+        setIsSearchFocused(false);
+      }, 100);
+      return () => clearTimeout(timeout);
+    }, [])
+  );
+
   const slideAnim = useRef(new Animated.Value(0)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
-  
+
   // Collections store (реактивно)
   const collectionsFromStore = useCollectionsStore((state) => state.collections);
-  const { 
+  const {
     createCollection: createCollectionInStore,
     updateCollection,
-    deleteCollection 
+    deleteCollection
   } = useCollectionsStore();
-  
+
   // Форматування дати
   const formatDate = useCallback((dateString: string): string => {
+    if (!dateString) return 'Just now';
+
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Recently';
+
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    
+
+    if (diffDays < 0) return 'Just now';
     if (diffDays === 0) return 'Just now';
     if (diffDays === 1) return 'Yesterday';
     if (diffDays < 7) return `${diffDays} days ago`;
@@ -60,23 +85,26 @@ export default function CollectionsScreen() {
       count: collectionsFromStore.length,
       collections: collectionsFromStore.map(c => ({ id: c.id, title: c.title, propertyCount: c.propertyIds.length })),
     });
-    
+
     // Додаємо propertyCount та formatted date
     return collectionsFromStore.map(c => ({
       ...c,
       propertyCount: c.propertyIds.length,
       createdDate: formatDate(c.createdAt),
-      // Якщо немає image і немає properties - показуємо placeholder
-      image: c.image || (c.propertyIds.length === 0 
-        ? 'https://via.placeholder.com/400x300?text=No+Properties' 
-        : 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400'),
+      // Якщо є propertyIds, але немає image - намагаємось використати перше зображення або дефолтне
+      image: c.image || (c.propertyIds.length > 0
+        ? 'https://images.unsplash.com/photo-1600596542815-27b88e31e640?w=400' // Placeholder for collection with items but no cover
+        : 'https://via.placeholder.com/400x300?text=No+Properties'),
     }));
   }, [collectionsFromStore, formatDate]);
 
   const filteredCollections = collections.filter(collection => {
-    const matchesSearch = collection.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         collection.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
+    const title = collection.title || '';
+    const description = collection.description || '';
+    const search = searchQuery.toLowerCase();
+
+    return title.toLowerCase().includes(search) ||
+      description.toLowerCase().includes(search);
   });
 
 
@@ -121,42 +149,50 @@ export default function CollectionsScreen() {
     }
   }, [modalVisible]);
 
-  const handleSave = () => {
+  const handleSearchFocus = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setIsSearchFocused(true);
+  };
+
+  const handleCancelSearch = () => {
+    Keyboard.dismiss();
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setIsSearchFocused(false);
+    setSearchQuery('');
+  };
+
+  const handleSave = async () => {
     const trimmedName = collectionName.trim();
     const trimmedDescription = collectionDescription.trim();
-    
+
     if (!trimmedName || !trimmedDescription) {
       console.warn('⚠️ Collection name or description is empty');
       return;
     }
-    
+
     console.log('➕ Creating collection:', {
       name: trimmedName,
       description: trimmedDescription,
     });
-    
+
     try {
-      const newCollection = createCollectionInStore(trimmedName, trimmedDescription);
-      console.log('✅ Collection created:', {
-        id: newCollection.id,
-        title: newCollection.title,
-        propertyIds: newCollection.propertyIds.length,
-      });
-      
-      // Перевіряємо, чи колекція дійсно створилася
-      const allCollections = getCollections();
-      const foundCollection = allCollections.find(c => c.id === newCollection.id);
-      console.log('🔍 Collection in store:', {
-        found: !!foundCollection,
-        totalCollections: allCollections.length,
-      });
-      
-      closeModal();
-      
-      // Невелика затримка перед навігацією, щоб store встиг оновитися
-      setTimeout(() => {
-        router.push(`/collections/${newCollection.id}`);
-      }, 100);
+      const newCollection = await createCollectionInStore(trimmedName, trimmedDescription);
+
+      if (newCollection && newCollection.id) {
+        console.log('✅ Collection created:', {
+          id: newCollection.id,
+          title: newCollection.title,
+        });
+
+        closeModal();
+
+        // Невелика затримка перед навігацією, щоб store встиг оновитися
+        setTimeout(() => {
+          router.push(`/collections/${newCollection.id}`);
+        }, 300);
+      } else {
+        console.error('❌ Created collection has no ID:', newCollection);
+      }
     } catch (error) {
       console.error('❌ Error creating collection:', error);
     }
@@ -166,25 +202,38 @@ export default function CollectionsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
       {/* Header and Search */}
       <View>
-        <Header 
+        <Header
           title={t('tabs.collections.title')}
-          avatar="https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=200"
+          titleColor="#FFFFFF"
+          titleSize={20}
+          titleWeight="600"
+          user={user || undefined}
+          avatar={user?.avatar}
         />
-        
+
         <View style={styles.searchSection}>
           <View style={styles.searchBarWrapper}>
-            <SearchBar 
+            <SearchBar
+              inputRef={searchInputRef}
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholder="Find property"
+              placeholder="Find collection"
+              onFocus={handleSearchFocus}
+              autoFocus={false}
             />
           </View>
-          <Pressable
-            style={[styles.addButton, { backgroundColor: theme.primary }]}
-            onPress={() => setModalVisible(true)}
-          >
-            <Ionicons name="add" size={24} color="#FFFFFF" />
-          </Pressable>
+          {isSearchFocused ? (
+            <Pressable onPress={handleCancelSearch} style={{ paddingHorizontal: 4, justifyContent: 'center' }}>
+              <Text style={{ color: theme.primary, fontSize: 16 }}>Cancel</Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              style={[styles.addButton, { backgroundColor: theme.primary }]}
+              onPress={() => setModalVisible(true)}
+            >
+              <Ionicons name="add" size={24} color="#FFFFFF" />
+            </Pressable>
+          )}
         </View>
 
         {/* Collections Count */}
@@ -198,11 +247,12 @@ export default function CollectionsScreen() {
       </View>
 
       {/* Collections Grid */}
-      <FlatList
+      <FlatList<MappedCollection>
         data={filteredCollections}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        keyboardDismissMode="on-drag"
         numColumns={2}
         columnWrapperStyle={styles.row}
         renderItem={({ item }) => (
@@ -243,7 +293,7 @@ export default function CollectionsScreen() {
               },
             ]}
           />
-          
+
           {/* Content */}
           <Animated.View
             style={[
@@ -266,66 +316,67 @@ export default function CollectionsScreen() {
               behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
               style={styles.modalContentWrapper}
             >
-            {/* Header */}
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: theme.primary }]}>
-                Create Collection
-              </Text>
-              <Pressable onPress={closeModal}>
-                <Ionicons name="close" size={24} color={theme.textSecondary} />
-              </Pressable>
-            </View>
-
-            {/* Form */}
-            <View style={styles.modalForm}>
-              <View style={styles.inputContainer}>
-                <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>
-                  Name
+              {/* Header */}
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { color: '#FFFFFF' }]}>
+                  Create Collection
                 </Text>
-                <TextInput
-                  style={[styles.input, { backgroundColor: theme.card, borderColor: theme.border, color: theme.text }]}
-                  value={collectionName}
-                  onChangeText={setCollectionName}
-                  placeholder="Enter collection name"
-                  placeholderTextColor={theme.textTertiary}
-                />
+                <Pressable onPress={closeModal}>
+                  <Ionicons name="close" size={24} color={theme.textSecondary} />
+                </Pressable>
               </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>
-                  Description
-                </Text>
-                <TextInput
-                  style={[styles.input, styles.textArea, { backgroundColor: theme.card, borderColor: theme.border, color: theme.text }]}
-                  value={collectionDescription}
-                  onChangeText={setCollectionDescription}
-                  placeholder="Enter collection description"
-                  placeholderTextColor={theme.textTertiary}
-                  multiline
-                  numberOfLines={4}
-                />
-              </View>
-            </View>
+              {/* Form */}
+              <View style={styles.modalForm}>
+                <View style={styles.inputContainer}>
+                  <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>
+                    Name
+                  </Text>
+                  <TextInput
+                    style={[styles.input, { backgroundColor: theme.card, borderColor: theme.border, color: theme.text }]}
+                    value={collectionName}
+                    onChangeText={setCollectionName}
+                    placeholder="Enter collection name"
+                    placeholderTextColor={theme.textTertiary}
+                    autoFocus={false}
+                  />
+                </View>
 
-            {/* Actions */}
-            <View style={styles.modalActions}>
-              <Pressable
-                style={[styles.modalButton, styles.cancelButton, { borderColor: theme.border }]}
-                onPress={closeModal}
-              >
-                <Text style={[styles.modalButtonText, { color: theme.textSecondary }]}>
-                  Cancel
-                </Text>
-              </Pressable>
-              <Pressable
-                style={[styles.modalButton, styles.saveButton, { backgroundColor: theme.primary }]}
-                onPress={handleSave}
-              >
-                <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>
-                  Save
-                </Text>
-              </Pressable>
-            </View>
+                <View style={styles.inputContainer}>
+                  <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>
+                    Description
+                  </Text>
+                  <TextInput
+                    style={[styles.input, styles.textArea, { backgroundColor: theme.card, borderColor: theme.border, color: theme.text }]}
+                    value={collectionDescription}
+                    onChangeText={setCollectionDescription}
+                    placeholder="Enter collection description"
+                    placeholderTextColor={theme.textTertiary}
+                    multiline
+                    numberOfLines={4}
+                  />
+                </View>
+              </View>
+
+              {/* Actions */}
+              <View style={styles.modalActions}>
+                <Pressable
+                  style={[styles.modalButton, styles.cancelButton, { borderColor: theme.border }]}
+                  onPress={closeModal}
+                >
+                  <Text style={[styles.modalButtonText, { color: theme.textSecondary }]}>
+                    Cancel
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.modalButton, styles.saveButton, { backgroundColor: theme.primary }]}
+                  onPress={handleSave}
+                >
+                  <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>
+                    Save
+                  </Text>
+                </Pressable>
+              </View>
             </KeyboardAvoidingView>
           </Animated.View>
         </View>
@@ -334,8 +385,13 @@ export default function CollectionsScreen() {
   );
 }
 
+interface MappedCollection extends Collection {
+  propertyCount: number;
+  createdDate: string;
+}
+
 interface CollectionCardProps {
-  collection: Collection;
+  collection: MappedCollection;
   onPress: () => void;
   theme: any;
 }
@@ -355,9 +411,9 @@ function CollectionCard({ collection, onPress, theme }: CollectionCardProps) {
       onPress={onPress}
     >
       <Image
-        source={{ 
-          uri: collection.image && collection.image.trim().length > 0 
-            ? collection.image 
+        source={{
+          uri: collection.image && collection.image.trim().length > 0
+            ? collection.image
             : 'https://via.placeholder.com/400x300?text=No+Image'
         }}
         style={styles.collectionImage}
@@ -506,7 +562,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   modalTitle: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: '600',
   },
   modalForm: {

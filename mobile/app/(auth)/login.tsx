@@ -73,7 +73,9 @@ export default function LoginScreen() {
         router.replace('/(tabs)/home');
       } catch (error: any) {
         // Handle login error
-        setPasswordError(error.message || 'Login failed');
+        // Get the detailed error from the store
+        const storeError = useAuthStore.getState().error;
+        setPasswordError(storeError || error.message || 'Login failed');
       }
     }
   };
@@ -111,12 +113,12 @@ export default function LoginScreen() {
       </View>
 
       {/* White Form Section */}
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.formSection}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={0}
       >
-        <ScrollView 
+        <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -138,7 +140,7 @@ export default function LoginScreen() {
               inputTextColor="#010312"
               inputPlaceholderColor="#94A3B8"
             />
-            
+
             <Input
               ref={passwordRef}
               placeholder="Password"

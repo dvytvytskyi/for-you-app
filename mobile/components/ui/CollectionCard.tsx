@@ -12,13 +12,14 @@ interface CollectionCardProps {
 
 export default function CollectionCard({ icon, title, description, gradientImage, onPress }: CollectionCardProps) {
   const { theme } = useTheme();
-  
+
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
         styles.container,
         {
+          backgroundColor: theme.card,
           borderColor: theme.cardBorder,
           opacity: pressed ? 0.9 : 1,
           transform: [{ scale: pressed ? 0.98 : 1 }]
@@ -29,22 +30,23 @@ export default function CollectionCard({ icon, title, description, gradientImage
         source={gradientImage}
         style={styles.gradient}
         imageStyle={styles.gradientImage}
+        resizeMode="cover"
       >
-        
+
         <View style={styles.content}>
           {/* Left icon */}
           <View style={[styles.iconContainer, { backgroundColor: theme.primary }]}>
             <Ionicons name={icon} size={20} color="#FFFFFF" />
           </View>
-          
+
           {/* Text content */}
           <View style={styles.textContainer}>
             <Text style={[styles.title, { color: theme.primary }]}>{title}</Text>
             <Text style={[styles.description, { color: theme.textSecondary }]}>{description}</Text>
           </View>
-          
+
           {/* Right arrow */}
-          <Ionicons name="arrow-forward" size={20} color={theme.primary} />
+          <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
         </View>
       </ImageBackground>
     </Pressable>

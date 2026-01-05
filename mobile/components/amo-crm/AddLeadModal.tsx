@@ -11,8 +11,10 @@ import {
   Alert,
   Animated,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/utils/theme';
+import { useTranslation } from '@/utils/i18n';
 import { amoCrmApi, type AmoPipeline, type AmoStage } from '@/api/amo-crm';
 import { leadsApi } from '@/api/leads';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -26,6 +28,7 @@ interface AddLeadModalProps {
 
 export function AddLeadModal({ visible, onClose, onSuccess, amoConnected = false }: AddLeadModalProps) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [step, setStep] = useState<'pipeline' | 'stage' | 'form'>(amoConnected ? 'pipeline' : 'form');
   const [selectedPipeline, setSelectedPipeline] = useState<AmoPipeline | null>(null);
@@ -40,7 +43,6 @@ export function AddLeadModal({ visible, onClose, onSuccess, amoConnected = false
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Завантаження pipelines (тільки якщо AMO CRM підключено)
-  // ⚠️ ВАЖЛИВО: Stages вже включені в відповідь /api/amo-crm/pipelines, не потрібно робити окремі запити!
   const { data: pipelinesData, isLoading: pipelinesLoading, error: pipelinesError } = useQuery({
     queryKey: ['amo-pipelines'],
     queryFn: async () => {
@@ -48,28 +50,14 @@ export function AddLeadModal({ visible, onClose, onSuccess, amoConnected = false
         console.log('🔄 [AddLeadModal] Завантаження pipelines (з stages)...');
         const pipelines = await amoCrmApi.getPipelines();
         console.log('✅ [AddLeadModal] Pipelines завантажено:', pipelines.data.length);
-        
-        // Stages вже включені в відповідь, просто перевіряємо та логуємо
-        pipelines.data.forEach((pipeline) => {
-          const stagesCount = pipeline.stages?.length || 0;
-          console.log(`📊 [AddLeadModal] Pipeline ${pipeline.id} (${pipeline.name}): ${stagesCount} stages`);
-        });
-        
-        const totalStages = pipelines.data.reduce((sum, p) => sum + (p.stages?.length || 0), 0);
-        console.log(`✅ [AddLeadModal] Всього stages завантажено: ${totalStages}`);
-        
+
         return pipelines;
       } catch (error: any) {
         console.error('❌ [AddLeadModal] Error loading pipelines:', error);
-        console.error('📋 [AddLeadModal] Error details:', {
-          status: error?.response?.status,
-          message: error?.message,
-          data: error?.response?.data,
-        });
         throw error;
       }
     },
-    enabled: visible && amoConnected, // Завантажуємо тільки коли модалка відкрита та AMO підключено
+    enabled: visible && amoConnected,
     retry: 1,
     retryDelay: 2000,
   });
@@ -95,7 +83,6 @@ export function AddLeadModal({ visible, onClose, onSuccess, amoConnected = false
     if (pipeline.stages && pipeline.stages.length > 0) {
       setStep('stage');
     } else {
-      // Якщо немає stages, переходимо до форми
       setStep('form');
     }
   };
@@ -123,7 +110,7 @@ export function AddLeadModal({ visible, onClose, onSuccess, amoConnected = false
   const handleSubmit = async () => {
     // Валідація
     if (!formData.guestName.trim() && !formData.guestPhone.trim() && !formData.guestEmail.trim()) {
-      Alert.alert('Помилка', 'Будь ласка, введіть хоча б ім\'я, телефон або email');
+      Alert.alert(t('common.error'), t('crm.validationError'));
       return;
     }
 
@@ -141,8 +128,8 @@ export function AddLeadModal({ visible, onClose, onSuccess, amoConnected = false
 
       // Оновити список leads
       await queryClient.invalidateQueries({ queryKey: ['leads'] });
-      
-      Alert.alert('Успіх', 'Lead успішно створено', [
+
+      Alert.alert(t('common.success'), t('crm.leadCreated'), [
         {
           text: 'OK',
           onPress: () => {
@@ -154,8 +141,8 @@ export function AddLeadModal({ visible, onClose, onSuccess, amoConnected = false
     } catch (error: any) {
       console.error('Error creating lead:', error);
       Alert.alert(
-        'Помилка',
-        error?.response?.data?.message || error?.message || 'Не вдалося створити lead'
+        t('common.error'),
+        error?.response?.data?.message || error?.message || t('crm.leadCreationError')
       );
     } finally {
       setIsSubmitting(false);
@@ -167,278 +154,279 @@ export function AddLeadModal({ visible, onClose, onSuccess, amoConnected = false
   return (
     <Modal
       visible={visible}
-      transparent
-      animationType="fade"
+      animationType="slide"
       onRequestClose={onClose}
     >
-      <View style={styles.modalBackdrop}>
-        <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
-          {/* Header */}
-          <View style={[styles.header, { borderBottomColor: theme.border }]}>
-            {step !== 'pipeline' && (
-              <Pressable onPress={handleBack} style={styles.backButton}>
-                <Ionicons name="arrow-back" size={24} color={theme.text} />
+      <View style={[styles.modalBackdrop, { backgroundColor: theme.background }]}>
+        <SafeAreaView style={{ flex: 1 }}>
+          <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
+            {/* Header */}
+            <View style={[styles.header, { borderBottomColor: theme.border }]}>
+              {step !== 'pipeline' && (
+                <Pressable onPress={handleBack} style={styles.backButton}>
+                  <Ionicons name="arrow-back" size={24} color={theme.text} />
+                </Pressable>
+              )}
+              <Text style={[styles.headerTitle, { color: theme.text }]}>
+                {step === 'pipeline' && t('crm.selectPipeline')}
+                {step === 'stage' && t('crm.selectStage')}
+                {step === 'form' && t('crm.newLead')}
+              </Text>
+              <Pressable onPress={onClose} style={styles.closeButton}>
+                <Ionicons name="close" size={24} color={theme.text} />
               </Pressable>
-            )}
-            <Text style={[styles.headerTitle, { color: theme.text }]}>
-              {step === 'pipeline' && 'Виберіть воронку'}
-              {step === 'stage' && 'Виберіть стадію'}
-              {step === 'form' && 'Новий lead'}
-            </Text>
-            <Pressable onPress={onClose} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color={theme.text} />
-            </Pressable>
-          </View>
+            </View>
 
-          {/* Content */}
-          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            {step === 'pipeline' && (
-              <View style={styles.pipelineList}>
-                {pipelinesLoading ? (
-                  <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={theme.primary} />
-                    <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
-                      Завантаження воронок...
-                    </Text>
-                  </View>
-                ) : pipelinesError ? (
-                  <View style={styles.emptyContainer}>
-                    <Ionicons name="alert-circle-outline" size={48} color="#FF3B30" />
-                    <Text style={[styles.emptyText, { color: theme.text }]}>
-                      Помилка завантаження воронок
-                    </Text>
-                    <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
-                      {(pipelinesError as any)?.response?.data?.message || (pipelinesError as any)?.message || 'Спробуйте пізніше'}
-                    </Text>
-                  </View>
-                ) : pipelines.length === 0 ? (
-                  <View style={styles.emptyContainer}>
-                    <Ionicons name="folder-outline" size={48} color={theme.textSecondary} />
-                    <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                      Немає доступних воронок
-                    </Text>
-                    <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
-                      Підключіть AMO CRM для вибору воронок
-                    </Text>
-                  </View>
-                ) : (
-                  pipelines.map((pipeline) => (
-                    <Pressable
-                      key={pipeline.id}
-                      style={[
-                        styles.pipelineItem,
-                        { backgroundColor: theme.card, borderColor: theme.border },
-                        selectedPipeline?.id === pipeline.id && {
-                          borderColor: theme.primary,
-                          borderWidth: 2,
-                        },
-                      ]}
-                      onPress={() => handlePipelineSelect(pipeline)}
-                    >
-                      <View style={styles.pipelineInfo}>
-                        <Text style={[styles.pipelineName, { color: theme.text }]}>
-                          {pipeline.name || 'Без назви'}
-                        </Text>
-                        {pipeline.isMain && (
-                          <View style={[styles.mainBadge, { backgroundColor: theme.primary }]}>
-                            <Text style={styles.mainBadgeText}>Основна</Text>
-                          </View>
-                        )}
-                      </View>
-                      {pipeline.stages && pipeline.stages.length > 0 ? (
-                        <Text style={[styles.pipelineStages, { color: theme.textSecondary }]}>
-                          {pipeline.stages.length} стадій
-                        </Text>
-                      ) : (
-                        <Text style={[styles.pipelineStages, { color: theme.textSecondary, fontStyle: 'italic' }]}>
-                          Немає стадій
-                        </Text>
-                      )}
-                      <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
-                    </Pressable>
-                  ))
-                )}
-              </View>
-            )}
-
-            {step === 'stage' && selectedPipeline && (
-              <View style={styles.stageList}>
-                {selectedPipeline.stages && selectedPipeline.stages.length > 0 ? (
-                  selectedPipeline.stages.map((stage) => (
-                    <Pressable
-                      key={stage.id}
-                      style={[
-                        styles.stageItem,
-                        { backgroundColor: theme.card, borderColor: theme.border },
-                        selectedStage?.id === stage.id && {
-                          borderColor: stage.color || theme.primary,
-                          borderWidth: 2,
-                        },
-                      ]}
-                      onPress={() => handleStageSelect(stage)}
-                    >
-                      <View
-                        style={[
-                          styles.stageColorIndicator,
-                          { backgroundColor: stage.color || theme.primary },
-                        ]}
-                      />
-                      <Text style={[styles.stageName, { color: theme.text }]}>
-                        {stage.name}
+            {/* Content */}
+            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+              {step === 'pipeline' && (
+                <View style={styles.pipelineList}>
+                  {pipelinesLoading ? (
+                    <View style={styles.loadingContainer}>
+                      <ActivityIndicator size="large" color={theme.primary} />
+                      <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+                        {t('crm.loadingPipelines')}
                       </Text>
-                      {selectedStage?.id === stage.id && (
-                        <Ionicons name="checkmark" size={20} color={stage.color || theme.primary} />
-                      )}
-                    </Pressable>
-                  ))
-                ) : (
-                  <View style={styles.emptyContainer}>
-                    <Ionicons name="list-outline" size={48} color={theme.textSecondary} />
-                    <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                      Немає доступних стадій
-                    </Text>
-                  </View>
-                )}
-              </View>
-            )}
-
-            {step === 'form' && (
-              <View style={styles.form}>
-                <View style={styles.formSection}>
-                  <Text style={[styles.formLabel, { color: theme.text }]}>
-                    Ім'я <Text style={{ color: theme.textSecondary }}>(опціонально)</Text>
-                  </Text>
-                  <TextInput
-                    style={[styles.formInput, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
-                    placeholder="Введіть ім'я"
-                    placeholderTextColor={theme.textSecondary}
-                    value={formData.guestName}
-                    onChangeText={(text) => setFormData({ ...formData, guestName: text })}
-                  />
+                    </View>
+                  ) : pipelinesError ? (
+                    <View style={styles.emptyContainer}>
+                      <Ionicons name="alert-circle-outline" size={48} color="#FF3B30" />
+                      <Text style={[styles.emptyText, { color: theme.text }]}>
+                        {t('crm.pipelinesLoadError')}
+                      </Text>
+                      <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
+                        {(pipelinesError as any)?.response?.data?.message || (pipelinesError as any)?.message || t('common.tryAgainLater')}
+                      </Text>
+                    </View>
+                  ) : pipelines.length === 0 ? (
+                    <View style={styles.emptyContainer}>
+                      <Ionicons name="folder-outline" size={48} color={theme.textSecondary} />
+                      <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+                        {t('crm.noPipelines')}
+                      </Text>
+                      <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
+                        {t('crm.connectAmo')}
+                      </Text>
+                    </View>
+                  ) : (
+                    pipelines.map((pipeline) => (
+                      <Pressable
+                        key={pipeline.id}
+                        style={[
+                          styles.pipelineItem,
+                          { backgroundColor: theme.card, borderColor: theme.border },
+                          selectedPipeline?.id === pipeline.id && {
+                            borderColor: theme.primary,
+                            borderWidth: 2,
+                          },
+                        ]}
+                        onPress={() => handlePipelineSelect(pipeline)}
+                      >
+                        <View style={styles.pipelineInfo}>
+                          <Text style={[styles.pipelineName, { color: theme.text }]}>
+                            {pipeline.name || t('common.untitled')}
+                          </Text>
+                          {pipeline.isMain && (
+                            <View style={[styles.mainBadge, { backgroundColor: theme.primary }]}>
+                              <Text style={styles.mainBadgeText}>{t('crm.main')}</Text>
+                            </View>
+                          )}
+                        </View>
+                        {pipeline.stages && pipeline.stages.length > 0 ? (
+                          <Text style={[styles.pipelineStages, { color: theme.textSecondary }]}>
+                            {pipeline.stages.length} {t('crm.stages')}
+                          </Text>
+                        ) : (
+                          <Text style={[styles.pipelineStages, { color: theme.textSecondary, fontStyle: 'italic' }]}>
+                            {t('crm.noStages')}
+                          </Text>
+                        )}
+                        <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
+                      </Pressable>
+                    ))
+                  )}
                 </View>
+              )}
 
-                <View style={styles.formSection}>
-                  <Text style={[styles.formLabel, { color: theme.text }]}>
-                    Телефон <Text style={{ color: theme.textSecondary }}>(опціонально)</Text>
-                  </Text>
-                  <TextInput
-                    style={[styles.formInput, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
-                    placeholder="+380501234567"
-                    placeholderTextColor={theme.textSecondary}
-                    value={formData.guestPhone}
-                    onChangeText={(text) => setFormData({ ...formData, guestPhone: text })}
-                    keyboardType="phone-pad"
-                  />
-                </View>
-
-                <View style={styles.formSection}>
-                  <Text style={[styles.formLabel, { color: theme.text }]}>
-                    Email <Text style={{ color: theme.textSecondary }}>(опціонально)</Text>
-                  </Text>
-                  <TextInput
-                    style={[styles.formInput, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
-                    placeholder="email@example.com"
-                    placeholderTextColor={theme.textSecondary}
-                    value={formData.guestEmail}
-                    onChangeText={(text) => setFormData({ ...formData, guestEmail: text })}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                  />
-                </View>
-
-                <View style={styles.formSection}>
-                  <Text style={[styles.formLabel, { color: theme.text }]}>
-                    Ціна <Text style={{ color: theme.textSecondary }}>(опціонально)</Text>
-                  </Text>
-                  <TextInput
-                    style={[styles.formInput, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
-                    placeholder="0"
-                    placeholderTextColor={theme.textSecondary}
-                    value={formData.price}
-                    onChangeText={(text) => setFormData({ ...formData, price: text.replace(/[^0-9.]/g, '') })}
-                    keyboardType="numeric"
-                  />
-                </View>
-
-                <View style={styles.formSection}>
-                  <Text style={[styles.formLabel, { color: theme.text }]}>
-                    Коментар <Text style={{ color: theme.textSecondary }}>(опціонально)</Text>
-                  </Text>
-                  <TextInput
-                    style={[
-                      styles.formInput,
-                      styles.formTextArea,
-                      { backgroundColor: theme.card, color: theme.text, borderColor: theme.border },
-                    ]}
-                    placeholder="Додаткові нотатки..."
-                    placeholderTextColor={theme.textSecondary}
-                    value={formData.comment}
-                    onChangeText={(text) => setFormData({ ...formData, comment: text })}
-                    multiline
-                    numberOfLines={4}
-                    textAlignVertical="top"
-                  />
-                </View>
-
-                {/* Selected Pipeline & Stage Info */}
-                {(selectedPipeline || selectedStage) && (
-                  <View style={[styles.selectedInfo, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                    {selectedPipeline && (
-                      <View style={styles.selectedInfoRow}>
-                        <Ionicons name="folder" size={16} color={theme.textSecondary} />
-                        <Text style={[styles.selectedInfoText, { color: theme.textSecondary }]}>
-                          Воронка: {selectedPipeline.name}
-                        </Text>
-                      </View>
-                    )}
-                    {selectedStage && (
-                      <View style={styles.selectedInfoRow}>
+              {step === 'stage' && selectedPipeline && (
+                <View style={styles.stageList}>
+                  {selectedPipeline.stages && selectedPipeline.stages.length > 0 ? (
+                    selectedPipeline.stages.map((stage) => (
+                      <Pressable
+                        key={stage.id}
+                        style={[
+                          styles.stageItem,
+                          { backgroundColor: theme.card, borderColor: theme.border },
+                          selectedStage?.id === stage.id && {
+                            borderColor: stage.color || theme.primary,
+                            borderWidth: 2,
+                          },
+                        ]}
+                        onPress={() => handleStageSelect(stage)}
+                      >
                         <View
                           style={[
                             styles.stageColorIndicator,
-                            styles.selectedInfoIndicator,
-                            { backgroundColor: selectedStage.color || theme.primary },
+                            { backgroundColor: stage.color || theme.primary },
                           ]}
                         />
-                        <Text style={[styles.selectedInfoText, { color: theme.textSecondary }]}>
-                          Стадія: {selectedStage.name}
+                        <Text style={[styles.stageName, { color: theme.text }]}>
+                          {stage.name}
                         </Text>
-                      </View>
-                    )}
+                        {selectedStage?.id === stage.id && (
+                          <Ionicons name="checkmark" size={20} color={stage.color || theme.primary} />
+                        )}
+                      </Pressable>
+                    ))
+                  ) : (
+                    <View style={styles.emptyContainer}>
+                      <Ionicons name="list-outline" size={48} color={theme.textSecondary} />
+                      <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+                        {t('crm.noStagesAvailable')}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              )}
+
+              {step === 'form' && (
+                <View style={styles.form}>
+                  <View style={styles.formSection}>
+                    <Text style={[styles.formLabel, { color: theme.text }]}>
+                      {t('crm.name')} <Text style={{ color: theme.textSecondary }}>({t('common.optional')})</Text>
+                    </Text>
+                    <TextInput
+                      style={[styles.formInput, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
+                      placeholder={t('crm.enterName')}
+                      placeholderTextColor={theme.textSecondary}
+                      value={formData.guestName}
+                      onChangeText={(text) => setFormData({ ...formData, guestName: text })}
+                    />
                   </View>
-                )}
+
+                  <View style={styles.formSection}>
+                    <Text style={[styles.formLabel, { color: theme.text }]}>
+                      {t('crm.phone')} <Text style={{ color: theme.textSecondary }}>({t('common.optional')})</Text>
+                    </Text>
+                    <TextInput
+                      style={[styles.formInput, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
+                      placeholder="+380501234567"
+                      placeholderTextColor={theme.textSecondary}
+                      value={formData.guestPhone}
+                      onChangeText={(text) => setFormData({ ...formData, guestPhone: text })}
+                      keyboardType="phone-pad"
+                    />
+                  </View>
+
+                  <View style={styles.formSection}>
+                    <Text style={[styles.formLabel, { color: theme.text }]}>
+                      {t('crm.email')} <Text style={{ color: theme.textSecondary }}>({t('common.optional')})</Text>
+                    </Text>
+                    <TextInput
+                      style={[styles.formInput, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
+                      placeholder="email@example.com"
+                      placeholderTextColor={theme.textSecondary}
+                      value={formData.guestEmail}
+                      onChangeText={(text) => setFormData({ ...formData, guestEmail: text })}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                    />
+                  </View>
+
+                  <View style={styles.formSection}>
+                    <Text style={[styles.formLabel, { color: theme.text }]}>
+                      {t('crm.price')} <Text style={{ color: theme.textSecondary }}>({t('common.optional')})</Text>
+                    </Text>
+                    <TextInput
+                      style={[styles.formInput, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
+                      placeholder="0"
+                      placeholderTextColor={theme.textSecondary}
+                      value={formData.price}
+                      onChangeText={(text) => setFormData({ ...formData, price: text.replace(/[^0-9.]/g, '') })}
+                      keyboardType="numeric"
+                    />
+                  </View>
+
+                  <View style={styles.formSection}>
+                    <Text style={[styles.formLabel, { color: theme.text }]}>
+                      {t('crm.comment')} <Text style={{ color: theme.textSecondary }}>({t('common.optional')})</Text>
+                    </Text>
+                    <TextInput
+                      style={[
+                        styles.formInput,
+                        styles.formTextArea,
+                        { backgroundColor: theme.card, color: theme.text, borderColor: theme.border },
+                      ]}
+                      placeholder={t('crm.additionalNotes')}
+                      placeholderTextColor={theme.textSecondary}
+                      value={formData.comment}
+                      onChangeText={(text) => setFormData({ ...formData, comment: text })}
+                      multiline
+                      numberOfLines={4}
+                      textAlignVertical="top"
+                    />
+                  </View>
+
+                  {/* Selected Pipeline & Stage Info */}
+                  {(selectedPipeline || selectedStage) && (
+                    <View style={[styles.selectedInfo, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                      {selectedPipeline && (
+                        <View style={styles.selectedInfoRow}>
+                          <Ionicons name="folder" size={16} color={theme.textSecondary} />
+                          <Text style={[styles.selectedInfoText, { color: theme.textSecondary }]}>
+                            {t('crm.pipeline')}: {selectedPipeline.name}
+                          </Text>
+                        </View>
+                      )}
+                      {selectedStage && (
+                        <View style={styles.selectedInfoRow}>
+                          <View
+                            style={[
+                              styles.stageColorIndicator,
+                              styles.selectedInfoIndicator,
+                              { backgroundColor: selectedStage.color || theme.primary },
+                            ]}
+                          />
+                          <Text style={[styles.selectedInfoText, { color: theme.textSecondary }]}>
+                            {t('crm.stage')}: {selectedStage.name}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
+                </View>
+              )}
+            </ScrollView>
+
+            {/* Footer */}
+            {step === 'form' && (
+              <View style={[styles.footer, { borderTopColor: theme.border }]}>
+                <Pressable
+                  style={[styles.cancelButton, { borderColor: theme.border }]}
+                  onPress={onClose}
+                  disabled={isSubmitting}
+                >
+                  <Text style={[styles.cancelButtonText, { color: theme.text }]}>{t('common.cancel')}</Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.submitButton,
+                    { backgroundColor: theme.primary },
+                    isSubmitting && styles.submitButtonDisabled,
+                  ]}
+                  onPress={handleSubmit}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.submitButtonText}>{t('common.create')}</Text>
+                  )}
+                </Pressable>
               </View>
             )}
-          </ScrollView>
-
-          {/* Footer */}
-          {step === 'form' && (
-            <View style={[styles.footer, { borderTopColor: theme.border }]}>
-              <Pressable
-                style={[styles.cancelButton, { borderColor: theme.border }]}
-                onPress={onClose}
-                disabled={isSubmitting}
-              >
-                <Text style={[styles.cancelButtonText, { color: theme.text }]}>Скасувати</Text>
-              </Pressable>
-              <Pressable
-                style={[
-                  styles.submitButton,
-                  { backgroundColor: theme.primary },
-                  isSubmitting && styles.submitButtonDisabled,
-                ]}
-                onPress={handleSubmit}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.submitButtonText}>Створити</Text>
-                )}
-              </Pressable>
-            </View>
-          )}
-        </View>
+          </View>
+        </SafeAreaView>
       </View>
     </Modal>
   );
@@ -447,14 +435,9 @@ export function AddLeadModal({ visible, onClose, onSuccess, amoConnected = false
 const styles = StyleSheet.create({
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
   },
   modalContent: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '90%',
-    minHeight: '50%',
+    flex: 1,
   },
   header: {
     flexDirection: 'row',

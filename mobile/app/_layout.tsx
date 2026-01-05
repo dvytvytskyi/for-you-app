@@ -15,7 +15,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 0, // Дані вважаються застарілими одразу
-      cacheTime: 0, // Не кешуємо дані
+      gcTime: 0, // Не кешуємо дані
       refetchOnMount: true, // Завжди завантажуємо при монтуванні
       refetchOnWindowFocus: true, // Оновлюємо дані при поверненні на екран
       refetchOnReconnect: true, // Оновлюємо дані при відновленні з'єднання
@@ -42,7 +42,7 @@ export default function RootLayout() {
     // Initialize language and theme on app start
     initializeLanguage();
     initializeTheme();
-    
+
     // Load user if token exists
     loadUser();
   }, [initializeLanguage, initializeTheme, loadUser]);
@@ -82,50 +82,71 @@ export default function RootLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen 
-          name="profile" 
+        <Stack.Screen
+          name="investor-chat"
           options={{
             animation: 'slide_from_right',
             presentation: 'card',
           }}
         />
-        <Stack.Screen 
-          name="property/[id]" 
+        <Stack.Screen
+          name="profile"
           options={{
             animation: 'slide_from_right',
             presentation: 'card',
           }}
         />
-        <Stack.Screen 
-          name="collections/[id]" 
+        <Stack.Screen
+          name="property/[id]"
           options={{
             animation: 'slide_from_right',
             presentation: 'card',
           }}
         />
-        <Stack.Screen 
-          name="lead/[id]" 
+        <Stack.Screen
+          name="collections/[id]"
           options={{
             animation: 'slide_from_right',
             presentation: 'card',
           }}
         />
-        <Stack.Screen 
-          name="news/[slug]" 
+        <Stack.Screen
+          name="lead/[id]"
           options={{
             animation: 'slide_from_right',
             presentation: 'card',
           }}
         />
-        <Stack.Screen 
-          name="developers" 
+        <Stack.Screen
+          name="project/[id]"
           options={{
             animation: 'slide_from_right',
             presentation: 'card',
           }}
         />
-        <Stack.Screen 
-          name="developers/[id]" 
+        <Stack.Screen
+          name="news/[slug]"
+          options={{
+            animation: 'slide_from_right',
+            presentation: 'card',
+          }}
+        />
+        <Stack.Screen
+          name="developers"
+          options={{
+            animation: 'slide_from_right',
+            presentation: 'card',
+          }}
+        />
+        <Stack.Screen
+          name="developers/[id]"
+          options={{
+            animation: 'slide_from_right',
+            presentation: 'card',
+          }}
+        />
+        <Stack.Screen
+          name="liked"
           options={{
             animation: 'slide_from_right',
             presentation: 'card',

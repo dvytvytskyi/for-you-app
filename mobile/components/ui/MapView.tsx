@@ -22,7 +22,7 @@ export default function MapView({
   interactive = false, // За замовчуванням неінтерактивна (для маленьких карт)
 }: MapViewProps) {
   // Convert mapbox:// style URL to https:// style URL
-  const convertedStyleUrl = styleUrl.replace('mapbox://styles/', 'https://api.mapbox.com/styles/v1/');
+  const convertedStyleUrl = styleUrl ? styleUrl.replace('mapbox://styles/', 'https://api.mapbox.com/styles/v1/') : '';
 
   const html = `
     <!DOCTYPE html>
@@ -40,6 +40,12 @@ export default function MapView({
           #map {
             width: 100%;
             height: 100vh;
+          }
+          .mapboxgl-ctrl-logo {
+            display: none !important;
+          }
+          .mapboxgl-ctrl-attrib {
+            display: none !important;
           }
         </style>
       </head>
@@ -76,7 +82,7 @@ export default function MapView({
         showsHorizontalScrollIndicator={false}
         showsVerticalScrollIndicator={false}
         androidLayerType="hardware"
-        onMessage={() => {}}
+        onMessage={() => { }}
         javaScriptEnabled={true}
         domStorageEnabled={true}
       />

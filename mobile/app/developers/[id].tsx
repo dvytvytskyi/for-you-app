@@ -17,7 +17,7 @@ export default function DeveloperDetailScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams();
-  
+
   // Завантаження developer з API
   const { data: developerResponse, isLoading, error } = useQuery({
     queryKey: ['developer', id],
@@ -50,7 +50,7 @@ export default function DeveloperDetailScreen() {
   // Форматування дати
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '';
-    
+
     const date = new Date(dateString);
     return date.toLocaleDateString('en-GB', {
       day: 'numeric',
@@ -63,19 +63,16 @@ export default function DeveloperDetailScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
         <StatusBar style="light" />
-        <View style={[styles.header, { borderBottomColor: theme.border }]}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.backButton,
-              { opacity: pressed ? 0.6 : 1 }
-            ]}
-            onPress={() => router.back()}
-          >
-            <Ionicons name="chevron-back" size={24} color={theme.text} />
-          </Pressable>
-          <Text style={[styles.headerTitle, { color: theme.text }]}>Developer</Text>
-          <View style={styles.backButton} />
-        </View>
+        <Pressable
+          style={({ pressed }) => [
+            styles.styledBackButton,
+            { backgroundColor: theme.primaryLight, top: insets.top + 10 },
+            { opacity: pressed ? 0.7 : 1 }
+          ]}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+        </Pressable>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.primary} />
           <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
@@ -90,19 +87,16 @@ export default function DeveloperDetailScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
         <StatusBar style="light" />
-        <View style={[styles.header, { borderBottomColor: theme.border }]}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.backButton,
-              { opacity: pressed ? 0.6 : 1 }
-            ]}
-            onPress={() => router.back()}
-          >
-            <Ionicons name="chevron-back" size={24} color={theme.text} />
-          </Pressable>
-          <Text style={[styles.headerTitle, { color: theme.text }]}>Developer</Text>
-          <View style={styles.backButton} />
-        </View>
+        <Pressable
+          style={({ pressed }) => [
+            styles.styledBackButton,
+            { backgroundColor: theme.primaryLight, top: insets.top + 10 },
+            { opacity: pressed ? 0.7 : 1 }
+          ]}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+        </Pressable>
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle-outline" size={64} color={theme.textTertiary} />
           <Text style={[styles.errorTitle, { color: theme.text }]}>
@@ -123,22 +117,19 @@ export default function DeveloperDetailScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
       <StatusBar style="dark" />
-      
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: theme.border }]}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.backButton,
-            { opacity: pressed ? 0.6 : 1 }
-          ]}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="chevron-back" size={24} color={theme.text} />
-        </Pressable>
-        <Text style={[styles.headerTitle, { color: theme.text }]}>Developer</Text>
-        <View style={styles.backButton} />
-      </View>
-      
+
+      {/* Floating Back Button */}
+      <Pressable
+        style={({ pressed }) => [
+          styles.styledBackButton,
+          { backgroundColor: theme.primaryLight, top: insets.top + 10 },
+          { opacity: pressed ? 0.7 : 1 }
+        ]}
+        onPress={() => router.back()}
+      >
+        <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+      </Pressable>
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -211,19 +202,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 0.5,
-  },
-  backButton: {
+  styledBackButton: {
+    position: 'absolute',
+    left: 16,
     width: 40,
     height: 40,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   headerTitle: {
     fontSize: 18,
@@ -269,7 +261,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 16,
-    paddingTop: 24,
+    paddingTop: 60, // Space for back button
   },
   logoSection: {
     alignItems: 'center',
@@ -280,6 +272,9 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     marginBottom: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 0.5,
+    borderColor: '#EFEFEF',
   },
   logoPlaceholder: {
     width: 100,

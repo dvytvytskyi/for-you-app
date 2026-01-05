@@ -1,4 +1,4 @@
-import { Property, OffPlanProperty, SecondaryProperty } from '@/api/properties';
+import { Property, OffPlanProperty, SecondaryProperty, PropertyFilters } from '@/api/properties';
 
 /**
  * Конвертує API Property в формат для UI
@@ -20,7 +20,7 @@ export interface PropertyCardData {
 /**
  * Конвертує Property з API в формат для картки
  */
-export function convertPropertyToCard(property: Property): PropertyCardData {
+export function convertPropertyToCard(property: Property, favoriteIds: string[] = []): PropertyCardData {
   const isOffPlan = property.propertyType === 'off-plan';
   const offPlanProperty = property as OffPlanProperty;
   const secondaryProperty = property as SecondaryProperty;
@@ -37,10 +37,10 @@ export function convertPropertyToCard(property: Property): PropertyCardData {
     } else {
       areaStr = '';
     }
-    
+
     // Обробляємо city - переконуємося, що це рядок
     const cityName = offPlanProperty.city?.nameEn || offPlanProperty.city?.nameRu || '';
-    
+
     location = areaStr || cityName || 'Unknown location';
   } else {
     // Обробляємо area для secondary property
@@ -52,17 +52,17 @@ export function convertPropertyToCard(property: Property): PropertyCardData {
     } else {
       areaStr = '';
     }
-    
+
     // Обробляємо city
     const cityName = secondaryProperty.city?.nameEn || secondaryProperty.city?.nameRu || '';
-    
+
     location = areaStr && cityName ? `${areaStr}, ${cityName}` : (areaStr || cityName || 'Unknown location');
   }
 
   // Визначаємо ціну (конвертуємо рядки в числа якщо потрібно)
   let price: number;
   if (isOffPlan) {
-    price = typeof offPlanProperty.priceFrom === 'string' 
+    price = typeof offPlanProperty.priceFrom === 'string'
       ? parseFloat(offPlanProperty.priceFrom) || 0
       : (offPlanProperty.priceFrom as number);
   } else {
@@ -70,8 +70,8 @@ export function convertPropertyToCard(property: Property): PropertyCardData {
       ? parseFloat(secondaryProperty.price) || 0
       : (secondaryProperty.price as number);
   }
-  
-  const priceAED = isOffPlan 
+
+  const priceAED = isOffPlan
     ? (offPlanProperty.priceFromAED || price * 3.673)
     : (secondaryProperty.priceAED || price * 3.673);
 
@@ -88,7 +88,7 @@ export function convertPropertyToCard(property: Property): PropertyCardData {
 
   // Гарантуємо, що title є рядком
   const title = typeof property.name === 'string' ? property.name : String(property.name || 'Untitled');
-  
+
   // Гарантуємо, що images є масивом рядків з валідними URI
   let images: string[] = [];
   if (Array.isArray(property.photos)) {
@@ -108,10 +108,12 @@ export function convertPropertyToCard(property: Property): PropertyCardData {
         }
       });
   }
-  
+
   // Якщо немає зображень, додаємо placeholder
   if (images.length === 0) {
-    images = ['https://via.placeholder.com/400x300?text=No+Image'];
+    // images = ['https://via.placeholder.com/400x300?text=No+Image'];
+    // Use local "new logo blue.png" as placeholder if no images
+    images = []; // We will handle empty images array in UI by showing placeholder asset
   }
 
   // Форматуємо дату завершення (handover date)
@@ -127,6 +129,9 @@ export function convertPropertyToCard(property: Property): PropertyCardData {
     }
   }
 
+  // Check if favorites logic is implemented
+  const isFavorite = favoriteIds.includes(String(property.id));
+
   return {
     id: String(property.id || ''),
     title,
@@ -138,7 +143,7 @@ export function convertPropertyToCard(property: Property): PropertyCardData {
     images,
     handoverDate,
     paymentPlan: isOffPlan ? (typeof offPlanProperty.paymentPlan === 'string' ? offPlanProperty.paymentPlan : null) : null,
-    isFavorite: false, // TODO: додати логіку для favorites
+    isFavorite,
   };
 }
 
@@ -150,17 +155,15 @@ export function formatPrice(price: number, currency: 'USD' | 'AED' = 'USD'): str
   if (price >= 1000000) {
     return `${symbol}${(price / 1000000).toFixed(2)}M`;
   }
-  if (price >= 1000) {
-    return `${symbol}${(price / 1000).toFixed(0)}K`;
-  }
-  return `${symbol}${price.toLocaleString()}`;
+  // Replace commas with spaces, no decimals
+  return `${symbol}${price.toLocaleString('en-US', { maximumFractionDigits: 0 }).replace(/,/g, ' ')}`;
 }
 
 /**
  * Конвертує фільтри з UI в формат API
  */
 export interface UIFilters {
-  listingType: 'offplan' | 'secondary';
+  listingType: 'all' | 'offplan' | 'secondary';
   minPrice: number | null;
   maxPrice: number | null;
   propertyType: string;
@@ -168,34 +171,38 @@ export interface UIFilters {
   location: string;
 }
 
-export function convertFiltersToAPI(uiFilters: UIFilters): {
-  propertyType?: 'off-plan' | 'secondary';
-  priceFrom?: number;
-  priceTo?: number;
-  bedrooms?: string;
-  search?: string;
-} {
-  const apiFilters: any = {};
+export function convertFiltersToAPI(uiFilters: UIFilters): PropertyFilters {
+  const apiFilters: PropertyFilters = {};
 
-  // Property type
+  // 1. Property type (Listing Type)
   if (uiFilters.listingType === 'offplan') {
     apiFilters.propertyType = 'off-plan';
   } else if (uiFilters.listingType === 'secondary') {
     apiFilters.propertyType = 'secondary';
   }
 
-  // Price range
+  // 2. Price range (Direct mapping to minPrice/maxPrice)
   if (uiFilters.minPrice) {
-    apiFilters.priceFrom = uiFilters.minPrice;
+    apiFilters.minPrice = uiFilters.minPrice;
   }
   if (uiFilters.maxPrice) {
-    apiFilters.priceTo = uiFilters.maxPrice;
+    apiFilters.maxPrice = uiFilters.maxPrice;
   }
 
-  // Bedrooms
+  // 3. Bedrooms (Map 'studio' to '0' for backend)
   if (uiFilters.bedrooms && uiFilters.bedrooms !== 'any') {
-    apiFilters.bedrooms = uiFilters.bedrooms;
+    const mappedBedrooms = uiFilters.bedrooms
+      .split(',')
+      .map(b => b.trim() === 'studio' ? '0' : b.trim())
+      .join(',');
+    apiFilters.bedrooms = mappedBedrooms;
   }
 
+  // 5. Locations -> Mapped to 'location'
+  if (uiFilters.location && uiFilters.location !== 'any') {
+    apiFilters.location = uiFilters.location.split('|').filter(Boolean);
+  }
+
+  console.log('🔄 Converted UI Filters to API:', apiFilters);
   return apiFilters;
 }

@@ -26,6 +26,6 @@
   "passwordTooShort": "Password must be at least 8 characters",
   "unsavedChanges": "Unsaved Changes",
   "unsavedChangesMessage": "You have unsaved changes. Are you sure you want to leave?",
-  "leave": "Leave"
+  "leave": "Leave",
+  "retry": "Retry"
 }
-

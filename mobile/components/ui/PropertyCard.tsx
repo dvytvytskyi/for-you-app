@@ -1,58 +1,92 @@
 import { View, Text, StyleSheet, ImageBackground, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 
 interface PropertyCardProps {
-  image: string;
-  title: string;
-  location: string;
-  price: string;
-  handoverDate: string;
-  onPress?: () => void;
+  property?: {
+    image: string;
+    title: string;
+    location: string;
+    price: string;
+    handoverDate: string;
+  };
+  // Fallback for old usage
+  image?: string;
+  title?: string;
+  location?: string;
+  price?: string;
+  handoverDate?: string;
+
+  onPress?: (id?: string) => void;
+  theme?: any;
+  isFavorite?: boolean;
+  onToggleFavorite?: (id: string, e: any) => void;
 }
 
 export default function PropertyCard({
+  property,
   image,
   title,
   location,
   price,
   handoverDate,
   onPress,
+  theme,
+  isFavorite,
+  onToggleFavorite
 }: PropertyCardProps) {
+  // Normalize data from either 'property' object or individual props
+  const displayImage = property?.image || image;
+  const displayTitle = property?.title || title;
+  const displayLocation = property?.location || location;
+  const displayPrice = property?.price || price;
+  const displayHandover = property?.handoverDate || handoverDate;
+
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => onPress && onPress()}
       style={({ pressed }) => [
         styles.container,
-        { 
-          opacity: pressed ? 0.9 : 1,
-          transform: [{ scale: pressed ? 0.98 : 1 }]
-        }
+        { opacity: pressed ? 0.9 : 1 }
       ]}
     >
       <ImageBackground
-        source={{ uri: image }}
+        source={
+          displayImage && displayImage.trim().length > 0 && (displayImage.startsWith('http://') || displayImage.startsWith('https://') || displayImage.startsWith('data:') || displayImage.startsWith('file://'))
+            ? { uri: displayImage }
+            : require('@/assets/images/new logo blue.png')
+        }
         style={styles.image}
-        imageStyle={styles.imageStyle}
+        imageStyle={{ borderRadius: 12 }}
       >
-        {/* Gradient overlay from bottom to middle */}
         <LinearGradient
-          colors={['rgba(0, 0, 0, 0.95)', 'rgba(0, 0, 0, 0)']}
-          start={{ x: 0, y: 1 }}
-          end={{ x: 0, y: 0 }}
+          colors={['transparent', 'rgba(0,0,0,0.8)']}
           style={styles.gradient}
         >
-          <View style={styles.textContainer}>
-            <Text style={styles.title} numberOfLines={1}>
-              {title}
-            </Text>
-            <Text style={styles.location} numberOfLines={1}>
-              {location}
-            </Text>
-            <Text style={styles.priceInfo} numberOfLines={1}>
-              {price} • Handover {handoverDate}
-            </Text>
+          <View style={styles.content}>
+            <Text style={styles.title} numberOfLines={1}>{displayTitle}</Text>
+            <Text style={styles.location} numberOfLines={1}>{displayLocation}</Text>
+
+            <View style={styles.footer}>
+              <Text style={styles.price}>{displayPrice}</Text>
+              <Text style={styles.date}>{displayHandover}</Text>
+            </View>
           </View>
         </LinearGradient>
+
+        {/* Favorite Button (if provided) */}
+        {isFavorite !== undefined && onToggleFavorite && (
+          <Pressable
+            style={styles.favButton}
+            onPress={(e) => onToggleFavorite('id-placeholder', e)}
+          >
+            <Ionicons
+              name={isFavorite ? "heart" : "heart-outline"}
+              size={24}
+              color={isFavorite ? "#FF3B30" : "#FFFFFF"}
+            />
+          </Pressable>
+        )}
       </ImageBackground>
     </Pressable>
   );
@@ -60,45 +94,63 @@ export default function PropertyCard({
 
 const styles = StyleSheet.create({
   container: {
+    height: 200,
     width: '100%',
-    height: 190,
     borderRadius: 12,
     overflow: 'hidden',
+    backgroundColor: '#f0f0f0',
   },
   image: {
     width: '100%',
     height: '100%',
     justifyContent: 'flex-end',
   },
-  imageStyle: {
-    borderRadius: 12,
-  },
   gradient: {
-    flex: 1,
+    height: '70%',
     justifyContent: 'flex-end',
-    paddingHorizontal: 14,
-    paddingVertical: 15,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: 0, // Pushed to absolute bottom
   },
-  textContainer: {
-    gap: 4,
+  content: {
+    gap: 2,
+    paddingBottom: 0, // Minimal spacing from bottom edge
   },
   title: {
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
-    lineHeight: 20,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   location: {
-    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 13,
     fontWeight: '400',
-    color: '#FFFFFF',
-    lineHeight: 18,
+    marginBottom: 2, // Reduced margin
   },
-  priceInfo: {
-    fontSize: 14,
-    fontWeight: '400',
+  footer: {
+    // marginTop removed to keeping tighter with location
+    gap: 2, // Stack price and date vertically
+  },
+  price: {
     color: '#FFFFFF',
-    lineHeight: 18,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  date: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 11,
+  },
+  favButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    // No background, just icon
   },
 });
-

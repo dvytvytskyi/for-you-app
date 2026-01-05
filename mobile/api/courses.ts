@@ -30,6 +30,11 @@ export interface Course {
   links?: CourseLink[];
   createdAt?: string;
   updatedAt?: string;
+  userProgress?: {
+    status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
+    completionPercentage: number;
+    lastAccessedAt?: string;
+  };
 }
 
 export interface CoursesListResponse {
@@ -48,20 +53,20 @@ export const coursesApi = {
    */
   async getAll(): Promise<CoursesListResponse> {
     console.log('📚 Fetching all courses (Public API)...');
-    
+
     try {
       const response = await publicApiClient.get<CoursesListResponse>('/public/courses');
-      
+
       console.log('✅ Courses response:', {
         status: response.status,
         success: response.data?.success,
         coursesCount: Array.isArray(response.data?.data) ? response.data.data.length : 0,
       });
-      
+
       if (response.data.success && Array.isArray(response.data.data)) {
         // Сортуємо курси за order ASC
         const sortedCourses = [...response.data.data].sort((a, b) => (a.order || 0) - (b.order || 0));
-        
+
         // Сортуємо contents та links для кожного курсу
         const normalizedCourses = sortedCourses.map(course => ({
           ...course,
@@ -72,13 +77,13 @@ export const coursesApi = {
             ? [...course.links].sort((a, b) => (a.order || 0) - (b.order || 0))
             : [],
         }));
-        
+
         return {
           success: true,
           data: normalizedCourses,
         };
       }
-      
+
       return response.data;
     } catch (error: any) {
       console.error('❌ Error fetching courses:', error);
@@ -91,16 +96,16 @@ export const coursesApi = {
    */
   async getById(id: string): Promise<CourseResponse> {
     console.log('📚 Fetching course by ID:', id);
-    
+
     try {
       const response = await publicApiClient.get<CourseResponse>(`/public/courses/${id}`);
-      
+
       console.log('✅ Course detail response:', {
         status: response.status,
         success: response.data?.success,
         hasData: !!response.data?.data,
       });
-      
+
       if (response.data.success && response.data.data) {
         // Сортуємо contents та links
         const normalizedCourse = {
@@ -112,13 +117,13 @@ export const coursesApi = {
             ? [...response.data.data.links].sort((a, b) => (a.order || 0) - (b.order || 0))
             : [],
         };
-        
+
         return {
           success: true,
           data: normalizedCourse,
         };
       }
-      
+
       return response.data;
     } catch (error: any) {
       console.error('❌ Error fetching course detail:', error);
@@ -131,20 +136,20 @@ export const coursesApi = {
    */
   async getAllAdmin(): Promise<CoursesListResponse> {
     console.log('📚 Fetching all courses (Admin API)...');
-    
+
     try {
       const response = await apiClient.get<{ success: boolean; data: Course[] }>('/courses');
-      
+
       console.log('✅ All courses response:', {
         status: response.status,
         success: response.data?.success,
         coursesCount: Array.isArray(response.data?.data) ? response.data.data.length : 0,
       });
-      
+
       if (response.data.success && Array.isArray(response.data.data)) {
         // Сортуємо курси за order ASC
         const sortedCourses = [...response.data.data].sort((a, b) => (a.order || 0) - (b.order || 0));
-        
+
         // Сортуємо contents та links для кожного курсу
         const normalizedCourses = sortedCourses.map(course => ({
           ...course,
@@ -155,13 +160,13 @@ export const coursesApi = {
             ? [...course.links].sort((a, b) => (a.order || 0) - (b.order || 0))
             : [],
         }));
-        
+
         return {
           success: true,
           data: normalizedCourses,
         };
       }
-      
+
       // Fallback формат
       return {
         success: true,
@@ -178,10 +183,10 @@ export const coursesApi = {
    */
   async getByIdAdmin(id: string): Promise<CourseResponse> {
     console.log('📚 Fetching course by ID (Admin API):', id);
-    
+
     try {
       const response = await apiClient.get<CourseResponse>(`/courses/${id}`);
-      
+
       if (response.data.success && response.data.data) {
         // Сортуємо contents та links
         const normalizedCourse = {
@@ -193,16 +198,32 @@ export const coursesApi = {
             ? [...response.data.data.links].sort((a, b) => (a.order || 0) - (b.order || 0))
             : [],
         };
-        
+
         return {
           success: true,
           data: normalizedCourse,
         };
       }
-      
+
       return response.data;
     } catch (error: any) {
       console.error('❌ Error fetching course by ID (Admin API):', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Оновити прогрес курсу для поточного користувача
+   */
+  async updateProgress(id: string, status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED'): Promise<{ success: boolean }> {
+    console.log(`📚 Updating course ${id} progress to:`, status);
+    try {
+      // Використовуємо шлях без версії v1, оскільки бекенд реалізував його як /api/courses/...
+      // Ми використовуємо baseURL, який закінчується на /v1, тому піднімаємося на рівень вище
+      const response = await apiClient.post(`/../courses/${id}/progress`, { status });
+      return { success: response.status === 200 || response.status === 201 };
+    } catch (error) {
+      console.error('❌ Error updating progress:', error);
       throw error;
     }
   },

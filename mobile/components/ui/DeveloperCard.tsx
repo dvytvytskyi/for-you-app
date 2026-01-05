@@ -11,21 +11,21 @@ interface DeveloperCardProps {
   onPress?: () => void;
 }
 
-export default function DeveloperCard({ 
-  logo, 
-  name, 
-  description, 
-  projectsCount, 
-  gradientImage, 
-  onPress 
+export default function DeveloperCard({
+  logo,
+  name,
+  description,
+  projectsCount,
+  gradientImage,
+  onPress
 }: DeveloperCardProps) {
   const { theme } = useTheme();
-  
+
   // Обрізаємо опис якщо він занадто довгий
-  const shortDescription = description 
+  const shortDescription = description
     ? (description.length > 80 ? description.substring(0, 80) + '...' : description)
     : 'No description available';
-  
+
   return (
     <Pressable
       onPress={onPress}
@@ -38,34 +38,34 @@ export default function DeveloperCard({
           transform: [{ scale: pressed ? 0.98 : 1 }]
         }
       ]}
-      >
-        <View style={styles.content}>
+    >
+      <View style={styles.content}>
         {/* Logo */}
         <View style={styles.logoContainer}>
-            {logo ? (
+          {logo ? (
             <Image
-                source={{ uri: logo }}
-                style={styles.logo}
-              resizeMode="contain"
-              />
-            ) : (
+              source={{ uri: logo }}
+              style={styles.logo}
+              resizeMode="cover"
+            />
+          ) : (
             <Ionicons name="business" size={24} color={theme.textSecondary} />
-            )}
-          </View>
-          
-          {/* Text content */}
-          <View style={styles.textContainer}>
-          <Text style={[styles.title, { color: theme.text }]} numberOfLines={1}>
-              {name}
-            </Text>
-            <Text style={[styles.description, { color: theme.textSecondary }]} numberOfLines={2}>
-              {shortDescription}
-            </Text>
-          </View>
-          
-          {/* Right arrow */}
-        <Ionicons name="arrow-forward" size={20} color={theme.textSecondary} />
+          )}
         </View>
+
+        {/* Text content */}
+        <View style={styles.textContainer}>
+          <Text style={[styles.title, { color: theme.text }]} numberOfLines={1}>
+            {name}
+          </Text>
+          <Text style={[styles.description, { color: theme.textSecondary }]} numberOfLines={2}>
+            {shortDescription}
+          </Text>
+        </View>
+
+        {/* Right arrow */}
+        <Ionicons name="arrow-forward" size={20} color={theme.textSecondary} />
+      </View>
     </Pressable>
   );
 }
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    backgroundColor: 'transparent',
+    backgroundColor: '#FFFFFF',
   },
   logo: {
     width: '100%',

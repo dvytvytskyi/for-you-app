@@ -9,8 +9,8 @@ interface QuickActionCardProps {
 }
 
 export default function QuickActionCard({ icon, label, onPress }: QuickActionCardProps) {
-  const { theme } = useTheme();
-  
+  const { theme, isDark } = useTheme();
+
   return (
     <Pressable
       onPress={onPress}
@@ -24,8 +24,8 @@ export default function QuickActionCard({ icon, label, onPress }: QuickActionCar
         }
       ]}
     >
-      <Ionicons name={icon} size={24} color={theme.primary} />
-      <Text style={[styles.label, { color: theme.primary }]}>{label}</Text>
+      <Ionicons name={icon} size={24} color={!isDark ? '#007AFF' : theme.textTertiary} />
+      <Text style={[styles.label, { color: theme.textSecondary }]}>{label}</Text>
     </Pressable>
   );
 }

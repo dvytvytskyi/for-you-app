@@ -1,37 +1,36 @@
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native';
 import { useEffect } from 'react';
 import { useTheme } from '@/utils/theme';
 import { useAuthStore } from '@/store/authStore';
 import { UserRole } from '@/types/user';
+import { TabBar } from '@/components/navigation/TabBar';
 
 export default function TabsLayout() {
   const { theme, isDark } = useTheme();
-  const user = useAuthStore((state) => state.user);
-  // Явна перевірка ролі
-  const isInvestor = user?.role === 'INVESTOR' || user?.role === UserRole.INVESTOR;
-  
-  // Debug: log user role
+  const { user, isLoading } = useAuthStore();
+  const router = useRouter();
+
+  const isInvestor = (user?.role as string) === 'INVESTOR';
+
   useEffect(() => {
-    console.log('=== TABS LAYOUT ===');
-    console.log('User role:', user?.role);
-    console.log('Is Investor:', isInvestor);
-    console.log('Should hide CRM tab:', !isInvestor);
-  }, [user?.role, isInvestor]);
+    if (!isLoading) {
+      console.log('=== TABS LAYOUT ===');
+      console.log('User role:', user?.role);
+      console.log('Is Investor:', isInvestor);
+    }
+  }, [user?.role, isInvestor, isLoading]);
+
+  if (isLoading) {
+    return null;
+  }
 
   return (
     <Tabs
+      tabBar={(props) => <TabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          ...styles.tabBar,
-          backgroundColor: theme.background,
-          borderTopColor: theme.border,
-        },
-        tabBarActiveTintColor: isDark ? '#FFFFFF' : '#102F73',
-        tabBarInactiveTintColor: isDark ? '#FFFFFF99' : '#999999',
-        tabBarLabelStyle: styles.tabBarLabel,
       }}
     >
       <Tabs.Screen
@@ -43,64 +42,94 @@ export default function TabsLayout() {
           ),
         }}
       />
-      
+
       <Tabs.Screen
         name="properties"
         options={{
-          title: 'Properties',
+          title: 'Projects',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'business' : 'business-outline'} size={24} color={color} />
           ),
         }}
       />
-      
+
+
       <Tabs.Screen
-        name="liked"
+        name="crm"
         options={{
-          title: 'Liked',
+          title: 'CRM',
+          href: !isInvestor ? '/crm' : null,
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'heart' : 'heart-outline'} size={24} color={color} />
+            <Ionicons name={focused ? 'people' : 'people-outline'} size={24} color={color} />
           ),
         }}
       />
-      
-      {!isInvestor && (
-        <Tabs.Screen
-          name="crm"
-          options={{
-            title: 'CRM',
-            tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'people' : 'people-outline'} size={24} color={color} />
-            ),
-          }}
-        />
-      )}
-      
+
+      <Tabs.Screen
+        name="chat"
+        listeners={{
+          tabPress: (e: any) => {
+            e.preventDefault();
+            router.push('/investor-chat');
+          },
+        }}
+        options={{
+          title: 'Chat',
+          href: isInvestor ? '/investor-chat' : null,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'chatbubbles' : 'chatbubbles-outline'} size={24} color={color} />
+          ),
+        }}
+      />
+
       <Tabs.Screen
         name="collections"
         options={{
           title: 'Collections',
+          href: !isInvestor ? '/collections' : null,
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'folder' : 'folder-outline'} size={24} color={color} />
           ),
         }}
       />
-      
+
+      <Tabs.Screen
+        name="portfolio"
+        options={{
+          title: 'Portfolio',
+          href: isInvestor ? '/portfolio' : null,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'wallet' : 'wallet-outline'} size={24} color={color} />
+          ),
+        }}
+      />
+
     </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
   tabBar: {
-    borderTopWidth: 1,
-    height: 84,
-    paddingBottom: 20,
-    paddingTop: 4,
-    paddingHorizontal: 8,
+    position: 'absolute',
+    bottom: 25,
+    left: 20,
+    right: 20,
+    height: 64,
+    borderRadius: 32,
+    paddingBottom: 0,
+    paddingTop: 0,
+    borderTopWidth: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 5,
+    overflow: 'hidden',
   },
   tabBarLabel: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 10,
+    fontWeight: '600',
+    marginBottom: 8,
   },
 });
 

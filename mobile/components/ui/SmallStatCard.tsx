@@ -9,15 +9,21 @@ interface SmallStatCardProps {
 }
 
 export default function SmallStatCard({ icon, title, value }: SmallStatCardProps) {
-  const { theme } = useTheme();
-  
+  const { theme, isDark } = useTheme();
+
   return (
     <View style={[styles.container, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
       <View style={styles.contentRow}>
-        <View style={[styles.iconContainer, { borderColor: theme.cardBorder }]}>
+        <View style={[
+          styles.iconContainer,
+          {
+            borderColor: theme.cardBorder,
+            backgroundColor: isDark ? 'rgba(10, 132, 255, 0.1)' : '#F0F7FF'
+          }
+        ]}>
           <Ionicons name={icon} size={20} color={theme.primary} />
         </View>
-        
+
         <View style={styles.textContainer}>
           <Text style={[styles.title, { color: theme.textSecondary }]}>{title}</Text>
           <Text style={[styles.value, { color: theme.primary }]}>{value}</Text>

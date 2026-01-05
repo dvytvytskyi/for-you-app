@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, Dimensions, Pressable, FlatList, Animated, PanResponder, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Pressable, FlatList, Animated, PanResponder, ActivityIndicator, Alert, Platform } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Header, CollectionPropertyCard } from '@/components/ui';
@@ -10,6 +11,7 @@ import { useCollectionsStore } from '@/store/collectionsStore';
 import { useQuery } from '@tanstack/react-query';
 import { propertiesApi } from '@/api/properties';
 import { convertPropertyToCard, formatPrice } from '@/utils/property-utils';
+import { useFavoritesStore } from '@/store/favoritesStore';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -20,15 +22,15 @@ export default function CollectionDetailScreen() {
   const insets = useSafeAreaInsets();
   const [showDescription, setShowDescription] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  
+
   // Завантажуємо колекцію з store (реактивно)
   const collections = useCollectionsStore((state) => state.collections);
   const { removePropertyFromCollection, addPropertyToCollection, clearCollectionProperties, updateCollectionImage } = useCollectionsStore();
-  
+
   const collection = useMemo(() => {
     const collectionId = typeof id === 'string' ? id : id?.[0];
     if (!collectionId) return undefined;
-    
+
     // Шукаємо колекцію в актуальному списку (реактивно оновлюється)
     const foundCollection = collections.find(c => c.id === collectionId);
     console.log('🔍 Looking for collection:', {
@@ -50,83 +52,100 @@ export default function CollectionDetailScreen() {
     });
     return ids;
   }, [collection?.propertyIds, collection?.id]);
-  
+
   // Створюємо унікальний ключ для query на основі propertyIds
   const propertyIdsKey = useMemo(() => {
-    const key = propertyIds.sort().join(',');
-    console.log('🔑 PropertyIds key:', key);
+    // Копіюємо масив перед сортуванням, щоб не мутувати оригінал
+    const key = [...propertyIds].sort().join(',');
+    console.log('🔑 PropertyIds key for query:', key);
     return key;
   }, [propertyIds]);
-  
+
   const { data: propertiesData, isLoading, error, refetch } = useQuery({
     queryKey: ['collection-properties', collection?.id, propertyIdsKey],
     queryFn: async () => {
-      if (propertyIds.length === 0) {
+      // Отримуємо актуальні ID з масиву (копіюємо для безпеки)
+      const idsToFetch = [...propertyIds].filter(id => !!id);
+
+      if (idsToFetch.length === 0) {
+        console.log('ℹ️ No properties to fetch for collection');
         return [];
       }
-      
-      console.log('🔄 Завантаження properties для колекції:', {
+
+      console.log('🔄 Fetching properties for collection:', {
         collectionId: collection?.id,
-        propertyIdsCount: propertyIds.length,
-        propertyIds: propertyIds,
+        count: idsToFetch.length,
+        ids: idsToFetch,
       });
-      
-      // Завантажуємо кожен property за ID
-      const propertiesPromises = propertyIds.map(propertyId => 
-        propertiesApi.getById(propertyId).catch(err => {
-          console.warn(`⚠️ Не вдалося завантажити property ${propertyId}:`, err);
+
+      // Завантажуємо кожен property за ID паралельно
+      const propertiesPromises = idsToFetch.map(async (propertyId) => {
+        try {
+          const result = await propertiesApi.getById(propertyId);
+          if (result && result.success && result.data) {
+            return result.data;
+          }
+          console.warn(`⚠️ Property ${propertyId} returned unsuccessful response:`, result);
           return null;
-        })
-      );
-      
-      const results = await Promise.all(propertiesPromises);
-      const properties = results
-        .filter((result): result is { success: boolean; data: any } => 
-          result !== null && 
-          result !== undefined && 
-          result.success && 
-          result.data !== null && 
-          result.data !== undefined
-        )
-        .map(result => result.data)
-        .filter(prop => prop && prop.id); // Додаткова перевірка
-      
-      console.log('✅ Завантажено properties для колекції:', {
-        total: properties.length,
-        propertyIds: properties.map(p => p.id),
+        } catch (err) {
+          console.error(`❌ Failed to fetch property ${propertyId}:`, err);
+          return null;
+        }
       });
-      
+
+      const results = await Promise.all(propertiesPromises);
+      const properties = results.filter((prop): prop is any => prop !== null && !!prop.id);
+
+      console.log('✅ Successfully loaded properties:', {
+        wanted: idsToFetch.length,
+        loaded: properties.length,
+      });
+
       // Конвертуємо в формат для UI
-      return properties.map(prop => convertPropertyToCard(prop));
+      // Note: We don't pass favoriteIds here because we don't need real-time favorite updates 
+      // during the fetch query cached result. We will re-map in the UI if needed
+      // or we can just pass updated favoriteIds if we want strict consistency.
+      // However, since useQuery caches the result, let's keep it pure data 
+      // and handle favorite status application in rendering or useMemo if possible.
+      // But property-utils is now expecting favoriteIds for isFavorite.
+      // So let's pass an empty array here for the cache to be "clean property data"
+      // and we will handle favorite status application in the UI rendering.
+      // WAIT, actually property-utils returns PropertyCardData which includes isFavorite.
+      // If we bake false into it, it will be false. 
+      // The best way is to pass current favoriteIds here.
+      // Since react-query keys include only IDs, but favoriteIds change often.
+      // We should probably NOT bake favoriteIds into the cached query data
+      // OR we should accept that this query will return properties with potentially stale favorite status
+      // unless we invalidate it often.
+      // BETTER APPROACH: Let's convert in the render or a separate useMemo that depends on favoriteIds.
+      // But the query returns already converted data: `return properties.map(prop => convertPropertyToCard(prop));`
+      // Let's change the query to return RAW properties, and convert them in useMemo.
+      return properties;
     },
-    enabled: !!collection,
-    staleTime: 0,
-    cacheTime: 0,
+    enabled: !!collection && propertyIds.length >= 0, // Завжди enabled якщо є колекція
+    staleTime: 1000 * 60, // 1 хвилина
   });
-  
+
+  // Favorites store
+  const { favoriteIds } = useFavoritesStore();
+
+  const formattedProperties = useMemo(() => {
+    if (!propertiesData) return [];
+    return propertiesData.map((prop: any) => convertPropertyToCard(prop, favoriteIds));
+  }, [propertiesData, favoriteIds]);
+
   // Оновлюємо image колекції, коли завантажуються properties
   useEffect(() => {
-    if (!collection?.id || !propertiesData || propertiesData.length === 0) {
-      // Якщо немає properties - скидаємо image (якщо потрібно)
-      if (collection?.id && (!propertiesData || propertiesData.length === 0) && collection.image) {
-        updateCollectionImage(collection.id, null);
-      }
-      return;
-    }
-    
-    // Якщо колекція не має image і є properties - встановлюємо перше зображення
-    if (!collection.image && propertiesData.length > 0) {
-      const firstProperty = propertiesData[0];
-      const firstImage = firstProperty.images && firstProperty.images.length > 0 
-        ? firstProperty.images[0] 
+    if (!collection?.id) return;
+
+    // Якщо завантажились properties і у колекції немає картинки - встановлюємо першу
+    if (formattedProperties && formattedProperties.length > 0 && !collection.image) {
+      const firstImage = formattedProperties[0].images && formattedProperties[0].images.length > 0
+        ? formattedProperties[0].images[0]
         : null;
-      
+
       if (firstImage) {
-        console.log('🖼️ Setting collection image from first property:', {
-          collectionId: collection.id,
-          propertyId: firstProperty.id,
-          image: firstImage.substring(0, 50),
-        });
+        console.log('🖼️ Auto-updating collection image to:', firstImage);
         updateCollectionImage(collection.id, firstImage);
       }
     }
@@ -138,7 +157,7 @@ export default function CollectionDetailScreen() {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 0) return 'Just now';
     if (diffDays === 1) return 'Yesterday';
     if (diffDays < 7) return `${diffDays} days ago`;
@@ -168,19 +187,19 @@ export default function CollectionDetailScreen() {
       console.warn('⚠️ Collection ID is missing');
       return;
     }
-    
+
     if (!propertyIdsToAdd || propertyIdsToAdd.length === 0) {
       console.warn('⚠️ No property IDs provided');
       return;
     }
-    
+
     console.log('➕ Adding properties to collection:', {
       collectionId: collection.id,
       propertyIdsToAdd,
       count: propertyIdsToAdd.length,
       currentPropertyIds: propertyIds,
     });
-    
+
     // Завантажуємо дані properties, щоб отримати їх зображення
     const loadPropertiesAndAdd = async () => {
       try {
@@ -191,8 +210,8 @@ export default function CollectionDetailScreen() {
             if (response.success && response.data) {
               const property = response.data;
               // Отримуємо перше зображення
-              const firstImage = property.photos && property.photos.length > 0 
-                ? property.photos[0] 
+              const firstImage = property.photos && property.photos.length > 0
+                ? property.photos[0]
                 : null;
               return { propertyId, image: firstImage };
             }
@@ -201,9 +220,9 @@ export default function CollectionDetailScreen() {
           }
           return { propertyId, image: null };
         });
-        
+
         const propertiesData = await Promise.all(propertiesPromises);
-        
+
         // Додаємо properties з їх зображеннями
         propertiesData.forEach(({ propertyId, image }) => {
           console.log('➕ Adding property with image:', {
@@ -221,9 +240,9 @@ export default function CollectionDetailScreen() {
         });
       }
     };
-    
+
     loadPropertiesAndAdd();
-    
+
     // Оновлюємо query після додавання
     // Query автоматично оновиться, оскільки propertyIds зміниться через useMemo
     // Але також викликаємо refetch для гарантії
@@ -238,13 +257,13 @@ export default function CollectionDetailScreen() {
     }, 500);
   }, [collection?.id, propertyIds, addPropertyToCollection, refetch]);
 
-  // Обробка очищення колекції
+  // Обробка очищення колекції (видалення всіх елементів)
   const handleClearCollection = useCallback(() => {
     if (!collection?.id) return;
 
     Alert.alert(
-      'Clear Collection?',
-      'Are you sure you want to remove all properties from this collection? This action cannot be undone.',
+      'Clear Properties?',
+      'Are you sure you want to remove all properties from this collection?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -257,6 +276,28 @@ export default function CollectionDetailScreen() {
       ]
     );
   }, [collection?.id, clearCollectionProperties]);
+
+  // Видалення всієї колекції
+  const handleDeleteCollection = useCallback(() => {
+    if (!collection?.id) return;
+
+    Alert.alert(
+      'Delete Collection?',
+      'Are you sure you want to delete this collection PERMANENTLY? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            const { deleteCollection } = useCollectionsStore.getState();
+            await deleteCollection(collection.id);
+            router.replace('/(tabs)/collections');
+          },
+        },
+      ]
+    );
+  }, [collection?.id, router]);
 
   const SwipeableItem = ({ item }: { item: ReturnType<typeof convertPropertyToCard> }) => {
     const panX = useRef(new Animated.Value(0)).current;
@@ -374,7 +415,7 @@ export default function CollectionDetailScreen() {
           </Text>
         </Pressable>
       </View>
-      
+
       {showDescription && (
         <Text style={[styles.description, { color: theme.textSecondary }]}>
           {collection?.description || 'No description'}
@@ -428,12 +469,12 @@ export default function CollectionDetailScreen() {
         >
           <Ionicons name="chevron-back" size={20} color={theme.text} />
         </Pressable>
-        
+
         <Text style={[styles.headerTitle, { color: theme.text }]}>Collection</Text>
-        
+
         <View style={styles.backButton} />
       </View>
-      
+
       {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.primary} />
@@ -453,7 +494,7 @@ export default function CollectionDetailScreen() {
         </View>
       ) : (
         <FlatList
-          data={propertiesData || []}
+          data={formattedProperties}
           renderItem={renderPropertyItem}
           keyExtractor={(item) => item.id}
           ListHeaderComponent={ListHeaderComponent}
@@ -473,31 +514,32 @@ export default function CollectionDetailScreen() {
         />
       )}
 
-      {/* Bottom Action Button */}
-      <View
-        style={[
-          styles.bottomButtonContainer,
-          {
-            borderTopColor: theme.border,
-            backgroundColor: theme.background,
-            paddingBottom: insets.bottom + 16,
-          },
-        ]}
-      >
-        <Pressable
-          style={[styles.bottomButton, { backgroundColor: theme.primary }]}
-          onPress={() => setShowAddModal(true)}
-        >
-          <Text style={styles.bottomButtonText}>Add to collection</Text>
-        </Pressable>
-        {propertyIds.length > 0 && (
+      {/* Bottom Action Buttons Island */}
+      <View style={[styles.islandWrapper, { bottom: insets.bottom > 0 ? insets.bottom + 10 : 30 }]}>
+        <BlurView intensity={25} tint="dark" style={[styles.blurIsland, { borderColor: 'rgba(255,255,255,0.1)' }]}>
+          {propertyIds.length > 0 && (
+            <Pressable
+              style={[styles.clearButton, { backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.1)' }]}
+              onPress={handleClearCollection}
+            >
+              <Ionicons name="close-outline" size={22} color={theme.textSecondary} />
+            </Pressable>
+          )}
+
           <Pressable
-            style={[styles.clearButton, { borderColor: theme.border }]}
-            onPress={handleClearCollection}
+            style={[styles.bottomButton, { backgroundColor: theme.primary }]}
+            onPress={() => setShowAddModal(true)}
           >
-            <Ionicons name="trash-outline" size={24} color="#FF3B30" />
+            <Text style={styles.bottomButtonText}>Add to collection</Text>
           </Pressable>
-        )}
+
+          <Pressable
+            style={[styles.deleteCollectionButton, { backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.1)' }]}
+            onPress={handleDeleteCollection}
+          >
+            <Ionicons name="trash-outline" size={22} color="#FF3B30" />
+          </Pressable>
+        </BlurView>
       </View>
 
       {/* Add Property Modal */}
@@ -668,33 +710,56 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 12,
   },
-  bottomButtonContainer: {
+  islandWrapper: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
+    left: 20,
+    right: 20,
+    zIndex: 10,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.4,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  blurIsland: {
+    padding: 10,
+    borderRadius: 24,
     flexDirection: 'row',
     gap: 8,
+    borderWidth: 1,
+    overflow: 'hidden',
   },
   bottomButton: {
     flex: 1,
-    height: 56,
-    borderRadius: 28,
+    height: 48,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
   bottomButtonText: {
     color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '500',
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   clearButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  deleteCollectionButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,

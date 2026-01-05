@@ -17,7 +17,7 @@ interface Module {
   title: string;
   author: string;
   completion: number;
-  status: 'completed' | 'in-progress';
+  status: 'completed' | 'in-progress' | 'not-started';
   topicId: string;
   isFeatured?: boolean;
   createdAt: string;
@@ -57,17 +57,21 @@ export default function KnowledgeBaseScreen() {
     if (!coursesResponse?.data) {
       return [];
     }
-    
+
     return coursesResponse.data.map((course) => {
-      // Для теперішньої версії, всі курси мають статус 'in-progress' та completion 0
-      // В майбутньому можна додати логіку відстеження прогресу користувача
+      const apiStatus = course.userProgress?.status || 'NOT_STARTED';
+      let uiStatus: 'completed' | 'in-progress' | 'not-started' = 'not-started';
+
+      if (apiStatus === 'COMPLETED') uiStatus = 'completed';
+      else if (apiStatus === 'IN_PROGRESS') uiStatus = 'in-progress';
+
       return {
         id: course.id,
         title: course.title,
         author: 'Made by ForYou Real Estate',
-        completion: 0, // TODO: додати відстеження прогресу
-        status: 'in-progress' as const,
-        topicId: 'all', // TODO: додати категорії/топи для курсів
+        completion: course.userProgress?.completionPercentage || 0,
+        status: uiStatus,
+        topicId: 'all',
         createdAt: course.createdAt || new Date().toISOString(),
       };
     });
@@ -80,7 +84,7 @@ export default function KnowledgeBaseScreen() {
       setSelectedTopics(prev => {
         // Remove 'all' if it was selected
         const withoutAll = prev.filter(t => t !== 'all');
-        
+
         // Toggle the selected topic
         if (prev.includes(topicId)) {
           const newTopics = withoutAll.filter(t => t !== topicId);
@@ -99,7 +103,7 @@ export default function KnowledgeBaseScreen() {
 
   const completedCount = modules.filter(m => m.status === 'completed').length;
   const totalModules = modules.length;
-  const overallProgress = totalModules > 0 
+  const overallProgress = totalModules > 0
     ? Math.round((modules.reduce((sum, m) => sum + m.completion, 0) / totalModules))
     : 0;
   const totalPoints = completedCount * 20;
@@ -121,11 +125,11 @@ export default function KnowledgeBaseScreen() {
           ]}
           onPress={() => router.back()}
         >
-          <Ionicons name="chevron-back" size={20} color={theme.text} />
+          <Ionicons name="chevron-back" size={24} color={theme.primary} />
         </Pressable>
-        
+
         <Text style={[styles.headerTitle, { color: theme.text }]}>Knowledge Base</Text>
-        
+
         <View style={styles.backButton} />
       </View>
 
@@ -156,7 +160,7 @@ export default function KnowledgeBaseScreen() {
               {totalPoints}
             </Text>
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
-              Points Earned
+              Points
             </Text>
           </View>
         </View>
@@ -240,10 +244,16 @@ export default function KnowledgeBaseScreen() {
                   </Text>
                   <View style={[
                     styles.statusBadge,
-                    { backgroundColor: module.status === 'completed' ? '#4CAF50' : '#FF9800' }
+                    {
+                      backgroundColor:
+                        module.status === 'completed' ? '#2ECC71' :
+                          module.status === 'in-progress' ? '#FFB300' :
+                            theme.primary
+                    }
                   ]}>
                     <Text style={styles.statusBadgeText}>
-                      {module.status === 'completed' ? 'Completed' : 'In Progress'}
+                      {module.status === 'completed' ? 'Completed' :
+                        module.status === 'in-progress' ? 'In Progress' : 'Not Started'}
                     </Text>
                   </View>
                   <Text style={[styles.moduleAuthor, { color: theme.textSecondary }]}>

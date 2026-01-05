@@ -1,10 +1,10 @@
-import { View, Text, StyleSheet, ScrollView, FlatList, Dimensions, NativeScrollEvent, NativeSyntheticEvent, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, FlatList, Dimensions, NativeScrollEvent, NativeSyntheticEvent, Pressable, ActivityIndicator, LayoutAnimation, Keyboard, Platform, UIManager, Animated, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { UserRole } from '@/types/user';
-import { Header, SearchBar, PropertyTypeFilter, PropertyCard, PaginationDots, CollectionCard, StatsCard, SmallStatCard, QuickActionCard, NewsCard, DeveloperCard } from '@/components/ui';
-import { useRouter } from 'expo-router';
+import { Header, SearchBar, LocationFilter, PropertyCard, PaginationDots, CollectionCard, StatsCard, SmallStatCard, QuickActionCard, NewsCard, DeveloperCard } from '@/components/ui';
+import { useRouter, useNavigation } from 'expo-router';
 import { useTranslation } from '@/utils/i18n';
 import { useTheme } from '@/utils/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,20 +15,25 @@ import { coursesApi } from '@/api/courses';
 import { developersApi } from '@/api/developers';
 import { formatPrice } from '@/utils/property-utils';
 import { crmStatsApi } from '@/api/crm-stats';
+import { useCollectionsStore } from '@/store/collectionsStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_PADDING = 16;
 const CARD_GAP = 8;
 const CARD_WIDTH = SCREEN_WIDTH - (CARD_PADDING * 2);
 
+import { useFavoritesStore } from '@/store/favoritesStore';
+
 export default function HomeScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const { t } = useTranslation();
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
+  const { favoriteIds, isFavorite, toggleFavorite } = useFavoritesStore();
   const user = useAuthStore((state) => state.user);
   // Явна перевірка ролі - переконуємося, що це точно строка 'INVESTOR'
-  const isInvestor = user?.role === 'INVESTOR' || user?.role === UserRole.INVESTOR;
-  
+  const isInvestor = (user?.role as string) === 'INVESTOR' || user?.role === UserRole.INVESTOR;
+
   // Debug: log user role
   useEffect(() => {
     console.log('=== HOME SCREEN ===');
@@ -38,6 +43,15 @@ export default function HomeScreen() {
     console.log('Is Investor:', isInvestor);
     console.log('Should hide Stats:', !isInvestor);
   }, [user, isInvestor]);
+
+  // Reset search on tab change
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('blur', () => {
+      setIsSearchFocused(false);
+      setSearchQuery('');
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   // Завантаження статистики CRM (тільки для брокерів)
   const { data: crmStats, isLoading: crmStatsLoading } = useQuery({
@@ -53,6 +67,7 @@ export default function HomeScreen() {
         // Повертаємо дефолтні значення при помилці
         return {
           newLeads: 0,
+          totalLeads: 0,
           activeDeals: 0,
           totalAmount: 0,
         };
@@ -66,15 +81,114 @@ export default function HomeScreen() {
   // Форматування total amount
   const formatTotalAmount = (amount: number): string => {
     if (amount >= 1000000) {
-      return `$${(amount / 1000000).toFixed(0)}M`;
+      return `$${(amount / 1000000).toFixed(0)} M`;
     } else if (amount >= 1000) {
-      return `$${(amount / 1000).toFixed(0)}K`;
+      return `$${(amount / 1000).toFixed(0)} K`;
     }
-    return `$${amount.toFixed(0)}`;
+    return `$${amount.toFixed(0)} `;
   };
+  // Enable LayoutAnimation for Android
+  if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+  }
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTypes, setSelectedTypes] = useState<string[]>(['Apartment']);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [selectedLocations, setSelectedLocations] = useState<string[]>(['Dubai Marina']);
   const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Search Animation State
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const searchInputRef = useRef<TextInput>(null);
+
+  const handleSearchFocus = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setIsSearchFocused(true);
+    navigation.setOptions({ tabBarStyle: { display: 'none' } });
+
+    // Robustly ensure keyboard opens by trying multiple times after layout settles
+    const attemptFocus = (delay: number) => {
+      setTimeout(() => {
+        if (searchInputRef.current && !searchInputRef.current.isFocused()) {
+          searchInputRef.current.focus();
+        }
+      }, delay);
+    };
+
+    // Try immediately after next tick, and after animation
+    attemptFocus(50);
+    attemptFocus(300);
+    attemptFocus(600);
+  };
+
+  const handleCancelSearch = () => {
+    Keyboard.dismiss();
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setIsSearchFocused(false);
+    setSearchQuery('');
+    navigation.setOptions({ tabBarStyle: { display: 'flex' } });
+  };
+
+  // Search results logic
+  const { data: searchResultsResponse, isLoading: searchLoading } = useQuery({
+    queryKey: ['property-search', searchQuery], // We filter client-side for now, or could add selectedTypes to key if we passed it to API
+    queryFn: async () => {
+      if (!searchQuery || searchQuery.trim().length < 2) return null;
+      try {
+        const response = await propertiesApi.getAll({
+          search: searchQuery.trim(),
+          limit: 20 // Increase limit to improve client-side filtering odds
+        });
+        return response;
+      } catch (error) {
+        console.error('Search error:', error);
+        return null;
+      }
+    },
+    enabled: searchQuery.trim().length >= 2,
+    staleTime: 10000,
+  });
+
+  const searchResults = useMemo(() => {
+    const rawResults = searchResultsResponse?.data?.data || [];
+
+    if (selectedLocations.length === 0) return rawResults;
+
+    const lowerLocations = selectedLocations.map(l => l.toLowerCase());
+
+    return rawResults.filter((item) => {
+      const name = item.name?.toLowerCase() || '';
+      const desc = item.description?.toLowerCase() || '';
+      const city = item.city?.nameEn?.toLowerCase() || '';
+
+      // Handle area being potentially an object or string
+      let area = '';
+      if (typeof item.area === 'string') {
+        area = item.area.toLowerCase();
+      } else if (item.area && typeof item.area === 'object' && (item.area as any).nameEn) {
+        area = (item.area as any).nameEn.toLowerCase();
+      }
+
+      // Check if any selected location matches name, description, city or area
+      return lowerLocations.some(loc =>
+        name.includes(loc) ||
+        desc.includes(loc) ||
+        city.includes(loc) ||
+        area.includes(loc)
+      );
+    });
+  }, [searchResultsResponse, selectedLocations]);
+
+  useEffect(() => {
+    if (searchQuery.trim().length >= 2) {
+      setShowSearchResults(true);
+    } else {
+      setShowSearchResults(false);
+    }
+  }, [searchQuery]);
+
+  // Collections count from store
+  const collectionsFromStore = useCollectionsStore((state) => state.collections);
 
   // Завантаження properties з API
   const { data: propertiesResponse, isLoading: propertiesLoading, error: propertiesError } = useQuery({
@@ -92,11 +206,11 @@ export default function HomeScreen() {
         return response;
       } catch (error: any) {
         console.error('❌ Помилка завантаження properties:', error);
-        console.error('Error details:', error?.response?.data);
         throw error;
       }
     },
     retry: 1,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Конвертуємо properties для UI
@@ -113,10 +227,10 @@ export default function HomeScreen() {
       console.warn('⚠️ Немає даних для properties');
       return [];
     }
-    
+
     const propertiesList = propertiesResponse.data.data.slice(0, 10);
     console.log('✅ Конвертація:', propertiesList.length, 'properties');
-    
+
     return propertiesList.map((property) => {
       const isOffPlan = property.propertyType === 'off-plan';
       const offPlanProperty = property as OffPlanProperty;
@@ -125,18 +239,18 @@ export default function HomeScreen() {
       // Визначаємо локацію
       let location: string;
       if (isOffPlan) {
-        location = offPlanProperty.area || `${offPlanProperty.city.nameEn}`;
+        location = offPlanProperty.area || `${offPlanProperty.city.nameEn} `;
       } else {
-        const area = typeof secondaryProperty.area === 'object' 
-          ? secondaryProperty.area.nameEn 
+        const area = typeof secondaryProperty.area === 'object'
+          ? secondaryProperty.area.nameEn
           : secondaryProperty.area;
-        location = `${area}, ${secondaryProperty.city.nameEn}`;
+        location = `${area}, ${secondaryProperty.city.nameEn} `;
       }
 
       // Визначаємо ціну (конвертуємо рядки в числа якщо потрібно)
       let price: number;
       if (isOffPlan) {
-        price = typeof offPlanProperty.priceFrom === 'string' 
+        price = typeof offPlanProperty.priceFrom === 'string'
           ? parseFloat(offPlanProperty.priceFrom) || 0
           : (offPlanProperty.priceFrom as number);
       } else {
@@ -151,7 +265,7 @@ export default function HomeScreen() {
         if (!photos || !Array.isArray(photos) || photos.length === 0) {
           return 'https://via.placeholder.com/400x300?text=No+Image';
         }
-        
+
         // Фільтруємо та валідуємо фото
         const validPhotos = photos
           .filter((photo): photo is string => typeof photo === 'string' && photo.trim().length > 0)
@@ -159,11 +273,11 @@ export default function HomeScreen() {
             // Перевіряємо, чи це валідний URI
             return photo.startsWith('http://') || photo.startsWith('https://') || photo.startsWith('data:') || photo.startsWith('file://');
           });
-        
+
         if (validPhotos.length === 0) {
           return 'https://via.placeholder.com/400x300?text=No+Image';
         }
-        
+
         return validPhotos[0];
       };
       const image = getValidImageUri(property.photos);
@@ -174,7 +288,9 @@ export default function HomeScreen() {
         title: property.name,
         location,
         price: priceFormatted,
-        handoverDate: '', // TODO: додати handoverDate якщо є в API
+        handoverDate: property.propertyType === 'off-plan' && property.plannedCompletionAt
+          ? new Date(property.plannedCompletionAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
+          : '',
       };
     });
   }, [propertiesResponse]);
@@ -187,7 +303,7 @@ export default function HomeScreen() {
       try {
         const response = await newsApi.getPublished({
           page: 1,
-          limit: 5,
+          limit: 10, // Get more and filter/sort in memo
         });
         console.log('✅ Новини завантажено:', response?.data?.data?.length || 0);
         return response;
@@ -196,6 +312,8 @@ export default function HomeScreen() {
         throw error;
       }
     },
+    staleTime: 0,
+    gcTime: 0,
     retry: 1,
   });
 
@@ -204,17 +322,24 @@ export default function HomeScreen() {
     if (!newsResponse?.data?.data) {
       return [];
     }
-    
-    return newsResponse.data.data.map((newsItem) => {
+
+    // Сортуємо за датою публікації (найновіші першими) та обмежуємо до 5
+    const sortedNews = [...newsResponse.data.data].sort((a, b) => {
+      const dateA = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
+      const dateB = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
+      return dateB - dateA;
+    }).slice(0, 5);
+
+    return sortedNews.map((newsItem) => {
       // Форматуємо дату
       const formatTimestamp = (dateString: string | null) => {
         if (!dateString) return 'Recently';
-        
+
         const date = new Date(dateString);
         const now = new Date();
         const diffMs = now.getTime() - date.getTime();
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-        
+
         if (diffDays === 0) return 'Today';
         if (diffDays === 1) return 'Yesterday';
         if (diffDays < 7) return `${diffDays} days ago`;
@@ -269,20 +394,36 @@ export default function HomeScreen() {
     retry: 1,
   });
 
+  interface KnowledgeModule {
+    id: string;
+    title: string;
+    author: string;
+    completion: number;
+    status: 'not-started' | 'in-progress' | 'completed';
+    topicId: string;
+    createdAt: string;
+  }
+
   // Конвертуємо курси в формат для UI (обмежуємо до 5)
-  const knowledgeBaseModules = useMemo(() => {
+  const knowledgeBaseModules = useMemo((): KnowledgeModule[] => {
     if (!coursesResponse?.data) {
       return [];
     }
-    
+
     return coursesResponse.data.slice(0, 5).map((course) => {
+      const apiStatus = course.userProgress?.status || 'NOT_STARTED';
+      let uiStatus: 'not-started' | 'in-progress' | 'completed' = 'not-started';
+
+      if (apiStatus === 'COMPLETED') uiStatus = 'completed';
+      else if (apiStatus === 'IN_PROGRESS') uiStatus = 'in-progress';
+
       return {
         id: course.id,
         title: course.title,
         author: 'Made by ForYou Real Estate',
-        completion: 0, // TODO: додати відстеження прогресу
-        status: 'in-progress' as const,
-        topicId: 'all', // TODO: додати категорії
+        completion: course.userProgress?.completionPercentage || 0,
+        status: uiStatus,
+        topicId: 'all',
         createdAt: course.createdAt || new Date().toISOString(),
       };
     });
@@ -306,7 +447,7 @@ export default function HomeScreen() {
       }
     },
     staleTime: 0, // Дані вважаються застарілими одразу
-    cacheTime: 0, // Не кешуємо дані
+    gcTime: 0, // Не кешуємо дані
     refetchOnMount: true, // Завжди завантажуємо при монтуванні
     refetchOnWindowFocus: true, // Оновлюємо дані при поверненні на екран
     refetchOnReconnect: true, // Оновлюємо дані при відновленні з'єднання
@@ -315,10 +456,10 @@ export default function HomeScreen() {
 
   // Конвертуємо developers для UI (обмежуємо до 5)
   const developers = useMemo(() => {
-    const fullResponseStr = developersResponse 
+    const fullResponseStr = developersResponse
       ? JSON.stringify(developersResponse, null, 2).substring(0, 500)
       : 'null';
-    
+
     console.log('📦 Конвертація developers:', {
       hasResponse: !!developersResponse,
       success: developersResponse?.success,
@@ -348,18 +489,21 @@ export default function HomeScreen() {
       console.error('❌ developersResponse.data не є масивом:', typeof developersResponse.data);
       return [];
     }
-    
+
     // ID тестових девелоперів, які мають бути першими
     const priorityDeveloperIds = [
       '155eaa8e-3708-449a-8348-16d25d0cf318', // Emaar Properties
       '15c2c5bc-f653-4991-9220-aa2699b2b8e7', // DAMAC Properties
     ];
-    
+
+    // Фільтруємо: тільки ті, що мають лого
+    const filteredDevelopers = (developersResponse.data || []).filter(d => !!d.logo);
+
     // Сортуємо: спочатку пріоритетні, потім решта
-    const sortedDevelopers = [...developersResponse.data].sort((a, b) => {
+    const sortedDevelopers = [...filteredDevelopers].sort((a, b) => {
       const aIndex = priorityDeveloperIds.indexOf(a.id);
       const bIndex = priorityDeveloperIds.indexOf(b.id);
-      
+
       // Якщо обидва в пріоритетних - зберігаємо порядок
       if (aIndex !== -1 && bIndex !== -1) {
         return aIndex - bIndex;
@@ -371,11 +515,11 @@ export default function HomeScreen() {
       // Інакше зберігаємо оригінальний порядок
       return 0;
     });
-    
+
     const developersList = sortedDevelopers.slice(0, 5);
     console.log('✅ Конвертація developers:', developersList.length, 'developers');
     console.log('📋 Перші девелопери:', developersList.map(d => ({ name: d.name, id: d.id })));
-    
+
     const converted = developersList.map((developer) => {
       const result = {
         id: developer.id,
@@ -387,7 +531,7 @@ export default function HomeScreen() {
       console.log('📋 Developer converted:', result.name, 'projects:', result.projectsCount);
       return result;
     });
-    
+
     console.log('✅ Конвертація завершена:', converted.length, 'developers');
     return converted;
   }, [developersResponse]);
@@ -396,307 +540,455 @@ export default function HomeScreen() {
     if (!dateString) return '';
     const date = new Date(dateString);
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+    return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()} `;
   };
+
+
+
+  const renderPropertyCard = useCallback(({ item }: { item: any }) => {
+    const isFav = isFavorite(item.id);
+
+    // Safety check - if item is undefined, don't render anything
+    if (!item) return null;
+
+    const handlePropertyPress = () => {
+      // Use router.push but ensure the path is clean
+      router.push(`/property/${item.id}`);
+    };
+
+    const handleFavoriteToggle = (id: string, e: any) => {
+      // e.stopPropagation() is usually handled inside the card, but good to have safety
+      toggleFavorite(id);
+    };
+
+    return (
+      <View style={{ width: CARD_WIDTH }}>
+        <PropertyCard
+          property={item}
+          theme={theme}
+          onPress={handlePropertyPress} // PropertyCard expects (id) => void
+          onToggleFavorite={handleFavoriteToggle} // PropertyCard expects (id, e) => void
+          isFavorite={isFav}
+        />
+      </View>
+    );
+  }, [isFavorite, toggleFavorite, theme, router]);
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const slideIndex = Math.round(event.nativeEvent.contentOffset.x / (CARD_WIDTH + CARD_GAP));
     setCurrentSlide(slideIndex);
   };
 
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <Header 
-          title={t('home.dashboard')}
-          avatar="https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=200"
-        />
-        
-        <View style={styles.searchSection}>
-          <SearchBar 
+  const renderSearchSection = () => (
+    <View style={styles.searchSection}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <View style={{ flex: 1 }}>
+          <SearchBar
+            inputRef={searchInputRef as any}
             value={searchQuery}
             onChangeText={setSearchQuery}
+            onFocus={handleSearchFocus}
+            autoFocus={isSearchFocused}
           />
-          
-          <PropertyTypeFilter 
-            selectedTypes={selectedTypes}
-            onTypesChange={setSelectedTypes}
-          />
-        </View>
-        
-        {/* Stats Section - Only for Broker */}
-        {!isInvestor && (
-          <View style={styles.statsSection}>
-            <StatsCard
-              title={t('home.newLeads')}
-              value={crmStatsLoading ? '...' : (crmStats?.newLeads?.toString() || '0')}
-              buttonText={t('home.explore')}
-              onPress={() => router.push('/(tabs)/crm')}
-            />
-            
-            <View style={styles.smallStatsRow}>
-              <SmallStatCard
-                icon="briefcase-outline"
-                title={t('home.activeDeals')}
-                value={crmStatsLoading ? '...' : (crmStats?.activeDeals?.toString() || '0')}
-              />
-              <SmallStatCard
-                icon="cash-outline"
-                title={t('home.totalAmount')}
-                value={crmStatsLoading ? '...' : formatTotalAmount(crmStats?.totalAmount || 0)}
-              />
-            </View>
-          </View>
-        )}
-        
-        <View style={styles.collectionSection}>
-          <CollectionCard
-            icon="thumbs-up"
-            title={t('home.yourLikedProjects')}
-            description={t('home.collectionDescription')}
-            gradientImage={require('@/assets/images/gradient-2.png')}
-            onPress={() => console.log('Collection pressed 1')}
-          />
-        </View>
-        
-        {/* Quick Actions */}
-        <View style={styles.quickActionsSection}>
-          {!isInvestor && (
-            <QuickActionCard
-              icon="people"
-              label={t('home.myLeads')}
-              onPress={() => router.push('/(tabs)/crm')}
-            />
-          )}
-          <QuickActionCard
-            icon="home"
-            label={t('home.properties')}
-            onPress={() => router.push('/(tabs)/properties')}
-          />
-          <QuickActionCard
-            icon="layers"
-            label={t('home.collections')}
-            onPress={() => console.log('Collections pressed')}
-          />
-        </View>
-        
-        <View style={styles.propertySection}>
-          {propertiesLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={theme.primary} />
-            </View>
-          ) : propertiesError ? (
-            <View style={styles.emptyContainer}>
-              <Text style={[styles.emptyText, { color: theme.error || '#FF3B30' }]}>
-                Помилка завантаження: {(propertiesError as any)?.message || 'Unknown error'}
-              </Text>
-            </View>
-          ) : properties.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                {t('home.noProperties')}
-              </Text>
-            </View>
-          ) : (
-            <FlatList
-              data={properties}
-              renderItem={({ item }) => (
-                <View style={{ width: CARD_WIDTH }}>
-                  <PropertyCard
-                    image={item.image}
-                    title={item.title}
-                    location={item.location}
-                    price={item.price}
-                    handoverDate={item.handoverDate}
-                    onPress={() => router.push(`/property/${item.id}`)}
-                  />
-                </View>
-              )}
-              keyExtractor={(item) => item.id}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              onScroll={handleScroll}
-              scrollEventThrottle={16}
-              snapToInterval={CARD_WIDTH + CARD_GAP}
-              decelerationRate="fast"
-              contentContainerStyle={styles.flatListContent}
-              ItemSeparatorComponent={() => <View style={{ width: CARD_GAP }} />}
-            />
-          )}
-          
-          <View style={styles.dotsContainer}>
-            <PaginationDots total={properties.length} current={currentSlide} />
-          </View>
-        </View>
-        
-        {/* Developers Section */}
-        <View style={styles.developersSection}>
-          <View style={styles.developersHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Developers</Text>
-            <Pressable onPress={() => router.push('/developers')}>
-              <Text style={[styles.viewAllText, { color: theme.primary }]}>View All</Text>
-            </Pressable>
-          </View>
-          
-          {(() => {
-            console.log('🔍 Рендер Developers Section:', {
-              loading: developersLoading,
-              error: !!developersError,
-              errorMessage: developersError ? (developersError as any)?.message : null,
-              developersCount: developers.length,
-              hasResponse: !!developersResponse,
-              responseData: developersResponse?.data?.length || 0,
-            });
-            
-            if (developersLoading) {
-              return (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="small" color={theme.primary} />
-                  <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
-                    Loading developers...
-                  </Text>
-                </View>
-              );
-            }
-            
-            if (developersError) {
-              const errorMessage = (developersError as any)?.response?.data?.message 
-                || (developersError as any)?.message 
-                || 'Unknown error';
-              console.error('❌ Developers Error Details:', {
-                message: errorMessage,
-                status: (developersError as any)?.response?.status,
-                data: (developersError as any)?.response?.data,
-              });
-              
-              return (
-                <View style={styles.emptyContainer}>
-                  <Ionicons name="alert-circle-outline" size={32} color={theme.textTertiary} />
-                  <Text style={[styles.emptyText, { color: theme.error || '#FF3B30', marginTop: 8 }]}>
-                    Error loading developers
-                  </Text>
-                  <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
-                    {errorMessage}
-                  </Text>
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.retryButton,
-                      { backgroundColor: theme.primary, opacity: pressed ? 0.8 : 1 }
-                    ]}
-                    onPress={() => {
-                      console.log('🔄 Retry developers...');
-                      refetchDevelopers();
-                    }}
-                  >
-                    <Text style={styles.retryButtonText}>Retry</Text>
-                  </Pressable>
-                </View>
-              );
-            }
-            
-            if (developers.length === 0) {
-              console.warn('⚠️ Developers array is empty');
-              return (
-                <View style={styles.emptyContainer}>
-                  <Ionicons name="business-outline" size={32} color={theme.textTertiary} />
-                  <Text style={[styles.emptyText, { color: theme.textSecondary, marginTop: 8 }]}>
-                    No developers available
-                  </Text>
-                </View>
-              );
-            }
-            
-            console.log('✅ Rendering', developers.length, 'developers');
-            return developers.map((developer) => (
-              <DeveloperCard
-                key={developer.id}
-                logo={developer.logo}
-                name={developer.name}
-                description={developer.description}
-                projectsCount={developer.projectsCount}
-                gradientImage={require('@/assets/images/gradient-2.png')}
-                onPress={() => router.push(`/developers/${developer.id}`)}
-              />
-            ));
-          })()}
-        </View>
-        
-        {/* News Section */}
-        <View style={styles.newsSection}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('home.recentMarketNews')}</Text>
-          
-          {newsLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color={theme.primary} />
-            </View>
-          ) : news.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                No news available
-              </Text>
-            </View>
-          ) : (
-            news.map((item) => (
-              <NewsCard
-                key={item.id}
-                image={item.image}
-                title={item.title}
-                description={item.description}
-                timestamp={item.timestamp}
-                onPress={() => router.push(`/news/${item.slug}`)}
-              />
-            ))
-          )}
         </View>
 
-        {/* Knowledge Base Section */}
-        <View style={styles.knowledgeBaseSection}>
-          <View style={styles.knowledgeBaseHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('home.knowledgeBase')}</Text>
-            <Pressable onPress={() => router.push('/profile/knowledge-base')}>
-              <Text style={[styles.viewAllText, { color: theme.primary }]}>{t('home.viewAll')}</Text>
-            </Pressable>
-          </View>
-          
-          {knowledgeBaseModules.length === 0 ? (
-            <View style={styles.emptyKnowledgeContainer}>
-              <Text style={[styles.emptyKnowledgeText, { color: theme.textSecondary }]}>
-                No courses available
-              </Text>
-            </View>
-          ) : (
-            knowledgeBaseModules.map((module) => (
-              <Pressable
-                key={module.id}
-                style={[
-                  styles.knowledgeModuleCard,
-                  { backgroundColor: theme.card, borderColor: theme.border },
-                ]}
-                onPress={() => router.push(`/profile/module/${module.id}`)}
-              >
-                <View style={styles.knowledgeModuleContent}>
-                  <Text style={[styles.knowledgeModuleTitle, { color: theme.text }]} numberOfLines={2}>
-                    {module.title}
-                  </Text>
-                  <View style={[
-                    styles.knowledgeStatusBadge,
-                    { backgroundColor: module.status === 'completed' ? '#4CAF50' : '#FF9800' }
-                  ]}>
-                    <Text style={styles.knowledgeStatusBadgeText}>
-                      {module.status === 'completed' ? 'Completed' : 'In Progress'}
-                    </Text>
-                  </View>
-                  <Text style={[styles.knowledgeModuleAuthor, { color: theme.textSecondary }]}>
-                    {module.author} • {formatDate(module.createdAt)}
+        {isSearchFocused ? (
+          <Pressable onPress={handleCancelSearch} style={{ paddingHorizontal: 4, justifyContent: 'center' }}>
+            <Text style={{ color: theme.primary, fontSize: 14 }}>Cancel</Text>
+          </Pressable>
+        ) : (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.filterButton,
+                { backgroundColor: theme.primaryLight, borderColor: theme.primary },
+                { opacity: pressed ? 0.7 : 1 }
+              ]}
+              onPress={() => router.push('/liked')}
+            >
+              <Ionicons name="heart-outline" size={20} color={theme.primary} />
+              {favoriteIds.length > 0 && (
+                <View style={{
+                  position: 'absolute',
+                  top: -4,
+                  right: -4,
+                  backgroundColor: '#FF3B30',
+                  borderRadius: 8,
+                  minWidth: 16,
+                  height: 16,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  paddingHorizontal: 4,
+                  zIndex: 10,
+                }}>
+                  <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>
+                    {favoriteIds.length}
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward-outline" size={20} color={theme.textSecondary} />
-              </Pressable>
-            ))
-          )}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+              )}
+            </Pressable>
+          </View>
+        )}
+      </View>
+
+      <LocationFilter
+        selectedLocations={selectedLocations}
+        onLocationsChange={setSelectedLocations}
+      />
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
+      {/* Fixed Top Section: Header + Search (only when focused) */}
+      <View style={{ zIndex: 100, backgroundColor: theme.background }}>
+
+
+        {isSearchFocused && renderSearchSection()}
+      </View>
+
+      {/* Main Content Area */}
+      <View style={{ flex: 1, zIndex: 1 }}>
+        {isSearchFocused ? (
+          <View style={{ flex: 1 }}>
+            {searchLoading ? (
+              <View style={styles.searchLoading}>
+                <ActivityIndicator size="small" color={theme.primary} />
+              </View>
+            ) : showSearchResults && searchQuery.trim().length >= 2 ? (
+              searchResults.length > 0 ? (
+                <ScrollView
+                  style={{ flex: 1, width: '100%', backgroundColor: theme.background }}
+                  contentContainerStyle={{ paddingBottom: 10 }}
+                  keyboardShouldPersistTaps="handled"
+                  keyboardDismissMode="on-drag"
+                  showsVerticalScrollIndicator={true}
+                >
+                  {searchResults.map((item) => (
+                    <Pressable
+                      key={item.id}
+                      style={({ pressed }) => [
+                        styles.searchResultItem,
+                        {
+                          backgroundColor: pressed ? theme.border : theme.background,
+                          borderBottomWidth: 1,
+                          borderBottomColor: theme.border,
+                          flexDirection: 'row',
+                          paddingHorizontal: 16,
+                          paddingVertical: 14
+                        }
+                      ]}
+                      onPress={() => {
+                        router.push(`/property/${item.id}`);
+                      }}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.searchResultTitle, { color: theme.text }]} numberOfLines={1}>
+                          {item.name}
+                        </Text>
+                        <Text style={[styles.searchResultLocation, { color: theme.textSecondary }]} numberOfLines={1}>
+                          {item.city.nameEn}
+                          {item.propertyType === 'off-plan'
+                            ? (item.area ? ` • ${item.area} ` : '')
+                            : (item.area && typeof item.area === 'object' ? ` • ${item.area.nameEn} ` : '')}
+                        </Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color={theme.textTertiary} />
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              ) : (
+                <View style={styles.searchNoResults}>
+                  <Text style={[styles.searchNoResultsText, { color: theme.textSecondary }]}>
+                    {t('home.noProperties') || 'No properties found'}
+                  </Text>
+                </View>
+              )
+            ) : (
+              <View style={{ flex: 1 }} onTouchStart={() => Keyboard.dismiss()} />
+            )}
+          </View>
+        ) : (
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 10 }}>
+            <Header
+              title=""
+              avatar={user?.avatar || undefined}
+              user={user || undefined}
+              mode="home"
+            />
+            {renderSearchSection()}
+            {/* Stats Section - Only for Broker */}
+            {!isInvestor && (
+              <View style={styles.statsSection}>
+                <StatsCard
+                  title={t('home.newLeads')}
+                  value={crmStatsLoading ? '...' : (crmStats?.totalLeads?.toString() || '0')}
+                  buttonText={t('home.explore')}
+                  onPress={() => router.push('/(tabs)/crm')}
+                />
+
+                <View style={styles.smallStatsRow}>
+                  <SmallStatCard
+                    icon="layers-outline"
+                    title={t('home.collections')}
+                    value={collectionsFromStore.length.toString()}
+                  />
+                  <SmallStatCard
+                    icon="heart-outline"
+                    title="Total likes"
+                    value={String(favoriteIds.length)}
+                  />
+                </View>
+              </View>
+            )}
+
+            <View style={styles.collectionSection}>
+              <CollectionCard
+                icon="thumbs-up"
+                title={t('home.yourLikedProjects')}
+                description={t('home.collectionDescription')}
+                gradientImage={require('@/assets/images/gradient-1.png')}
+                onPress={() => router.push('/liked')}
+              />
+            </View>
+
+            {/* Quick Actions */}
+            <View style={styles.quickActionsSection}>
+              {!isInvestor && (
+                <QuickActionCard
+                  icon="people"
+                  label={t('home.myLeads')}
+                  onPress={() => router.push('/(tabs)/crm')}
+                />
+              )}
+              <QuickActionCard
+                icon="home"
+                label={t('home.properties')}
+                onPress={() => router.push('/(tabs)/properties')}
+              />
+              <QuickActionCard
+                icon={isInvestor ? "wallet" : "layers"}
+                label={isInvestor ? "Portfolio" : t('home.collections')}
+                onPress={() => router.push(isInvestor ? '/portfolio' : '/collections')}
+              />
+            </View>
+
+            <View style={styles.propertySection}>
+              {propertiesLoading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color={theme.primary} />
+                </View>
+              ) : propertiesError ? (
+                <View style={styles.emptyContainer}>
+                  <Text style={[styles.emptyText, { color: theme.error || '#FF3B30' }]}>
+                    Помилка завантаження: {(propertiesError as any)?.message || 'Unknown error'}
+                  </Text>
+                </View>
+              ) : properties.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+                    {t('home.noProperties')}
+                  </Text>
+                </View>
+              ) : (
+                <FlatList
+                  data={properties}
+                  renderItem={renderPropertyCard}
+                  keyExtractor={(item) => item.id}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  onScroll={handleScroll}
+                  scrollEventThrottle={16}
+                  snapToInterval={CARD_WIDTH + CARD_GAP}
+                  decelerationRate="fast"
+                  contentContainerStyle={styles.flatListContent}
+                  ItemSeparatorComponent={() => <View style={{ width: CARD_GAP }} />}
+                />
+              )}
+
+              <View style={styles.dotsContainer}>
+                <PaginationDots total={properties.length} current={currentSlide} />
+              </View>
+            </View>
+
+            {/* Developers Section */}
+            <View style={styles.developersSection}>
+              <View style={styles.developersHeader}>
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>Developers</Text>
+                <Pressable onPress={() => router.push('/developers')}>
+                  <Text style={[styles.viewAllText, { color: theme.textTertiary }]}>View All</Text>
+                </Pressable>
+              </View>
+
+              {(() => {
+                console.log('🔍 Рендер Developers Section:', {
+                  loading: developersLoading,
+                  error: !!developersError,
+                  errorMessage: developersError ? (developersError as any)?.message : null,
+                  developersCount: developers.length,
+                  hasResponse: !!developersResponse,
+                  responseData: developersResponse?.data?.length || 0,
+                });
+
+                if (developersLoading) {
+                  return (
+                    <View style={styles.loadingContainer}>
+                      <ActivityIndicator size="small" color={theme.primary} />
+                      <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+                        Loading developers...
+                      </Text>
+                    </View>
+                  );
+                }
+
+                if (developersError) {
+                  const errorMessage = (developersError as any)?.response?.data?.message
+                    || (developersError as any)?.message
+                    || 'Unknown error';
+                  console.error('❌ Developers Error Details:', {
+                    message: errorMessage,
+                    status: (developersError as any)?.response?.status,
+                    data: (developersError as any)?.response?.data,
+                  });
+
+                  return (
+                    <View style={styles.emptyContainer}>
+                      <Ionicons name="alert-circle-outline" size={32} color={theme.textTertiary} />
+                      <Text style={[styles.emptyText, { color: theme.error || '#FF3B30', marginTop: 8 }]}>
+                        Error loading developers
+                      </Text>
+                      <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
+                        {errorMessage}
+                      </Text>
+                      <Pressable
+                        style={({ pressed }) => [
+                          styles.retryButton,
+                          { backgroundColor: theme.primary, opacity: pressed ? 0.8 : 1 }
+                        ]}
+                        onPress={() => {
+                          console.log('🔄 Retry developers...');
+                          refetchDevelopers();
+                        }}
+                      >
+                        <Text style={styles.retryButtonText}>Retry</Text>
+                      </Pressable>
+                    </View>
+                  );
+                }
+
+                if (developers.length === 0) {
+                  console.warn('⚠️ Developers array is empty');
+                  return (
+                    <View style={styles.emptyContainer}>
+                      <Ionicons name="business-outline" size={32} color={theme.textTertiary} />
+                      <Text style={[styles.emptyText, { color: theme.textSecondary, marginTop: 8 }]}>
+                        No developers available
+                      </Text>
+                    </View>
+                  );
+                }
+
+                console.log('✅ Rendering', developers.length, 'developers');
+                return developers.map((developer) => (
+                  <DeveloperCard
+                    key={developer.id}
+                    logo={developer.logo}
+                    name={developer.name}
+                    description={developer.description}
+                    projectsCount={developer.projectsCount}
+                    gradientImage={require('@/assets/images/gradient-2.png')}
+                    onPress={() => router.push(`/developers/${developer.id}`)}
+                  />
+                ));
+              })()}
+            </View>
+
+            {/* News Section */}
+            <View style={styles.newsSection}>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('home.recentMarketNews')}</Text>
+
+              {newsLoading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color={theme.primary} />
+                </View>
+              ) : news.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+                    No news available
+                  </Text>
+                </View>
+              ) : (
+                news.map((item) => (
+                  <NewsCard
+                    key={item.id}
+                    image={item.image}
+                    title={item.title}
+                    description={item.description}
+                    timestamp={item.timestamp}
+                    onPress={() => router.push(`/news/${item.slug}`)}
+                  />
+                ))
+              )}
+            </View>
+
+            {/* Knowledge Base Section - Hidden for Investors */}
+            {!isInvestor && (
+              <View style={styles.knowledgeBaseSection}>
+                <View style={styles.knowledgeBaseHeader}>
+                  <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('home.knowledgeBase')}</Text>
+                  <Pressable onPress={() => router.push('/profile/knowledge-base')}>
+                    <Text style={[styles.viewAllText, { color: theme.textTertiary }]}>{t('home.viewAll')}</Text>
+                  </Pressable>
+                </View>
+
+                {knowledgeBaseModules.length === 0 ? (
+                  <View style={styles.emptyKnowledgeContainer}>
+                    <Text style={[styles.emptyKnowledgeText, { color: theme.textSecondary }]}>
+                      No courses available
+                    </Text>
+                  </View>
+                ) : (
+                  knowledgeBaseModules.map((module) => (
+                    <Pressable
+                      key={module.id}
+                      style={[
+                        styles.knowledgeModuleCard,
+                        { backgroundColor: theme.card, borderColor: theme.border },
+                      ]}
+                      onPress={() => router.push(`/profile/module/${module.id}`)}
+                    >
+                      <View style={styles.knowledgeModuleContent}>
+                        <Text style={[styles.knowledgeModuleTitle, { color: theme.text }]} numberOfLines={2}>
+                          {module.title}
+                        </Text>
+                        <View style={[
+                          styles.knowledgeStatusBadge,
+                          {
+                            backgroundColor:
+                              module.status === 'completed' ? '#2ECC71' :
+                                module.status === 'in-progress' ? '#FFB300' :
+                                  theme.primary
+                          }
+                        ]}>
+                          <Text style={styles.knowledgeStatusBadgeText}>
+                            {module.status === 'completed' ? 'Completed' :
+                              module.status === 'in-progress' ? 'In Progress' : 'Not Started'}
+                          </Text>
+                        </View>
+                        <Text style={[styles.knowledgeModuleAuthor, { color: theme.textSecondary }]}>
+                          {module.author} • {formatDate(module.createdAt)}
+                        </Text>
+                      </View>
+                      <Ionicons name="chevron-forward-outline" size={20} color={theme.textSecondary} />
+                    </Pressable>
+                  ))
+                )}
+              </View>
+            )}
+          </ScrollView>
+        )}
+      </View>
+    </SafeAreaView >
   );
 }
 
@@ -707,9 +999,18 @@ const styles = StyleSheet.create({
   },
   searchSection: {
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
-    gap: 8,
+    paddingTop: 8,
+    paddingBottom: 8,
+    gap: 12,
+  },
+  filterButton: {
+    width: 44,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    borderWidth: 1,
+    flexShrink: 0,
   },
   statsSection: {
     paddingHorizontal: 16,
@@ -744,7 +1045,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 32,
     paddingBottom: 24,
-    gap: 8,
+    gap: 6,
   },
   developersHeader: {
     flexDirection: 'row',
@@ -761,7 +1062,7 @@ const styles = StyleSheet.create({
   knowledgeBaseSection: {
     paddingHorizontal: 16,
     paddingTop: 24,
-    paddingBottom: 24,
+    paddingBottom: 100,
     gap: 12,
   },
   knowledgeBaseHeader: {
@@ -771,7 +1072,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   viewAllText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
   },
   knowledgeModuleCard: {
@@ -871,6 +1172,52 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#999999',
     textAlign: 'center',
+  },
+  searchResultsContainer: {
+    position: 'absolute',
+    top: 48,
+    left: 0,
+    right: 0,
+    borderRadius: 12,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    zIndex: 1000,
+    overflow: 'hidden',
+  },
+  searchResultsList: {
+    maxHeight: 300, // Roughly 6 items (around 50px each)
+  },
+  searchResultItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    gap: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+
+  searchResultTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  searchResultLocation: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  searchLoading: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  searchNoResults: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  searchNoResultsText: {
+    fontSize: 14,
   },
 });
 
