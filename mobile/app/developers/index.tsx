@@ -67,7 +67,7 @@ export default function DevelopersScreen() {
           ]}
           onPress={() => router.back()}
         >
-          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+          <Ionicons name="chevron-back" size={24} color={theme.primary} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: theme.text }]}>Developers</Text>
         <View style={styles.backButton} />
@@ -145,13 +145,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
   },
   listContent: {

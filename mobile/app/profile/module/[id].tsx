@@ -299,11 +299,11 @@ export default function ModuleDetailScreen() {
           styles.statusButton,
           {
             position: 'absolute',
-            bottom: 24,
+            bottom: 40,
             left: 40,
             right: 40,
             backgroundColor: status === 'COMPLETED' ? '#2ECC71' : (status === 'IN_PROGRESS' ? '#FFB300' : theme.primary),
-            height: 44,
+            height: 52,
             borderRadius: 22,
             opacity: (status === 'COMPLETED' || isUpdating) ? 1 : (pressed ? 0.8 : 1),
             shadowColor: "#000",

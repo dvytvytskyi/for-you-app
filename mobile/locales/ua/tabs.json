@@ -15,7 +15,6 @@
     "noResults": "Нерухомість не знайдено",
     "tryDifferentFilters": "Спробуйте змінити фільтри"
   },
-  
   "liked": {
     "title": "Вподобане",
     "subtitle": "Ваша улюблена нерухомість",
@@ -24,7 +23,6 @@
     "removeFromLiked": "Видалити з вподобаного",
     "addedOn": "Додано {{date}}"
   },
-  
   "collections": {
     "title": "Колекції",
     "createCollection": "Створити колекцію",
@@ -37,7 +35,6 @@
     "createYourFirst": "Створіть свою першу колекцію для організації нерухомості",
     "propertiesCount": "{{count}} об'єктів"
   },
-  
   "crm": {
     "title": "CRM",
     "leads": "Ліди",
@@ -57,9 +54,9 @@
     "noDeal": "Поки немає угод",
     "findByName": "Знайти за ім'ям",
     "selectLeadStage": "Вибрати етап ліда",
+    "allStages": "Всі етапи",
     "leadsFound": "{{count}} лідів знайдено"
   },
-  
   "map": {
     "title": "Карта",
     "searchOnMap": "Пошук на карті",
@@ -72,4 +69,3 @@
     "propertiesInArea": "{{count}} об'єктів у цій зоні"
   }
 }
-

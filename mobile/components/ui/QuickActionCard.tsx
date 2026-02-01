@@ -24,7 +24,7 @@ export default function QuickActionCard({ icon, label, onPress }: QuickActionCar
         }
       ]}
     >
-      <Ionicons name={icon} size={24} color={!isDark ? '#007AFF' : theme.textTertiary} />
+      <Ionicons name={icon} size={24} color={theme.primary} />
       <Text style={[styles.label, { color: theme.textSecondary }]}>{label}</Text>
     </Pressable>
   );

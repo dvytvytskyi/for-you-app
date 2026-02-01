@@ -9,6 +9,7 @@ interface CollectionPropertyCardProps {
   price: string;
   handoverDate: string;
   onPress?: () => void;
+  onLongPress?: () => void;
 }
 
 export default function CollectionPropertyCard({
@@ -18,6 +19,7 @@ export default function CollectionPropertyCard({
   price,
   handoverDate,
   onPress,
+  onLongPress,
 }: CollectionPropertyCardProps) {
   const { theme } = useTheme();
 
@@ -29,6 +31,7 @@ export default function CollectionPropertyCard({
         pressed && styles.pressed,
       ]}
       onPress={onPress}
+      onLongPress={onLongPress}
     >
       <Image source={{ uri: image }} style={styles.image} />
       <View style={styles.content}>

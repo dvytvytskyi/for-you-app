@@ -27,5 +27,8 @@
   "unsavedChanges": "Unsaved Changes",
   "unsavedChangesMessage": "You have unsaved changes. Are you sure you want to leave?",
   "leave": "Leave",
-  "retry": "Retry"
+  "retry": "Retry",
+  "create": "Create",
+  "tryAgainLater": "Please try again later",
+  "untitled": "Untitled"
 }

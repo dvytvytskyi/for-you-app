@@ -166,9 +166,9 @@ export interface UIFilters {
   listingType: 'all' | 'offplan' | 'secondary';
   minPrice: number | null;
   maxPrice: number | null;
-  propertyType: string;
   bedrooms: string; // "any" або "1,2,3"
   location: string;
+  developerIds: string;
 }
 
 export function convertFiltersToAPI(uiFilters: UIFilters): PropertyFilters {
@@ -201,6 +201,11 @@ export function convertFiltersToAPI(uiFilters: UIFilters): PropertyFilters {
   // 5. Locations -> Mapped to 'location'
   if (uiFilters.location && uiFilters.location !== 'any') {
     apiFilters.location = uiFilters.location.split('|').filter(Boolean);
+  }
+
+  // 6. Developers -> Mapped to 'developerId'
+  if ((uiFilters as any).developerIds && (uiFilters as any).developerIds !== 'any') {
+    apiFilters.developerId = (uiFilters as any).developerIds;
   }
 
   console.log('🔄 Converted UI Filters to API:', apiFilters);

@@ -18,10 +18,10 @@ export function AmoCrmAuthScreen({ onSuccess, onCancel }: AmoCrmAuthScreenProps)
   const handleConnect = async () => {
     try {
       setIsConnecting(true);
-      
+
       // Побудувати OAuth URL (async)
       const authUrl = await buildAmoAuthUrl();
-      
+
       // Відкрити системний браузер
       const canOpen = await Linking.canOpenURL(authUrl);
       if (canOpen) {
@@ -29,11 +29,11 @@ export function AmoCrmAuthScreen({ onSuccess, onCancel }: AmoCrmAuthScreenProps)
         // onSuccess буде викликано після успішного callback
       } else {
         console.error('Cannot open URL:', authUrl);
-        alert('Не вдалося відкрити браузер. Перевірте налаштування.');
+        alert('Failed to open browser. Please check your settings.');
       }
     } catch (error) {
       console.error('Error opening browser:', error);
-      alert('Помилка при відкритті браузера. Спробуйте ще раз.');
+      alert('Error opening browser. Please try again.');
     } finally {
       setIsConnecting(false);
     }
@@ -49,12 +49,12 @@ export function AmoCrmAuthScreen({ onSuccess, onCancel }: AmoCrmAuthScreenProps)
 
         {/* Title */}
         <Text style={[styles.title, { color: theme.text }]}>
-          Підключіть AMO CRM
+          Connect AMO CRM
         </Text>
 
         {/* Description */}
         <Text style={[styles.description, { color: theme.textSecondary }]}>
-          Для роботи з CRM потрібно підключити ваш акаунт AMO CRM. Після натискання кнопки ви будете перенаправлені на сторінку авторизації.
+          To work with CRM, you need to connect your AMO CRM account. After clicking the button, you will be redirected to the authorization page.
         </Text>
 
         {/* Features */}
@@ -62,19 +62,19 @@ export function AmoCrmAuthScreen({ onSuccess, onCancel }: AmoCrmAuthScreenProps)
           <View style={styles.featureItem}>
             <Ionicons name="checkmark-circle" size={20} color={theme.primary} />
             <Text style={[styles.featureText, { color: theme.textSecondary }]}>
-              Синхронізація заявок
+              Leads synchronization
             </Text>
           </View>
           <View style={styles.featureItem}>
             <Ionicons name="checkmark-circle" size={20} color={theme.primary} />
             <Text style={[styles.featureText, { color: theme.textSecondary }]}>
-              Управління воронками
+              Pipeline management
             </Text>
           </View>
           <View style={styles.featureItem}>
             <Ionicons name="checkmark-circle" size={20} color={theme.primary} />
             <Text style={[styles.featureText, { color: theme.textSecondary }]}>
-              Відстеження задач
+              Task tracking
             </Text>
           </View>
         </View>
@@ -95,7 +95,7 @@ export function AmoCrmAuthScreen({ onSuccess, onCancel }: AmoCrmAuthScreenProps)
             ) : (
               <>
                 <Ionicons name="link-outline" size={20} color="#FFFFFF" />
-                <Text style={styles.connectButtonText}>Підключити AMO CRM</Text>
+                <Text style={styles.connectButtonText}>Connect AMO CRM</Text>
               </>
             )}
           </Pressable>
@@ -107,7 +107,7 @@ export function AmoCrmAuthScreen({ onSuccess, onCancel }: AmoCrmAuthScreenProps)
               disabled={isConnecting}
             >
               <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>
-                Скасувати
+                Cancel
               </Text>
             </Pressable>
           )}

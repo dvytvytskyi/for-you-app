@@ -64,7 +64,7 @@ export default function DeveloperCard({
         </View>
 
         {/* Right arrow */}
-        <Ionicons name="arrow-forward" size={20} color={theme.textSecondary} />
+        <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
       </View>
     </Pressable>
   );
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   title: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
     lineHeight: 20,
   },

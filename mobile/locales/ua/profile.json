@@ -1,5 +1,6 @@
 {
   "profile": "Профіль",
+  "title": "Профіль",
   "editProfile": "Редагувати профіль",
   "changePassword": "Змінити пароль",
   "notifications": "Сповіщення",
@@ -11,21 +12,17 @@
   "about": "Про додаток",
   "logOut": "Вийти",
   "version": "Версія",
-  
   "accountSection": "Обліковий запис",
   "notificationsSection": "Сповіщення",
   "preferencesSection": "Налаштування",
   "supportSection": "Підтримка",
   "appearance": "Вигляд",
-  
   "phoneNumber": "Номер телефону",
   "pushNotifications": "Push-сповіщення",
   "emailNotifications": "Email-сповіщення",
   "marketing": "Маркетинг",
-  
   "logOutConfirmTitle": "Вийти",
   "logOutConfirmMessage": "Ви впевнені, що хочете вийти?",
-  
   "editProfileTitle": "Редагувати профіль",
   "firstName": "Ім'я",
   "lastName": "Прізвище",
@@ -36,7 +33,6 @@
   "deleteAvatar": "Видалити",
   "deletePhotoTitle": "Видалити фото",
   "deletePhotoMessage": "Ви впевнені, що хочете видалити своє фото профілю?",
-  
   "changePasswordTitle": "Змінити пароль",
   "currentPassword": "Поточний пароль",
   "newPassword": "Новий пароль",
@@ -46,7 +42,6 @@
   "passwordsDoNotMatch": "Паролі не співпадають",
   "pleaseConfirmPassword": "Будь ласка, підтвердіть новий пароль",
   "passwordChangedSuccess": "Пароль успішно змінено",
-  
   "notificationsInfo": "Керуйте способами отримання сповіщень про ліди, нерухомість та оновлення.",
   "pushNotificationsSection": "Push-сповіщення",
   "pushNotificationsDescription": "Отримуйте миттєві оновлення на ваш мобільний пристрій",
@@ -54,7 +49,6 @@
   "emailNotificationsDescription": "Отримуйте оновлення та звіти електронною поштою",
   "marketingSection": "Маркетинг та оновлення",
   "marketingDescription": "Рекламний контент та новини",
-  
   "enablePushNotifications": "Увімкнути Push-сповіщення",
   "pushNotificationsMaster": "Головний перемикач для всіх push-сповіщень",
   "newLeads": "Нові ліди",
@@ -65,7 +59,6 @@
   "propertyMatchesDescription": "Коли нерухомість відповідає вподобанням ліда",
   "priceChanges": "Зміни цін",
   "priceChangesDescription": "Коли змінюються ціни на нерухомість",
-  
   "enableEmailNotifications": "Увімкнути Email-сповіщення",
   "emailNotificationsMaster": "Головний перемикач для всіх email-сповіщень",
   "weeklyDigest": "Тижневий огляд",
@@ -74,7 +67,6 @@
   "monthlyReportDescription": "Детальний місячний звіт про ефективність",
   "marketInsights": "Аналіз ринку",
   "marketInsightsDescription": "Тренди та аналіз ринку",
-  
   "enableMarketing": "Увімкнути маркетинг",
   "marketingMaster": "Отримувати рекламний контент",
   "promotions": "Акції",
@@ -83,19 +75,15 @@
   "newsUpdatesDescription": "Новини індустрії та оновлення",
   "events": "Події",
   "eventsDescription": "Майбутні події та вебінари",
-  
   "savePreferences": "Зберегти налаштування",
   "preferencesUpdatedSuccess": "Налаштування сповіщень успішно оновлено",
-  
   "languageTitle": "Мова",
   "languageInfo": "Виберіть бажану мову. Додаток буде відображатися обраною мовою.",
   "changeLanguage": "Змінити мову",
   "languageChangedSuccess": "Мову успішно змінено. Будь ласка, перезапустіть додаток для застосування змін.",
-  
   "english": "Англійська",
   "ukrainian": "Українська",
   "russian": "Російська",
-  
   "supportTitle": "Допомога та підтримка",
   "supportInfo": "Ми тут, щоб допомогти! Опишіть вашу проблему, і ми відповімо протягом 24 годин.",
   "category": "Категорія",
@@ -123,7 +111,6 @@
   "subjectRequired": "Тема обов'язкова",
   "messageRequired": "Повідомлення обов'язкове",
   "messageTooShort": "Повідомлення повинно містити щонайменше 10 символів",
-  
   "aboutTitle": "Про додаток",
   "appName": "For You Real Estate",
   "appDescription": "For You Real Estate - це ваше повне рішення для управління операціями з нерухомістю в Дубаї та ОАЕ. Створено для брокерів, агентів та інвесторів.",
@@ -150,7 +137,6 @@
   "followUs": "Слідкуйте за нами",
   "madeWithLove": "Створено з ❤️ в Дубаї",
   "copyright": "© 2025 For You Real Estate. Всі права захищено.",
-  
   "theme": {
     "title": "Вигляд",
     "info": "Виберіть як має виглядати додаток. Оберіть тему або автоматично для синхронізації з системою.",
@@ -162,4 +148,3 @@
     "systemDescription": "Як на вашому пристрої"
   }
 }
-

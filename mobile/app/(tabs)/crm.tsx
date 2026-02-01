@@ -1,6 +1,7 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, Modal, FlatList, Animated, ActivityIndicator, RefreshControl, Alert, LayoutAnimation, Keyboard, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Modal, FlatList, Animated, ActivityIndicator, RefreshControl, Alert, LayoutAnimation, Keyboard, TextInput, Dimensions, PanResponder } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header, SearchBar, Dropdown } from '@/components/ui';
 import { useTheme } from '@/utils/theme';
 import { useTranslation } from '@/utils/i18n';
@@ -13,6 +14,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
 import * as SecureStore from 'expo-secure-store';
 import { AddLeadModal } from '@/components/amo-crm/AddLeadModal';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface Lead {
   id: string;
@@ -63,7 +66,7 @@ const DEFAULT_STAGE_COLORS: Record<string, string> = {
 };
 
 export default function CRMScreen() {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,7 +80,7 @@ export default function CRMScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const searchInputRef = useRef<TextInput>(null);
-
+  const scrollY = useRef(new Animated.Value(0)).current;
   // Перевірка авторизації
   const { user: authUser, isAuthenticated, isLoading: authLoading } = useAuthStore();
   const queryClient = useQueryClient();
@@ -278,7 +281,7 @@ export default function CRMScreen() {
   // Конвертуємо API leads в формат для відображення
   const leads: Lead[] = leadsData?.data?.map((lead: ApiLead) => ({
     id: lead.id,
-    name: lead.guestName || 'Без імені',
+    name: lead.guestName || 'No name',
     price: lead.price,
     stage: lead.status,
 
@@ -287,42 +290,55 @@ export default function CRMScreen() {
   })) || [];
 
   // Формуємо список стадій з AMO CRM
-  const allStages: Array<{ label: string; value: string; color: string; id?: number }> = [];
-  if (pipelinesData?.data && Array.isArray(pipelinesData.data)) {
-    console.log('🔍 Обробка pipelines:', pipelinesData.data.length);
-    pipelinesData.data.forEach((pipeline) => {
-      console.log(`🔍 Pipeline ${pipeline.id} (${pipeline.name}):`, {
-        hasStages: !!pipeline.stages,
-        stagesCount: pipeline.stages?.length || 0,
-        stages: pipeline.stages,
-      });
+  const allStages: Array<{
+    label: string;
+    value: string;
+    color: string;
+    id?: number;
+    pipelineId: number;
+    pipelineName: string;
+  }> = [];
+  const ALLOWED_PIPELINES = ['Real Estate', 'Партнеры', 'Vladimir Team'];
 
-      if (pipeline && pipeline.stages && Array.isArray(pipeline.stages) && pipeline.stages.length > 0) {
+  if (pipelinesData?.data && Array.isArray(pipelinesData.data)) {
+    const filteredPipelines = pipelinesData.data.filter(p =>
+      ALLOWED_PIPELINES.some(name => p.name?.toLowerCase().includes(name.toLowerCase()))
+    );
+
+    filteredPipelines.forEach((pipeline) => {
+      if (pipeline && pipeline.stages && Array.isArray(pipeline.stages)) {
         pipeline.stages.forEach((stage: AmoStage) => {
-          // Перевірка на валідність stage
           if (stage && stage.id && stage.name) {
-            // Уникаємо дублікатів
             if (!allStages.find(s => s.id === stage.id)) {
               allStages.push({
                 label: String(stage.name),
                 value: stage.mappedStatus || String(stage.name),
                 color: stage.color || DEFAULT_STAGE_COLORS[stage.mappedStatus || ''] || getStageColor(stage.id || stage.name),
                 id: stage.id,
+                pipelineId: pipeline.id,
+                pipelineName: pipeline.name
               });
-              console.log(`✅ Додано stage: ${stage.name} (id: ${stage.id})`);
-            } else {
-              console.log(`⚠️ Пропущено дублікат stage: ${stage.name} (id: ${stage.id})`);
             }
-          } else {
-            console.warn('⚠️ Невалідний stage:', stage);
           }
         });
-      } else {
-        console.log(`⚠️ Pipeline ${pipeline.id} не має stages`);
       }
     });
-  } else {
-    console.log('⚠️ Немає pipelines data або це не масив');
+  }
+
+  // Додаємо дефолтні стадії, якщо немає з AMO
+  const currentPipelineId = selectedPipeline || (allStages.length > 0 ? allStages[0].pipelineId : null);
+
+  const LEAD_STAGES = allStages.filter(s => s.pipelineId === currentPipelineId);
+  const UI_PIPELINES = Array.from(new Set(allStages.map(s => JSON.stringify({ id: s.pipelineId, name: s.pipelineName }))))
+    .map(s => JSON.parse(s));
+
+  if (LEAD_STAGES.length === 0 && allStages.length === 0) {
+    // Fallback if no pipelines at all
+    (LEAD_STAGES as any).push(
+      { label: 'New', value: 'NEW', color: '#4CAF50', pipelineId: 0, pipelineName: 'Default' },
+      { label: 'In Progress', value: 'IN_PROGRESS', color: '#2196F3', pipelineId: 0, pipelineName: 'Default' },
+      { label: 'Closed', value: 'CLOSED', color: '#607D8B', pipelineId: 0, pipelineName: 'Default' },
+    );
   }
 
   // Логування для діагностики
@@ -333,16 +349,8 @@ export default function CRMScreen() {
     allStages: allStages.map(s => ({ label: s.label, id: s.id })),
     pipelinesLoading,
     pipelinesError: pipelinesError ? (pipelinesError as any)?.message : null,
+    LEAD_STAGES_COUNT: LEAD_STAGES.length,
   });
-
-  // Додаємо дефолтні стадії, якщо немає з AMO
-  const LEAD_STAGES = allStages.length > 0
-    ? allStages
-    : [
-      { label: 'New', value: 'NEW', color: '#4CAF50' },
-      { label: 'In Progress', value: 'IN_PROGRESS', color: '#2196F3' },
-      { label: 'Closed', value: 'CLOSED', color: '#607D8B' },
-    ];
 
   const leadCount = leadsData?.total || 0;
 
@@ -413,6 +421,7 @@ export default function CRMScreen() {
 
   const handleSelectStage = (value: string, stageId?: number) => {
     console.log('🎯 Вибір стадії:', { value, stageId, currentPipeline: selectedPipeline });
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setSelectedStage(value);
     setSelectedStageId(stageId || null);
     setFilterActive(value !== '' || selectedPipeline !== null);
@@ -461,6 +470,163 @@ export default function CRMScreen() {
     setSearchQuery('');
   };
 
+  const currentStageIndex = LEAD_STAGES.findIndex(s => s.id === selectedStageId || (selectedStage && s.value === selectedStage));
+
+  // Robust translation fallbacks to avoid [missing translation] messages
+  const getAllStagesLabel = () => {
+    const label = t('tabs.crm.allStages');
+    return (label && !label.includes('missing')) ? label : 'All Stages';
+  };
+
+  const getLeadsFoundLabel = (count: number) => {
+    const label = t('tabs.crm.leadsFound', { count });
+    if (label && !label.includes('missing')) return label;
+    return `${count} leads found`;
+  };
+
+  const currentStageLabel = currentStageIndex !== -1 ? LEAD_STAGES[currentStageIndex].label : getAllStagesLabel();
+
+  const currentPipeline = UI_PIPELINES.find(p => p.id === currentPipelineId);
+  const currentPipelineName = currentPipeline?.name || 'Default';
+
+  // Animation values for pipeline switcher
+  const pipelineTranslateX = useRef(new Animated.Value(0)).current;
+
+  // Calculate generic prev/next pipelines for display
+  const currentPipelineIdx = UI_PIPELINES.findIndex(p => p.id === currentPipelineId);
+  const activeIdx = currentPipelineIdx === -1 ? 0 : currentPipelineIdx;
+
+  const prevPipeline = UI_PIPELINES.length > 0 ? UI_PIPELINES[(activeIdx - 1 + UI_PIPELINES.length) % UI_PIPELINES.length] : null;
+  const nextPipeline = UI_PIPELINES.length > 0 ? UI_PIPELINES[(activeIdx + 1) % UI_PIPELINES.length] : null;
+
+  const handlePrevStage = () => {
+
+
+    if (LEAD_STAGES.length === 0) return;
+    let newIndex;
+    if (currentStageIndex === -1) newIndex = LEAD_STAGES.length - 1;
+    else newIndex = currentStageIndex - 1; // -1 becomes "All Stages"
+
+    if (newIndex === -1) handleSelectStage('', undefined);
+    else handleSelectStage(LEAD_STAGES[newIndex].value, LEAD_STAGES[newIndex].id);
+  };
+
+
+  // Pipeline navigation handlers
+  const handlePrevPipeline = () => {
+    if (!UI_PIPELINES || UI_PIPELINES.length <= 1) return;
+    const currentIndex = UI_PIPELINES.findIndex(p => p.id === selectedPipeline);
+    // If nothing selected or not found, current is effectively 0 (default) or -1.
+    // Logic: if current is 0, go to last.
+    // If selectedPipeline is null, we assume we are on the first one or "default".
+    // Let's assume UI_PIPELINES covers all valid pipelines.
+
+    let effectiveIndex = currentIndex === -1 ? 0 : currentIndex;
+    let newIndex = effectiveIndex - 1;
+    if (newIndex < 0) newIndex = UI_PIPELINES.length - 1;
+
+    // Animate slide right (content moves right because we go previous)
+    Animated.sequence([
+      Animated.timing(pipelineTranslateX, {
+        toValue: 20, // Slide right
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(pipelineTranslateX, {
+        toValue: 0,
+        duration: 0,
+        useNativeDriver: true,
+      })
+    ]).start();
+
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    handleSelectPipeline(UI_PIPELINES[newIndex].id);
+  };
+
+  const handleNextPipeline = () => {
+    if (!UI_PIPELINES || UI_PIPELINES.length <= 1) return;
+    const currentIndex = UI_PIPELINES.findIndex(p => p.id === selectedPipeline);
+
+    let effectiveIndex = currentIndex === -1 ? 0 : currentIndex;
+    let newIndex = effectiveIndex + 1;
+    if (newIndex >= UI_PIPELINES.length) newIndex = 0;
+
+    // Animate slide left (content moves left because we go next)
+    Animated.sequence([
+      Animated.timing(pipelineTranslateX, {
+        toValue: -20, // Slide left
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(pipelineTranslateX, {
+        toValue: 0,
+        duration: 0,
+        useNativeDriver: true,
+      })
+    ]).start();
+
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    handleSelectPipeline(UI_PIPELINES[newIndex].id);
+  };
+
+  const pipelineHandlersRef = useRef({ handlePrevPipeline, handleNextPipeline });
+  pipelineHandlersRef.current = { handlePrevPipeline, handleNextPipeline };
+
+  const pipelinePanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dx) > 10;
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dx > 30) {
+          pipelineHandlersRef.current.handlePrevPipeline();
+        } else if (gestureState.dx < -30) {
+          pipelineHandlersRef.current.handleNextPipeline();
+        }
+      },
+      onPanResponderTerminationRequest: () => false,
+    })
+  ).current;
+
+  const handleNextStage = () => {
+    if (LEAD_STAGES.length === 0) return;
+    let newIndex;
+    if (currentStageIndex === LEAD_STAGES.length - 1) newIndex = -1;
+    else newIndex = currentStageIndex + 1;
+
+    if (newIndex === -1) handleSelectStage('', undefined);
+    else handleSelectStage(LEAD_STAGES[newIndex].value, LEAD_STAGES[newIndex].id);
+  };
+
+  // Ref for handlers to avoid stale closures in PanResponder
+  const handlersRef = useRef({ handlePrevStage, handleNextStage });
+  // Update ref on every render
+  handlersRef.current = { handlePrevStage, handleNextStage };
+
+  const panResponder = useRef(
+    PanResponder.create({
+      // Використовуємо Capture, щоб перехопити подію ДО того, як її отримає ScrollView
+      onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+        const { dx, dy } = gestureState;
+        // Перехоплюємо, якщо рух горизонтальний і достатньо сильний
+        // Поріг 10px дозволяє відсіяти випадкові натискання
+        // dx > dy гарантує, що ми не блокуємо вертикальний скрол
+        return Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy);
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const { dx } = gestureState;
+        // Поріг 50px для спрацьовування перемикання
+        if (dx > 50) {
+          handlersRef.current.handlePrevStage();
+        } else if (dx < -50) {
+          handlersRef.current.handleNextStage();
+        }
+      },
+      onPanResponderTerminationRequest: () => false, // Не віддавати контроль іншим
+    })
+  ).current;
+
   const slideUp = slideAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [400, 0],
@@ -481,32 +647,36 @@ export default function CRMScreen() {
     // Безпечне отримання назви стадії
     const stageLabel = item.statusName || stage?.label || (typeof item.stage === 'string' ? item.stage : 'Unknown') || 'Unknown';
     const stageColor = stage?.color || getStageColor(item.stageId || item.stage);
-    const leadName = item.name || 'Без імені';
+    const leadName = item.name || 'No name';
 
     return (
       <Pressable
         onPress={() => router.push(`/lead/${item.id}`)}
         style={[styles.leadCard, { borderColor: theme.border, backgroundColor: theme.card }]}
       >
-        <View style={styles.leadTopRow}>
-          <Text
-            style={[styles.leadName, { color: theme.primary }]}
-            numberOfLines={2}
-            ellipsizeMode="tail"
-          >
-            {String(leadName)}
-          </Text>
-          {typeof item.price === 'number' && (
-            <Text style={[styles.leadPrice, { color: theme.textSecondary }]}>
-              {formatPrice(item.price)} $
+        <View style={styles.leadRowMain}>
+          <View style={[styles.leadAvatar, { backgroundColor: theme.primary + '15' }]}>
+            <Text style={[styles.leadAvatarText, { color: theme.primary }]}>
+              {leadName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
             </Text>
-          )}
-        </View>
-        <View style={styles.leadBottomRow}>
-          <View style={[styles.stageTag, { backgroundColor: String(stageColor) }]}>
-            <Text style={styles.stageTagText}>{String(stageLabel)}</Text>
           </View>
-          <Ionicons name="chevron-forward-outline" size={20} color={theme.textSecondary} />
+
+          <View style={styles.leadInfo}>
+            <Text style={[styles.leadNameNew, { color: theme.text }]} numberOfLines={1}>
+              {leadName}
+            </Text>
+            <View style={styles.leadDetailsRow}>
+              {typeof item.price === 'number' && (
+                <Text style={[styles.leadPriceNew, { color: theme.textSecondary }]}>
+                  {formatPrice(item.price)} $
+                </Text>
+              )}
+            </View>
+          </View>
+
+          <View style={[styles.viewButton, { backgroundColor: theme.primary + '10', borderColor: theme.primary + '20' }]}>
+            <Text style={[styles.viewButtonText, { color: theme.primary }]}>View</Text>
+          </View>
         </View>
       </Pressable>
     );
@@ -517,55 +687,48 @@ export default function CRMScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={{ flexGrow: 1 }}
-        stickyHeaderIndices={showSearch ? [1] : []}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />
-        }
-      >
-        {/* Index 0: Main Header - Will scroll away */}
-        <View>
-          <Header
-            title={t('tabs.crm.title')}
-            titleColor="#FFFFFF"
-            user={authUser || undefined}
-            avatar={authUser?.avatar || undefined}
-          />
-        </View>
+      <View style={{ flex: 1 }} {...panResponder.panHandlers}>
+        <Animated.ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 150 }}
+          stickyHeaderIndices={showSearch ? [0] : []}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY as any } } }],
+            { useNativeDriver: false }
+          )}
+          scrollEventThrottle={16}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />
+          }
+        >
 
-        {/* Index 1: Search & Filter Section - Will become sticky */}
-        {showSearch && (
-          <View style={[styles.fixedSection, { backgroundColor: 'transparent' }]}>
-            {/* Search, Stage Filter, and Add Button */}
-            <View style={styles.searchRow}>
-              <View style={styles.searchBarContainer}>
-                <BlurView intensity={50} tint="dark" style={{ borderRadius: 8, overflow: 'hidden' }}>
+
+          {/* Index 1: Search & Filter Section - Will become sticky */}
+          {showSearch && (
+            <View style={[styles.fixedSection, { backgroundColor: theme.background }]}>
+              <View style={styles.searchRow}>
+                <View style={styles.searchBarContainer}>
                   <SearchBar
                     inputRef={searchInputRef as any}
                     value={searchQuery}
                     onFocus={handleSearchFocus}
                     onChangeText={setSearchQuery}
                     placeholder={t('tabs.crm.findByName')}
-                    backgroundColor="rgba(255,255,255,0.05)"
                   />
-                </BlurView>
-              </View>
+                </View>
 
-              {isSearchFocused ? (
-                <Pressable onPress={handleCancelSearch} style={{ paddingHorizontal: 4, justifyContent: 'center' }}>
-                  <Text style={{ color: theme.primary, fontSize: 16 }}>{t('common.cancel') || 'Cancel'}</Text>
-                </Pressable>
-              ) : (
-                <>
-                  <BlurView intensity={50} tint="dark" style={{ borderRadius: 8, overflow: 'hidden' }}>
+                {isSearchFocused ? (
+                  <Pressable onPress={handleCancelSearch} style={{ paddingHorizontal: 4, justifyContent: 'center' }}>
+                    <Text style={{ color: theme.primary, fontSize: 16 }}>{t('common.cancel') || 'Cancel'}</Text>
+                  </Pressable>
+                ) : (
+                  <>
                     <Pressable
                       style={[
                         styles.filterButton,
                         {
-                          borderColor: filterActive ? theme.primary : 'transparent',
-                          backgroundColor: filterActive ? theme.primary : 'rgba(255,255,255,0.05)'
+                          borderColor: theme.border,
+                          backgroundColor: theme.card
                         }
                       ]}
                       onPress={handleToggleFilter}
@@ -573,158 +736,178 @@ export default function CRMScreen() {
                       <Ionicons
                         name="filter"
                         size={20}
-                        color={filterActive ? '#FFFFFF' : theme.text}
+                        color={theme.text}
                       />
                     </Pressable>
-                  </BlurView>
 
-                  <BlurView intensity={0} tint="dark" style={{ borderRadius: 8, overflow: 'hidden' }}>
                     <Pressable
                       style={[styles.addButton, { backgroundColor: theme.primary }]}
                       onPress={() => setAddLeadModalVisible(true)}
                     >
                       <Ionicons name="add" size={24} color="#FFFFFF" />
                     </Pressable>
-                  </BlurView>
-                </>
-              )}
-            </View>
-          </View>
-        )}
+                  </>
+                )}
+              </View>
 
-        {/* Index 2: Lead Count - Will scroll away (Index changes based on rendering, but logic holds) */}
-        {showSearch && (
-          <View style={styles.countContainer}>
-            <View style={[styles.divider, { backgroundColor: theme.border }]} />
-            <Text style={[styles.countText, { color: theme.textSecondary }]}>
-              {leadCount} leads found
-            </Text>
-            <View style={[styles.divider, { backgroundColor: theme.border }]} />
-          </View>
-        )}
+              <Animated.View style={[
+                styles.countContainer,
+                {
+                  height: (scrollY as any).interpolate({
+                    inputRange: [0, 50],
+                    outputRange: [72, 0],
+                    extrapolate: 'clamp'
+                  }),
+                  opacity: (scrollY as any).interpolate({
+                    inputRange: [0, 30],
+                    outputRange: [1, 0],
+                    extrapolate: 'clamp'
+                  }),
+                  overflow: 'hidden',
+                  marginTop: (scrollY as any).interpolate({
+                    inputRange: [0, 50],
+                    outputRange: [4, 0],
+                    extrapolate: 'clamp'
+                  }),
+                  marginBottom: (scrollY as any).interpolate({
+                    inputRange: [0, 50],
+                    outputRange: [4, 0],
+                    extrapolate: 'clamp'
+                  }),
+                }
+              ]}>
+                <View style={styles.stageSwitcher}>
+                  <Pressable onPress={handlePrevStage} style={styles.switcherArrow}>
+                    <Ionicons name="chevron-back" size={20} color={theme.primary} />
+                  </Pressable>
+                  <Text style={[styles.stageSwitcherText, { color: theme.text }]}>
+                    {currentStageLabel}
+                  </Text>
+                  <Pressable onPress={handleNextStage} style={styles.switcherArrow}>
+                    <Ionicons name="chevron-forward" size={20} color={theme.primary} />
+                  </Pressable>
+                </View>
 
-        {/* Index 3: Content Area */}
-        <View style={styles.content}>
-          {authLoading ? (
-            <View style={[styles.loadingContainer]}>
-              <ActivityIndicator size="large" color={theme.primary} />
-              <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
-                Перевірка авторизації...
-              </Text>
-            </View>
-          ) : !isAuthenticated ? (
-            <View style={[styles.errorContainer]}>
-              <Ionicons name="lock-closed-outline" size={64} color="#FF3B30" />
-              <Text style={[styles.errorText, { color: theme.text }]}>
-                Потрібна авторизація
-              </Text>
-              <Text style={[styles.errorSubtext, { color: theme.textSecondary }]}>
-                Для доступу до CRM потрібно увійти в систему
-              </Text>
-              <Pressable
-                style={[styles.secondaryButton, { borderColor: theme.border, marginTop: 12 }]}
-                onPress={() => router.push('/(auth)/intro')}
-              >
-                <Text style={[styles.secondaryButtonText, { color: theme.text }]}>Зареєструватися</Text>
-              </Pressable>
-            </View>
-          ) : (!authUser?.amoCrmUserId && !authLoading) ? (
-            <View style={[styles.errorContainer, { justifyContent: 'center', alignItems: 'center', padding: 24, paddingBottom: 100 }]}>
-              <Ionicons name="alert-circle-outline" size={64} color={theme.textSecondary} />
-              <Text style={[styles.errorText, { color: theme.text, textAlign: 'center', marginTop: 16, fontSize: 18, fontWeight: '600' }]}>
-                You do not own crm account.
-              </Text>
-              <Text style={[styles.errorSubtext, { color: theme.textSecondary, textAlign: 'center', marginTop: 8, fontSize: 14 }]}>
-                Contact your admin
-              </Text>
-            </View>
-          ) : leadsLoading ? (
-            <View style={[styles.loadingContainer]}>
-              <ActivityIndicator size="large" color={theme.primary} />
-              <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
-                Завантаження leads...
-              </Text>
-            </View>
-          ) : leadsError ? (
-            <View style={[styles.errorContainer]}>
-              <Ionicons name="alert-circle-outline" size={64} color="#FF3B30" />
-              <Text style={[styles.errorText, { color: theme.text }]}>
-                Помилка завантаження leads
-              </Text>
-              <Text style={[styles.errorSubtext, { color: theme.textSecondary }]}>
-                {(leadsError as any)?.message || (leadsError as any)?.response?.data?.message || 'Спробуйте оновити'}
-              </Text>
-              <Pressable
-                style={[styles.retryButton, { backgroundColor: theme.primary }]}
-                onPress={() => refetchLeads()}
-              >
-                <Text style={styles.retryButtonText}>Спробувати знову</Text>
-              </Pressable>
-            </View>
-          ) : filteredLeads.length === 0 ? (
-            <View style={[styles.emptyContainer]}>
-              <Ionicons name="document-outline" size={64} color={theme.textSecondary} />
-              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                {searchQuery ? 'Leads не знайдено' : 'Немає leads'}
-              </Text>
-            </View>
-          ) : (
-            <View>
-              {filteredLeads.map((lead) => (
-                <LeadCard key={lead.id} item={lead} />
-              ))}
+                <View style={styles.pipelineInfoRow}>
+                  <View style={[styles.divider, { backgroundColor: theme.border }]} />
+                  <Text style={[styles.pipelineInfoText, { color: theme.textSecondary }]} numberOfLines={1}>
+                    {currentPipelineName} — {getLeadsFoundLabel(leadCount)}
+                  </Text>
+                  <View style={[styles.divider, { backgroundColor: theme.border }]} />
+                </View>
+              </Animated.View>
             </View>
           )}
-        </View>
-      </ScrollView>
+
+          {/* Index 3: Content Area */}
+          <View style={styles.content}>
+            {authLoading ? (
+              <View style={[styles.loadingContainer]}>
+                <ActivityIndicator size="large" color={theme.primary} />
+                <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+                  Перевірка авторизації...
+                </Text>
+              </View>
+            ) : !isAuthenticated ? (
+              <View style={[styles.errorContainer]}>
+                <Ionicons name="lock-closed-outline" size={64} color="#FF3B30" />
+                <Text style={[styles.errorText, { color: theme.text }]}>
+                  Потрібна авторизація
+                </Text>
+                <Text style={[styles.errorSubtext, { color: theme.textSecondary }]}>
+                  Для доступу до CRM потрібно увійти в систему
+                </Text>
+                <Pressable
+                  style={[styles.secondaryButton, { borderColor: theme.border, marginTop: 12 }]}
+                  onPress={() => router.push('/(auth)/intro')}
+                >
+                  <Text style={[styles.secondaryButtonText, { color: theme.text }]}>Зареєструватися</Text>
+                </Pressable>
+              </View>
+            ) : (!authUser?.amoCrmUserId && !authLoading) ? (
+              <View style={[styles.errorContainer, { justifyContent: 'center', alignItems: 'center', padding: 24, paddingBottom: 100 }]}>
+                <Ionicons name="alert-circle-outline" size={64} color={theme.textSecondary} />
+                <Text style={[styles.errorText, { color: theme.text, textAlign: 'center', marginTop: 16, fontSize: 18, fontWeight: '600' }]}>
+                  You do not own crm account.
+                </Text>
+                <Text style={[styles.errorSubtext, { color: theme.textSecondary, textAlign: 'center', marginTop: 8, fontSize: 14 }]}>
+                  Contact your admin
+                </Text>
+              </View>
+            ) : leadsLoading ? (
+              <View style={[styles.loadingContainer]}>
+                <ActivityIndicator size="large" color={theme.primary} />
+                <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+                  Завантаження leads...
+                </Text>
+              </View>
+            ) : leadsError ? (
+              <View style={[styles.errorContainer]}>
+                <Ionicons name="alert-circle-outline" size={64} color="#FF3B30" />
+                <Text style={[styles.errorText, { color: theme.text }]}>
+                  Помилка завантаження leads
+                </Text>
+                <Text style={[styles.errorSubtext, { color: theme.textSecondary }]}>
+                  {(leadsError as any)?.message || (leadsError as any)?.response?.data?.message || 'Спробуйте оновити'}
+                </Text>
+                <Pressable
+                  style={[styles.retryButton, { backgroundColor: theme.primary }]}
+                  onPress={() => refetchLeads()}
+                >
+                  <Text style={styles.retryButtonText}>Спробувати знову</Text>
+                </Pressable>
+              </View>
+            ) : filteredLeads.length === 0 ? (
+              <View style={[styles.emptyContainer]}>
+                <Ionicons name="document-outline" size={64} color={theme.textSecondary} />
+                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+                  {searchQuery ? 'Leads не знайдено' : 'Немає leads'}
+                </Text>
+              </View>
+            ) : (
+              <View>
+                {filteredLeads.map((lead) => (
+                  <LeadCard key={lead.id} item={lead} />
+                ))}
+              </View>
+            )}
+          </View>
+        </Animated.ScrollView>
+      </View>
 
       {/* Stage Filter Modal */}
       <Modal
         visible={modalVisible}
-        transparent
-        animationType="none"
+        transparent={false}
+        animationType="slide"
+        presentationStyle="fullScreen"
         onRequestClose={closeModal}
       >
-        <Animated.View
-          style={[
-            styles.modalBackdrop,
-            {
-              opacity: backdropOpacity,
-            },
-          ]}
-        >
-          <Pressable
-            style={StyleSheet.absoluteFill}
-            onPress={closeModal}
-          />
-          <Animated.View
-            style={[
-              styles.modalContent,
-              styles.modalContentTall,
-              {
-                transform: [{ translateY: slideUp }],
-                backgroundColor: theme.background,
-              },
-            ]}
-          >
-            <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
-              {filterModalStep === 'stage' && (
-                <Pressable onPress={handleBackToPipelines} style={styles.modalBackButton}>
-                  <Ionicons name="arrow-back" size={24} color={theme.primary} />
-                </Pressable>
-              )}
-              <Text style={[styles.modalTitle, { color: theme.primary, flex: 1 }]}>
-                {filterModalStep === 'pipeline' ? 'Select pipeline' : 'Select stage'}
-              </Text>
-              <Pressable onPress={closeModal} style={styles.modalCloseButton}>
-                <Ionicons name="close" size={24} color={theme.primary} />
+        <View style={{ flex: 1, paddingTop: useSafeAreaInsets().top, backgroundColor: theme.background }}>
+          <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
+            {filterModalStep === 'stage' ? (
+              <Pressable onPress={handleBackToPipelines} style={styles.modalBackButton}>
+                <Ionicons name="chevron-back" size={24} color={theme.primary} />
               </Pressable>
-            </View>
+            ) : (
+              <View style={styles.modalBackButton} /> // Spacer
+            )}
 
+            <Text style={[styles.modalTitle, { color: theme.text }]}>
+              {filterModalStep === 'pipeline' ? 'Select pipeline' : 'Select stage'}
+            </Text>
+
+            <Pressable onPress={closeModal} style={styles.modalCloseButton}>
+              <Ionicons name="close" size={24} color={theme.primary} />
+            </Pressable>
+          </View>
+
+          <View style={{ flex: 1 }}>
             {filterModalStep === 'pipeline' ? (
               <FlatList
                 data={pipelinesData?.data || []}
                 keyExtractor={(item) => String(item.id)}
+                contentContainerStyle={{ padding: 16 }}
                 renderItem={({ item }) => {
                   const pipelineName = String(item.name || 'Без назви');
                   const stagesCount = item.stages?.length || 0;
@@ -738,7 +921,7 @@ export default function CRMScreen() {
                       onPress={() => handleSelectPipeline(item.id)}
                     >
                       <View style={styles.modalItemContent}>
-                        <Text style={[styles.modalItemText, { color: theme.primary, fontSize: 14 }]}>
+                        <Text style={[styles.modalItemText, { color: theme.text }]}>
                           {pipelineName}
                         </Text>
                         {stagesCount > 0 && (
@@ -747,71 +930,7 @@ export default function CRMScreen() {
                           </Text>
                         )}
                       </View>
-                      <Ionicons name="chevron-forward" size={20} color={theme.primary} />
-                    </Pressable>
-                  );
-                }}
-                ListEmptyComponent={
-                  <View style={styles.modalEmptyContainer}>
-                    <Ionicons name="folder-outline" size={48} color={theme.textSecondary} />
-                    <Text style={[styles.modalEmptyText, { color: theme.textSecondary }]}>
-                      Немає доступних воронок
-                    </Text>
-                  </View>
-                }
-              />
-            ) : (
-              <FlatList
-                data={
-                  pipelinesData?.data
-                    ?.find((p) => p.id === selectedPipeline)
-                    ?.stages?.map((stage) => ({
-                      label: String(stage.name || 'Без назви'),
-                      value: stage.mappedStatus || String(stage.name || ''),
-                      color: stage.color || '#999',
-                      id: stage.id,
-                    })) || []
-                }
-                contentContainerStyle={{ paddingBottom: 32 }}
-                ListHeaderComponent={() => (
-                  <Pressable
-                    style={[
-                      styles.modalItem,
-                      { borderBottomColor: theme.border },
-                      selectedStage === '' && { backgroundColor: theme.card },
-                    ]}
-                    onPress={() => handleSelectStage('', undefined)}
-                  >
-                    <View style={styles.modalItemContent}>
-                      <View style={[styles.stageColorIndicator, { backgroundColor: theme.textSecondary }]} />
-                      <Text style={[styles.modalItemText, { color: theme.primary, fontSize: 14 }]}>
-                        All stages
-                      </Text>
-                    </View>
-                    {selectedStage === '' && (
-                      <Ionicons name="checkmark" size={20} color={theme.primary} />
-                    )}
-                  </Pressable>
-                )}
-                keyExtractor={(item) => String(item.id || item.value || Math.random())}
-                renderItem={({ item }) => {
-                  const itemLabel = String(item.label || item.value || 'Unknown');
-                  const itemValue = String(item.value || item.label || '');
-                  return (
-                    <Pressable
-                      style={[
-                        styles.modalItem,
-                        { borderBottomColor: theme.border },
-                      ]}
-                      onPress={() => handleSelectStage(itemValue, item.id)}
-                    >
-                      <View style={styles.modalItemContent}>
-                        <View style={[styles.stageColorIndicator, { backgroundColor: item.color }]} />
-                        <Text style={[styles.modalItemText, { color: theme.primary, fontSize: 14 }]}>
-                          {itemLabel}
-                        </Text>
-                      </View>
-                      {selectedStage === itemValue && (
+                      {selectedPipeline === item.id && (
                         <Ionicons name="checkmark" size={20} color={theme.primary} />
                       )}
                     </Pressable>
@@ -821,14 +940,46 @@ export default function CRMScreen() {
                   <View style={styles.modalEmptyContainer}>
                     <Ionicons name="list-outline" size={48} color={theme.textSecondary} />
                     <Text style={[styles.modalEmptyText, { color: theme.textSecondary }]}>
-                      Немає доступних стадій
+                      Немає доступних воронок
                     </Text>
                   </View>
                 }
               />
+            ) : (
+              <FlatList
+                data={LEAD_STAGES}
+                keyExtractor={(item, idx) => `${item.id}-${idx}`}
+                contentContainerStyle={{ padding: 16 }}
+                renderItem={({ item }) => {
+                  const itemLabel = String(item.label || '');
+                  const itemValue = String(item.value || item.label || '');
+                  const isActive = selectedStageId === item.id || (selectedStage === itemValue && !selectedStageId);
+
+                  return (
+                    <Pressable
+                      style={[
+                        styles.modalItem,
+                        { borderBottomColor: theme.border },
+                        isActive && { backgroundColor: theme.card },
+                      ]}
+                      onPress={() => handleSelectStage(itemValue, item.id)}
+                    >
+                      <View style={styles.modalItemContent}>
+                        <View style={[styles.stageColorIndicator, { backgroundColor: item.color }]} />
+                        <Text style={[styles.modalItemText, { color: theme.text }]}>
+                          {itemLabel}
+                        </Text>
+                      </View>
+                      {isActive && (
+                        <Ionicons name="checkmark" size={20} color={theme.primary} />
+                      )}
+                    </Pressable>
+                  );
+                }}
+              />
             )}
-          </Animated.View>
-        </Animated.View>
+          </View>
+        </View>
       </Modal>
 
       {/* Add Lead Modal */}
@@ -840,16 +991,75 @@ export default function CRMScreen() {
         }}
         amoConnected={true}
       />
-    </SafeAreaView >
+
+      {/* Floating Pipeline Switcher */}
+      {/* Floating Pipeline Switcher */}
+      <View style={styles.floatingPipelineContainer} pointerEvents="box-none">
+        {/* Left Gradient */}
+        <LinearGradient
+          colors={[theme.background, theme.background + '00']}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={styles.floatingGradientLeft}
+          pointerEvents="none"
+        />
+
+        {/* Content with PanResponder */}
+        <Animated.View
+          style={[
+            styles.pipelineSwitcherContent,
+            { transform: [{ translateX: pipelineTranslateX }] }
+          ]}
+          {...pipelinePanResponder.panHandlers}
+        >
+          {/* Prev Pipeline (Left) */}
+          {prevPipeline && (
+            <View style={[styles.pipelinePillSide, { opacity: 0.5 }]}>
+              <Text style={[styles.pipelinePillTextSide, { color: theme.textSecondary }]} numberOfLines={1}>
+                {prevPipeline.name}
+              </Text>
+            </View>
+          )}
+
+          {/* Current Pipeline (Center) */}
+          <View style={[styles.pipelinePill, { backgroundColor: theme.primary, borderColor: theme.border }]}>
+            <Text style={styles.pipelinePillText} numberOfLines={1}>
+              {currentPipelineName}
+            </Text>
+          </View>
+
+          {/* Next Pipeline (Right) */}
+          {nextPipeline && (
+            <View style={[styles.pipelinePillSide, { opacity: 0.5 }]}>
+              <Text style={[styles.pipelinePillTextSide, { color: theme.textSecondary }]} numberOfLines={1}>
+                {nextPipeline.name}
+              </Text>
+            </View>
+          )}
+        </Animated.View>
+
+        {/* Right Gradient */}
+        <LinearGradient
+          colors={[theme.background + '00', theme.background]}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={styles.floatingGradientRight}
+          pointerEvents="none"
+        />
+      </View>
+
+    </SafeAreaView>
   );
 }
 
+// Separate component for scrub segments to use Reanimated styles efficiently
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
   fixedSection: {
     padding: 16,
+    paddingTop: 8,
     paddingBottom: 0,
   },
   scrollView: {
@@ -857,48 +1067,174 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingTop: 8,
+    paddingTop: 0,
   },
   searchRow: {
     flexDirection: 'row',
     gap: 12,
     marginBottom: 8,
     alignItems: 'center',
-    height: 48,
+    height: 44,
   },
   searchBarContainer: {
     flex: 1,
   },
   filterButton: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
     borderRadius: 8,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   addButton: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   countContainer: {
+    alignItems: 'center',
+    gap: 4,
+    width: '100%',
+  },
+  stageSwitcher: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 4,
-    paddingHorizontal: 16,
-    minHeight: 30,
+    justifyContent: 'space-between',
     width: '100%',
+    paddingHorizontal: 0,
+  },
+  switcherArrow: {
+    padding: 8,
+  },
+  stageSwitcherText: {
+    fontSize: 16,
+    fontWeight: '600',
+    minWidth: 120,
+    textAlign: 'center',
+    marginHorizontal: 8,
+  },
+  pipelineInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    width: '100%',
+  },
+  pipelineInfoText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   divider: {
     flex: 1,
     height: 1,
   },
-  countText: {
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  loadingText: {
+    marginTop: 12,
     fontSize: 14,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  errorText: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 16,
+  },
+  errorSubtext: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 8,
+    marginBottom: 20,
+  },
+  retryButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  secondaryButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  secondaryButtonText: {
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+    marginTop: 40,
+  },
+  emptyText: {
+    marginTop: 16,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  leadCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 6,
+  },
+  leadRowMain: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  leadAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  leadAvatarText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  leadInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  leadNameNew: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  leadDetailsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  leadPriceNew: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  viewButton: {
     paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  viewButtonText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   modalBackdrop: {
     flex: 1,
@@ -908,190 +1244,74 @@ const styles = StyleSheet.create({
   modalContent: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: 400,
+    paddingBottom: 40,
+    maxHeight: '80%',
   },
   modalContentTall: {
-    maxHeight: 600,
+    height: '60%',
   },
-
   modalHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    gap: 8,
+    paddingVertical: 12, // More compact like KB header
+    borderBottomWidth: 0.5,
   },
   modalBackButton: {
-    padding: 4,
-  },
-  modalCloseButton: {
-    padding: 4,
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '500',
+    fontSize: 16,
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'center',
+  },
+  modalCloseButton: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    justifyContent: 'space-between',
+    paddingVertical: 16, // Better spacing
+    paddingHorizontal: 4,
     borderBottomWidth: 1,
   },
   modalItemContent: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flex: 1,
+  },
+  modalItemText: {
+    fontWeight: '500',
+    fontSize: 15,
   },
   modalItemSubtext: {
-    fontSize: 12,
-    marginTop: 2,
+    fontSize: 13,
+    marginLeft: 'auto',
+    marginRight: 8,
   },
   stageColorIndicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 24, // Bigger square
+    height: 24,
+    borderRadius: 6, // Rounded square
   },
   modalEmptyContainer: {
-    padding: 32,
+    padding: 40,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   modalEmptyText: {
     marginTop: 12,
     fontSize: 14,
-    textAlign: 'center',
-  },
-  lastModalItem: {
-    paddingBottom: 32,
-  },
-  modalItemText: {
-    fontSize: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  emptyText: {
-    marginTop: 16,
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  errorText: {
-    marginTop: 16,
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  errorSubtext: {
-    marginTop: 8,
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  retryButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  secondaryButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  secondaryButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  leadCard: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  leadTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  leadBottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  leadName: {
-    fontSize: 16,
-    fontWeight: '600',
-    flex: 1,
-    marginRight: '10%',
-  },
-  leadPrice: {
-    fontSize: 14,
-  },
-  stageTag: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  stageTagText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  connectBanner: {
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 8,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  connectBannerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  connectBannerText: {
-    flex: 1,
-    fontSize: 14,
-  },
-  connectButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  connectButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
   },
   infoBanner: {
     marginHorizontal: 16,
@@ -1123,5 +1343,157 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 12,
   },
+  scrubWrapper: {
+    position: 'absolute',
+    bottom: 80,
+    left: 20,
+    right: 20,
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  scrubIndicatorWrapper: {
+    position: 'absolute',
+    width: '100%',
+    bottom: 60,
+    alignItems: 'center',
+  },
+  scrubIndicator: {
+    alignItems: 'center',
+    width: 200, // Fixed width for easier centering calculation
+  },
+  scrubTooltip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    overflow: 'hidden',
+  },
+  stageBadgePoint: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  scrubTooltipText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  scrubBarContainer: {
+    width: '100%',
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  scrubBarInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 20,
+    gap: 2,
+  },
+  scrubSegment: {
+    flex: 1,
+    borderRadius: 3,
+  },
+  pipelineSwitcher: {
+    marginBottom: 12,
+    width: '100%',
+  },
+  pipelineSwitcherInner: {
+    paddingHorizontal: 4,
+    gap: 8,
+  },
+  pipelineTab: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  pipelineTabText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  floatingPipelineContainer: {
+    position: 'absolute',
+    bottom: 90,
+    left: 0,
+    right: 0,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+  },
+  floatingGradientLeft: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 60,
+    zIndex: 20,
+  },
+  floatingGradientRight: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 60,
+    zIndex: 20,
+  },
+  pipelineSwitcherContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    width: '100%',
+    paddingHorizontal: 20,
+  },
+  pipelinePillWrapper: {
+    paddingHorizontal: 4,
+  },
+  pipelinePill: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 4,
+    zIndex: 10,
+    minWidth: 100,
+    alignItems: 'center',
+  },
+  pipelinePillSide: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: 'rgba(128,128,128, 0.08)',
+    transform: [{ scale: 0.85 }],
+    maxWidth: 90,
+  },
+  pipelinePillText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  pipelinePillTextSide: {
+    fontWeight: '500',
+    fontSize: 11,
+  },
 });
-

@@ -12,7 +12,7 @@ export const lightTheme = {
 
   // Brand colors
   primary: '#102F73',
-  primaryLight: '#F8F9FE',
+  primaryLight: 'rgba(16, 47, 115, 0.05)',
 
   // Border colors
   border: '#E5E5E5',
@@ -22,7 +22,7 @@ export const lightTheme = {
   success: '#34C759',
   error: '#EF4444',
   warning: '#FF9500',
-  info: '#007AFF',
+  info: '#102F73',
 
   // Card colors
   card: '#FFFFFF',

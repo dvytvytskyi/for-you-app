@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TextInput, StyleSheet } from 'react-native';
+import { View, TextInput, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/utils/theme';
 
@@ -12,13 +12,14 @@ interface SearchBarProps extends React.ComponentProps<typeof TextInput> {
   autoFocus?: boolean;
   inputRef?: React.RefObject<TextInput>;
   backgroundColor?: string;
+  containerStyle?: StyleProp<ViewStyle>;
 }
 
-export default function SearchBar({ value, onChangeText, placeholder = 'Find property', onFocus, onBlur, autoFocus, inputRef, backgroundColor, ...props }: SearchBarProps) {
+export default function SearchBar({ value, onChangeText, placeholder = 'Find property', onFocus, onBlur, autoFocus, inputRef, backgroundColor, containerStyle, ...props }: SearchBarProps) {
   const { theme } = useTheme();
 
   return (
-    <View style={[styles.container, { backgroundColor: backgroundColor || theme.card, borderColor: backgroundColor ? backgroundColor : theme.border }]}>
+    <View style={[styles.container, { backgroundColor: backgroundColor || theme.card, borderColor: backgroundColor ? backgroundColor : theme.border }, containerStyle]}>
       <Ionicons name="search" size={20} color={theme.textTertiary} style={styles.icon} />
       <TextInput
         ref={inputRef}
@@ -44,7 +45,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 12,
-    height: 48,
+    height: 44,
     width: '100%',
   },
   icon: {

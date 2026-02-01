@@ -1,0 +1,7 @@
+Щоб додати свайп-жест для повернення назад в AddLeadModal, потрібно:
+
+1. Імпортувати GestureDetector та Gesture з react-native-gesture-handler
+2. Створити swipeGesture з Pan gesture
+3. Обгорнути ScrollView в GestureDetector
+
+Код вже відновлено з git. Зараз застосую зміни по черзі.

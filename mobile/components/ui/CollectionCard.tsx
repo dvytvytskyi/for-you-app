@@ -1,5 +1,5 @@
-import { View, Text, StyleSheet, Pressable, ImageBackground } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { Ionicons, Feather } from '@expo/vector-icons';
 import { useTheme } from '@/utils/theme';
 
 interface CollectionCardProps {
@@ -14,72 +14,80 @@ export default function CollectionCard({ icon, title, description, gradientImage
   const { theme } = useTheme();
 
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.container,
+    <View style={styles.wrapper}>
+      {/* Solid Shadow Block */}
+      <View style={[
+        styles.shadowBlock,
         {
-          backgroundColor: theme.card,
-          borderColor: theme.cardBorder,
-          opacity: pressed ? 0.9 : 1,
-          transform: [{ scale: pressed ? 0.98 : 1 }]
+          backgroundColor: theme.primary,
+          opacity: 0.25, // Less blue (lighter)
         }
-      ]}
-    >
-      <ImageBackground
-        source={gradientImage}
-        style={styles.gradient}
-        imageStyle={styles.gradientImage}
-        resizeMode="cover"
-      >
+      ]} />
 
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [
+          styles.container,
+          {
+            backgroundColor: theme.primary,
+            borderColor: theme.primary,
+            opacity: pressed ? 0.9 : 1,
+            transform: [{ scale: pressed ? 0.98 : 1 }]
+          }
+        ]}
+      >
         <View style={styles.content}>
           {/* Left icon */}
-          <View style={[styles.iconContainer, { backgroundColor: theme.primary }]}>
-            <Ionicons name={icon} size={20} color="#FFFFFF" />
+          <View style={[styles.iconContainer, { backgroundColor: '#FFFFFF' }]}>
+            <Ionicons name={icon} size={20} color={theme.primary} />
           </View>
 
           {/* Text content */}
           <View style={styles.textContainer}>
-            <Text style={[styles.title, { color: theme.primary }]}>{title}</Text>
-            <Text style={[styles.description, { color: theme.textSecondary }]}>{description}</Text>
+            <Text style={[styles.title, { color: '#FFFFFF' }]}>{title}</Text>
+            <Text style={[styles.description, { color: 'rgba(255, 255, 255, 0.8)' }]}>{description}</Text>
           </View>
 
-          {/* Right arrow */}
-          <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+          {/* Right arrow - Thinner icon using Feather */}
+          <Feather name="chevron-right" size={24} color="#FFFFFF" />
         </View>
-      </ImageBackground>
-    </Pressable>
+      </Pressable>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    width: '100%',
+    marginBottom: 6, // Compensate for shadow offset if needed
+  },
+  shadowBlock: {
+    position: 'absolute',
+    top: 4, // Even higher (closer to card)
+    width: '96%', // Wider shadow
+    height: '100%',
+    alignSelf: 'center',
+    borderRadius: 16,
+    zIndex: -1, // Behind the main card
+  },
   container: {
     width: '100%',
-    height: 60,
-    borderRadius: 12,
+    height: 70,
+    borderRadius: 16,
     overflow: 'hidden',
-    borderWidth: 0.5,
-    // borderColor applied dynamically
-  },
-  gradient: {
-    flex: 1,
-  },
-  gradientImage: {
-    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: 'center',
   },
   content: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     gap: 12,
   },
   iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    // backgroundColor applied dynamically
+    width: 40,
+    height: 40,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -89,14 +97,12 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 14,
-    fontWeight: '600',
-    // color applied dynamically
+    fontWeight: '700',
     lineHeight: 18,
   },
   description: {
     fontSize: 12,
     fontWeight: '400',
-    // color applied dynamically
     lineHeight: 16,
   },
 });

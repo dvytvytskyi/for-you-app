@@ -1,5 +1,6 @@
 {
   "profile": "Профиль",
+  "title": "Профиль",
   "editProfile": "Редактировать профиль",
   "changePassword": "Изменить пароль",
   "notifications": "Уведомления",
@@ -11,21 +12,17 @@
   "about": "О приложении",
   "logOut": "Выйти",
   "version": "Версия",
-  
   "accountSection": "Учетная запись",
   "notificationsSection": "Уведомления",
   "preferencesSection": "Настройки",
   "supportSection": "Поддержка",
   "appearance": "Внешний вид",
-  
   "phoneNumber": "Номер телефона",
   "pushNotifications": "Push-уведомления",
   "emailNotifications": "Email-уведомления",
   "marketing": "Маркетинг",
-  
   "logOutConfirmTitle": "Выйти",
   "logOutConfirmMessage": "Вы уверены, что хотите выйти?",
-  
   "editProfileTitle": "Редактировать профиль",
   "firstName": "Имя",
   "lastName": "Фамилия",
@@ -36,7 +33,6 @@
   "deleteAvatar": "Удалить",
   "deletePhotoTitle": "Удалить фото",
   "deletePhotoMessage": "Вы уверены, что хотите удалить свое фото профиля?",
-  
   "changePasswordTitle": "Изменить пароль",
   "currentPassword": "Текущий пароль",
   "newPassword": "Новый пароль",
@@ -46,7 +42,6 @@
   "passwordsDoNotMatch": "Пароли не совпадают",
   "pleaseConfirmPassword": "Пожалуйста, подтвердите новый пароль",
   "passwordChangedSuccess": "Пароль успешно изменен",
-  
   "notificationsInfo": "Управляйте способами получения уведомлений о лидах, недвижимости и обновлениях.",
   "pushNotificationsSection": "Push-уведомления",
   "pushNotificationsDescription": "Получайте мгновенные обновления на ваше мобильное устройство",
@@ -54,7 +49,6 @@
   "emailNotificationsDescription": "Получайте обновления и отчеты по электронной почте",
   "marketingSection": "Маркетинг и обновления",
   "marketingDescription": "Рекламный контент и новости",
-  
   "enablePushNotifications": "Включить Push-уведомления",
   "pushNotificationsMaster": "Главный переключатель для всех push-уведомлений",
   "newLeads": "Новые лиды",
@@ -65,7 +59,6 @@
   "propertyMatchesDescription": "Когда недвижимость соответствует предпочтениям лида",
   "priceChanges": "Изменения цен",
   "priceChangesDescription": "Когда изменяются цены на недвижимость",
-  
   "enableEmailNotifications": "Включить Email-уведомления",
   "emailNotificationsMaster": "Главный переключатель для всех email-уведомлений",
   "weeklyDigest": "Еженедельный обзор",
@@ -74,7 +67,6 @@
   "monthlyReportDescription": "Детальный месячный отчет о производительности",
   "marketInsights": "Анализ рынка",
   "marketInsightsDescription": "Тренды и анализ рынка",
-  
   "enableMarketing": "Включить маркетинг",
   "marketingMaster": "Получать рекламный контент",
   "promotions": "Акции",
@@ -83,19 +75,15 @@
   "newsUpdatesDescription": "Новости индустрии и обновления",
   "events": "События",
   "eventsDescription": "Предстоящие события и вебинары",
-  
   "savePreferences": "Сохранить настройки",
   "preferencesUpdatedSuccess": "Настройки уведомлений успешно обновлены",
-  
   "languageTitle": "Язык",
   "languageInfo": "Выберите предпочтительный язык. Приложение будет отображаться на выбранном языке.",
   "changeLanguage": "Изменить язык",
   "languageChangedSuccess": "Язык успешно изменен. Пожалуйста, перезапустите приложение для применения изменений.",
-  
   "english": "Английский",
   "ukrainian": "Украинский",
   "russian": "Русский",
-  
   "supportTitle": "Помощь и поддержка",
   "supportInfo": "Мы здесь, чтобы помочь! Опишите вашу проблему, и мы ответим в течение 24 часов.",
   "category": "Категория",
@@ -123,7 +111,6 @@
   "subjectRequired": "Тема обязательна",
   "messageRequired": "Сообщение обязательно",
   "messageTooShort": "Сообщение должно содержать минимум 10 символов",
-  
   "aboutTitle": "О приложении",
   "appName": "For You Real Estate",
   "appDescription": "For You Real Estate - это ваше полное решение для управления операциями с недвижимостью в Дубае и ОАЭ. Создано для брокеров, агентов и инвесторов.",
@@ -150,7 +137,6 @@
   "followUs": "Следите за нами",
   "madeWithLove": "Создано с ❤️ в Дубае",
   "copyright": "© 2025 For You Real Estate. Все права защищены.",
-  
   "theme": {
     "title": "Внешний вид",
     "info": "Выберите как должно выглядеть приложение. Выберите тему или автоматически для синхронизации с системой.",
@@ -162,4 +148,3 @@
     "systemDescription": "Как на вашем устройстве"
   }
 }
-

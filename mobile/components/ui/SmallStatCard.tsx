@@ -18,7 +18,7 @@ export default function SmallStatCard({ icon, title, value }: SmallStatCardProps
           styles.iconContainer,
           {
             borderColor: theme.cardBorder,
-            backgroundColor: isDark ? 'rgba(10, 132, 255, 0.1)' : '#F0F7FF'
+            backgroundColor: 'transparent'
           }
         ]}>
           <Ionicons name={icon} size={20} color={theme.primary} />

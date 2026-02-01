@@ -7,7 +7,7 @@ interface PaginationDotsProps {
 }
 
 export default function PaginationDots({ total, current }: PaginationDotsProps) {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
 
   return (
     <View style={styles.container}>
@@ -16,7 +16,7 @@ export default function PaginationDots({ total, current }: PaginationDotsProps) 
           key={index}
           style={[
             styles.dot,
-            { backgroundColor: theme.textTertiary, opacity: 1 },
+            { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)', opacity: 1 },
             index === current && [styles.dotActive, { backgroundColor: theme.primary, opacity: 1 }],
           ]}
         />

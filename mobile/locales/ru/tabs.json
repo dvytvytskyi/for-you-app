@@ -15,7 +15,6 @@
     "noResults": "Недвижимость не найдена",
     "tryDifferentFilters": "Попробуйте изменить фильтры"
   },
-  
   "liked": {
     "title": "Избранное",
     "subtitle": "Ваша любимая недвижимость",
@@ -24,7 +23,6 @@
     "removeFromLiked": "Удалить из избранного",
     "addedOn": "Добавлено {{date}}"
   },
-  
   "collections": {
     "title": "Коллекции",
     "createCollection": "Создать коллекцию",
@@ -37,7 +35,6 @@
     "createYourFirst": "Создайте свою первую коллекцию для организации недвижимости",
     "propertiesCount": "{{count}} объектов"
   },
-  
   "crm": {
     "title": "CRM",
     "leads": "Лиды",
@@ -57,9 +54,9 @@
     "noDeal": "Пока нет сделок",
     "findByName": "Найти по имени",
     "selectLeadStage": "Выбрать этап лида",
+    "allStages": "Все этапи",
     "leadsFound": "{{count}} лидов найдено"
   },
-  
   "map": {
     "title": "Карта",
     "searchOnMap": "Поиск на карте",
@@ -72,4 +69,3 @@
     "propertiesInArea": "{{count}} объектов в этой зоне"
   }
 }
-

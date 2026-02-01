@@ -15,7 +15,6 @@
     "noResults": "No properties found",
     "tryDifferentFilters": "Try adjusting your filters"
   },
-  
   "liked": {
     "title": "Liked",
     "subtitle": "Your favorite properties",
@@ -24,7 +23,6 @@
     "removeFromLiked": "Remove from liked",
     "addedOn": "Added on {{date}}"
   },
-  
   "collections": {
     "title": "Collections",
     "createCollection": "Create Collection",
@@ -37,7 +35,6 @@
     "createYourFirst": "Create your first collection to organize properties",
     "propertiesCount": "{{count}} properties"
   },
-  
   "crm": {
     "title": "CRM",
     "leads": "Leads",
@@ -57,9 +54,9 @@
     "noDeal": "No deals yet",
     "findByName": "Find by name",
     "selectLeadStage": "Select lead stage",
+    "allStages": "All Stages",
     "leadsFound": "{{count}} leads found"
   },
-  
   "map": {
     "title": "Map",
     "searchOnMap": "Search on map",
@@ -72,4 +69,3 @@
     "propertiesInArea": "{{count}} properties in this area"
   }
 }
-

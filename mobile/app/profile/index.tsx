@@ -189,143 +189,150 @@ export default function ProfileScreen() {
           </Text>
         </View>
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Back Button */}
-          <Pressable
-            onPress={handleGoBack}
-            style={({ pressed }) => [
-              styles.backButton,
-              {
-                backgroundColor: theme.primaryLight,
-                opacity: pressed ? 0.8 : 1
-              }
-            ]}
-          >
-            <Ionicons name="chevron-back" size={24} color={theme.primary} />
-          </Pressable>
+        <>
+          <View style={[styles.header, { borderBottomColor: theme.border }]}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.headerBackButton,
+                { opacity: pressed ? 0.6 : 1 }
+              ]}
+              onPress={handleGoBack}
+            >
+              <Ionicons name="chevron-back" size={24} color={theme.primary} />
+            </Pressable>
 
-          <ProfileHeader
-            avatar={user.avatar || undefined}
-            firstName={user.firstName}
-            lastName={user.lastName}
-            email={user.email}
-            role={user.role || 'BROKER'} // Fallback на BROKER якщо роль не визначена
-            onEditPress={handleEditProfile}
-            onAvatarPress={() => {
-              if (user.avatar) {
-                setShowImageViewer(true);
-              }
-            }}
-          />
+            <Text style={[styles.headerTitle, { color: theme.text }]}>{t('profile.title') || 'Profile'}</Text>
 
-          {/* Account Section */}
-          <SettingsSection isFirst>
-            <SettingsItem
-              icon="person-outline"
-              label={t('profile.editProfile')}
-              onPress={handleEditProfilePage}
-            />
-            <SettingsItem
-              icon="lock-closed-outline"
-              label={t('profile.changePassword')}
-              onPress={handleChangePassword}
-            />
-            <SettingsItem
-              icon="call-outline"
-              label={t('profile.phoneNumber')}
-              value={user.phone || undefined}
-              hasArrow={false}
-              isLast
-            />
-          </SettingsSection>
+            <View style={styles.headerBackButton} />
+          </View>
 
-          {/* Notifications Section */}
-          <SettingsSection>
-            <SettingsItem
-              icon="notifications-outline"
-              label={t('profile.pushNotifications')}
-              hasSwitch
-              switchValue={pushEnabled}
-              onSwitchChange={setPushEnabled}
-              hasArrow={false}
-            />
-            <SettingsItem
-              icon="mail-outline"
-              label={t('profile.emailNotifications')}
-              hasSwitch
-              switchValue={emailEnabled}
-              onSwitchChange={setEmailEnabled}
-              hasArrow={false}
-            />
-            <SettingsItem
-              icon="megaphone-outline"
-              label={t('profile.marketing')}
-              hasSwitch
-              switchValue={marketingEnabled}
-              onSwitchChange={setMarketingEnabled}
-              hasArrow={false}
-              isLast
-            />
-          </SettingsSection>
+          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+            {/* Back Button Removed from here */}
 
-          {/* Preferences Section */}
-          <SettingsSection>
-            <SettingsItem
-              icon="color-palette-outline"
-              label={t('profile.appearance')}
-              onPress={handleAppearance}
+            <ProfileHeader
+              avatar={user.avatar || undefined}
+              firstName={user.firstName}
+              lastName={user.lastName}
+              email={user.email}
+              role={user.role || 'BROKER'} // Fallback на BROKER якщо роль не визначена
+              onEditPress={handleEditProfile}
+              onAvatarPress={() => {
+                if (user.avatar) {
+                  setShowImageViewer(true);
+                }
+              }}
             />
-            <SettingsItem
-              icon="language-outline"
-              label={t('profile.language')}
-              value={getLanguageDisplayName()}
-              onPress={handleLanguage}
-              isLast
-            />
-          </SettingsSection>
 
-          {/* Support Section */}
-          <SettingsSection>
-            {/* Only show Knowledge Base if user is explicitly not an INVESTOR and user exists */}
-            {authUser && authUser.role !== 'INVESTOR' && (
+            {/* Account Section */}
+            <SettingsSection isFirst>
               <SettingsItem
-                icon="book-outline"
-                label="Knowledge Base"
-                onPress={handleKnowledgeBase}
+                icon="person-outline"
+                label={t('profile.editProfile')}
+                onPress={handleEditProfilePage}
               />
-            )}
-            <SettingsItem
-              icon="shield-checkmark-outline"
-              label={t('profile.privacyPolicy')}
-              onPress={handlePrivacy}
-            />
-            <SettingsItem
-              icon="document-text-outline"
-              label={t('profile.termsOfService')}
-              onPress={handleTerms}
-            />
-            <SettingsItem
-              icon="information-circle-outline"
-              label={t('profile.about')}
-              value={`${t('profile.version')} 1.0.0`}
-              onPress={handleAbout}
-              isLast
-            />
-          </SettingsSection>
+              <SettingsItem
+                icon="lock-closed-outline"
+                label={t('profile.changePassword')}
+                onPress={handleChangePassword}
+              />
+              <SettingsItem
+                icon="call-outline"
+                label={t('profile.phoneNumber')}
+                value={user.phone || undefined}
+                hasArrow={false}
+                isLast
+              />
+            </SettingsSection>
 
-          {/* Logout Section */}
-          <SettingsSection>
-            <SettingsItem
-              icon="log-out-outline"
-              label={t('profile.logOut')}
-              onPress={handleLogout}
-              hasArrow={false}
-              isLast
-            />
-          </SettingsSection>
+            {/* Notifications Section */}
+            <SettingsSection>
+              <SettingsItem
+                icon="notifications-outline"
+                label={t('profile.pushNotifications')}
+                hasSwitch
+                switchValue={pushEnabled}
+                onSwitchChange={setPushEnabled}
+                hasArrow={false}
+              />
+              <SettingsItem
+                icon="mail-outline"
+                label={t('profile.emailNotifications')}
+                hasSwitch
+                switchValue={emailEnabled}
+                onSwitchChange={setEmailEnabled}
+                hasArrow={false}
+              />
+              <SettingsItem
+                icon="megaphone-outline"
+                label={t('profile.marketing')}
+                hasSwitch
+                switchValue={marketingEnabled}
+                onSwitchChange={setMarketingEnabled}
+                hasArrow={false}
+                isLast
+              />
+            </SettingsSection>
 
-          <View style={[styles.footer, { backgroundColor: theme.backgroundSecondary }]} />
-        </ScrollView>
+            {/* Preferences Section */}
+            <SettingsSection>
+              <SettingsItem
+                icon="color-palette-outline"
+                label={t('profile.appearance')}
+                onPress={handleAppearance}
+              />
+              <SettingsItem
+                icon="language-outline"
+                label={t('profile.language')}
+                value={getLanguageDisplayName()}
+                onPress={handleLanguage}
+                isLast
+              />
+            </SettingsSection>
+
+            {/* Support Section */}
+            <SettingsSection>
+              {/* Only show Knowledge Base if user is explicitly not an INVESTOR and user exists */}
+              {authUser && authUser.role !== 'INVESTOR' && (
+                <SettingsItem
+                  icon="book-outline"
+                  label="Knowledge Base"
+                  onPress={handleKnowledgeBase}
+                />
+              )}
+              <SettingsItem
+                icon="shield-checkmark-outline"
+                label={t('profile.privacyPolicy')}
+                onPress={handlePrivacy}
+              />
+              <SettingsItem
+                icon="document-text-outline"
+                label={t('profile.termsOfService')}
+                onPress={handleTerms}
+              />
+              <SettingsItem
+                icon="information-circle-outline"
+                label={t('profile.about')}
+                value={`${t('profile.version')} 1.0.0`}
+                onPress={handleAbout}
+                isLast
+              />
+            </SettingsSection>
+
+            {/* Logout Section */}
+            <SettingsSection>
+              <SettingsItem
+                icon="log-out-outline"
+                label={t('profile.logOut')}
+                onPress={handleLogout}
+                hasArrow={false}
+                isLast
+              />
+            </SettingsSection>
+
+            <View style={[styles.footer, { backgroundColor: theme.backgroundSecondary }]} />
+            <View style={[styles.footer, { backgroundColor: theme.backgroundSecondary }]} />
+          </ScrollView>
+        </>
       )}
 
       {/* Fullscreen Image Viewer */}
@@ -374,17 +381,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  backButton: {
-    marginTop: 10,
-    marginLeft: 8,
-    marginBottom: 0,
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    overflow: 'hidden',
-    zIndex: 10,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 0.5,
+  },
+  headerBackButton: {
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   footer: {
     height: 24,

@@ -92,22 +92,26 @@ export default function LikedScreen() {
   const navigation = useNavigation();
 
   const renderHeader = () => (
-    <View style={{ marginTop: -8, marginBottom: 8, marginHorizontal: -16 }}>
-      <Header
-        title="Liked"
-        centered
-        titleColor={theme.text}
-        titleSize={17}
-        backColor={theme.primary}
-        hideRight
-        onBack={() => {
+    <View style={[styles.header, { borderBottomColor: theme.border, marginHorizontal: -16, marginBottom: 16 }]}>
+      <Pressable
+        style={({ pressed }) => [
+          styles.backButton,
+          { opacity: pressed ? 0.6 : 1 }
+        ]}
+        onPress={() => {
           if (router.canGoBack()) {
             router.back();
           } else {
             router.replace('/(tabs)/home');
           }
         }}
-      />
+      >
+        <Ionicons name="chevron-back" size={24} color={theme.primary} />
+      </Pressable>
+
+      <Text style={[styles.headerTitle, { color: theme.text }]}>Liked</Text>
+
+      <View style={styles.backButton} />
     </View>
   );
 
@@ -283,6 +287,24 @@ function PropertyCard({ property, onToggleFavorite, theme, t, router }: Property
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 0.5,
+  },
+  backButton: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   listContent: {
     paddingHorizontal: 16,

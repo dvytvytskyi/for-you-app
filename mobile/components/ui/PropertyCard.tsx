@@ -21,6 +21,7 @@ interface PropertyCardProps {
   theme?: any;
   isFavorite?: boolean;
   onToggleFavorite?: (id: string, e: any) => void;
+  style?: any;
 }
 
 export default function PropertyCard({
@@ -33,7 +34,8 @@ export default function PropertyCard({
   onPress,
   theme,
   isFavorite,
-  onToggleFavorite
+  onToggleFavorite,
+  style
 }: PropertyCardProps) {
   // Normalize data from either 'property' object or individual props
   const displayImage = property?.image || image;
@@ -47,6 +49,7 @@ export default function PropertyCard({
       onPress={() => onPress && onPress()}
       style={({ pressed }) => [
         styles.container,
+        style,
         { opacity: pressed ? 0.9 : 1 }
       ]}
     >

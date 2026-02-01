@@ -3,7 +3,7 @@ import {
     View,
     Text,
     StyleSheet,
-    FlatList,
+    SectionList,
     TextInput,
     Pressable,
     KeyboardAvoidingView,
@@ -15,6 +15,8 @@ import {
     Keyboard,
     Animated,
     ImageBackground,
+    Alert,
+    StatusBar,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -47,6 +49,7 @@ export default function ChatScreen() {
     const [isSending, setIsSending] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [participantsCount, setParticipantsCount] = useState<number | null>(null);
+    const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
     const paddingAnim = useRef(new Animated.Value(12)).current;
@@ -59,6 +62,35 @@ export default function ChatScreen() {
 
     const flatListRef = useRef<FlatList>(null);
     const reversedMessages = React.useMemo(() => [...messages].reverse(), [messages]);
+
+    // Grouping messages into sections for sticky avatar effect
+    const sections = React.useMemo(() => {
+        const result: { title: string; senderId: string; data: ChatMessage[] }[] = [];
+        if (reversedMessages.length === 0) return result;
+
+        reversedMessages.forEach((msg) => {
+            const lastSection = result[result.length - 1];
+            const msgDate = new Date(msg.createdAt);
+
+            if (lastSection && lastSection.senderId === msg.senderId) {
+                const lastMsg = lastSection.data[lastSection.data.length - 1];
+                const lastMsgDate = new Date(lastMsg.createdAt);
+                const diff = Math.abs(differenceInMinutes(msgDate, lastMsgDate));
+
+                if (diff < 1) {
+                    lastSection.data.push(msg);
+                    return;
+                }
+            }
+
+            result.push({
+                title: msg.senderId,
+                senderId: msg.senderId,
+                data: [msg],
+            });
+        });
+        return result;
+    }, [reversedMessages]);
 
     // Fetch participants count (placeholder for real backend call)
     const fetchParticipantsCount = async () => {
@@ -79,40 +111,25 @@ export default function ChatScreen() {
 
         const showSubscription = Keyboard.addListener(showEvent as any, (e: any) => {
             setIsKeyboardVisible(true);
-            const keyboardHeight = e.endCoordinates.height;
-
             Animated.parallel([
-                // Follow keyboard upward immediately
-                Animated.timing(marginAnim, {
-                    toValue: keyboardHeight + 8,
-                    duration: 250, // Match typical keyboard duration
+                Animated.spring(paddingAnim, {
+                    toValue: 4,
                     useNativeDriver: false,
+                    friction: 9,
+                    tension: 50
                 }),
-                // Wait slightly then expand horizontally and integrate button
-                Animated.sequence([
-                    Animated.delay(100),
-                    Animated.parallel([
-                        Animated.spring(paddingAnim, {
-                            toValue: 4,
-                            useNativeDriver: false,
-                            friction: 6,
-                            tension: 30
-                        }),
-                        Animated.spring(focusAnim, {
-                            toValue: 1,
-                            useNativeDriver: false,
-                            friction: 7,
-                            tension: 35
-                        })
-                    ])
-                ])
+                Animated.spring(focusAnim, {
+                    toValue: 1,
+                    useNativeDriver: false,
+                    friction: 8,
+                    tension: 40
+                })
             ]).start();
         });
 
         const hideSubscription = Keyboard.addListener(hideEvent as any, () => {
             setIsKeyboardVisible(false);
             Animated.parallel([
-                // Contract quickly
                 Animated.spring(paddingAnim, {
                     toValue: 12,
                     useNativeDriver: false,
@@ -121,13 +138,6 @@ export default function ChatScreen() {
                 }),
                 Animated.spring(focusAnim, {
                     toValue: 0,
-                    useNativeDriver: false,
-                    friction: 8,
-                    tension: 40
-                }),
-                // Return to bottom position
-                Animated.spring(marginAnim, {
-                    toValue: insets.bottom > 0 ? insets.bottom : 12,
                     useNativeDriver: false,
                     friction: 8,
                     tension: 40
@@ -295,38 +305,46 @@ export default function ChatScreen() {
         }
     };
 
-    const renderMessage = ({ item, index }: { item: ChatMessage; index: number }) => {
+    const handleDeleteMessage = async (messageId: string) => {
+        Alert.alert(
+            "Delete Message",
+            "Are you sure you want to delete this message?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                        setDeletingMessageId(messageId);
+                        try {
+                            const success = await chatApi.deleteMessage(messageId);
+                            if (success) {
+                                setMessages(prev => prev.filter(m => m.id !== messageId));
+                            } else {
+                                Alert.alert("Error", "Could not delete message. Please try again.");
+                            }
+                        } catch (err) {
+                            console.error("Delete error:", err);
+                            Alert.alert("Error", "Something went wrong.");
+                        } finally {
+                            setDeletingMessageId(null);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    const renderMessage = ({ item, index, section }: { item: ChatMessage; index: number; section: any }) => {
         const isMe = item.senderId === user?.id || item.sender.email === user?.email;
 
-        const prevMessage = reversedMessages[index - 1]; // Newer message (visually below)
-        const nextMessage = reversedMessages[index + 1]; // Older message (visually above)
+        // Cluster Logic within Section
+        const isFirstInCluster = index === section.data.length - 1; // Top-most (oldest) in section
+        const isLastInCluster = index === 0; // Bottom-most (newest) in section
 
-        // Cluster Logic: 1 minute threshold
-        // isLastInCluster = Bottom-most visual = Newest = has no Newer message in cluster
-        const isLastInCluster = !prevMessage ||
-            prevMessage.senderId !== item.senderId ||
-            Math.abs(differenceInMinutes(new Date(prevMessage.createdAt), new Date(item.createdAt))) >= 1;
-
-        // isFirstInCluster = Top-most visual = Oldest = has no Older message in cluster
-        const isFirstInCluster = !nextMessage ||
-            nextMessage.senderId !== item.senderId ||
-            Math.abs(differenceInMinutes(new Date(item.createdAt), new Date(nextMessage.createdAt))) >= 1;
-
-        // Calculate gap based on time difference with the PREVIOUS (newer/visually below) message
-        // In inverted list, marginBottom pushes the current item away from the item below it
-        let marginBottom = 0;
-
-        if (prevMessage) {
-            const isSameSender = prevMessage.senderId === item.senderId;
-            const diff = Math.abs(differenceInMinutes(new Date(item.createdAt), new Date(prevMessage.createdAt)));
-
-            if (!isSameSender) {
-                marginBottom = 16;
-            } else if (diff < 1) {
-                marginBottom = 4;
-            } else {
-                marginBottom = 8;
-            }
+        let marginBottom = 4; // Increased from 2
+        if (isLastInCluster) {
+            marginBottom = 6; // Increased from 4
         }
 
         const renderBubbleContent = () => (
@@ -383,7 +401,11 @@ export default function ChatScreen() {
                         style={[styles.projectCard, { backgroundColor: 'transparent' }]}
                     >
                         <RNImage
-                            source={{ uri: item.property.photos[0] }}
+                            source={
+                                item.property.photos && item.property.photos.length > 0
+                                    ? { uri: item.property.photos[0] }
+                                    : require('../assets/images/new logo blue.png')
+                            }
                             style={styles.projectImage}
                             resizeMode="cover"
                         />
@@ -419,41 +441,35 @@ export default function ChatScreen() {
                 isMe ? styles.myMessageContainer : styles.theirMessageContainer,
                 { marginBottom }
             ]}>
-                {!isMe && (
-                    <View style={styles.avatarPlaceholder}>
-                        {isLastInCluster ? (
-                            item.sender.avatar ? (
-                                <RNImage source={{ uri: item.sender.avatar }} style={styles.avatarImage} />
-                            ) : (
-                                <View style={[styles.initialsCircle, { backgroundColor: theme.primary }]}>
-                                    <Text style={styles.initialsText}>{item.sender.firstName[0]}{item.sender.lastName[0]}</Text>
-                                </View>
-                            )
-                        ) : null}
-                    </View>
-                )}
+                {/* Space for the sticky avatar */}
+                {!isMe && <View style={styles.avatarPlaceholder} />}
 
                 <View style={styles.messageBubbleWrapper}>
-                    <View style={[
-                        styles.messageBubble,
-                        isMe ? [
-                            styles.myMessageBubble,
-                            {
-                                backgroundColor: '#102F73',
-                                borderBottomRightRadius: isLastInCluster ? 4 : 20
-                            }
-                        ] : [
-                            styles.theirMessageBubble,
-                            {
-                                backgroundColor: theme.card,
-                                borderColor: theme.border,
-                                borderWidth: 1,
-                                borderBottomLeftRadius: isLastInCluster ? 4 : 20
-                            }
-                        ]
-                    ]}>
+                    <Pressable
+                        onLongPress={() => isMe && handleDeleteMessage(item.id)}
+                        delayLongPress={500}
+                        style={({ pressed }) => [
+                            styles.messageBubble,
+                            { opacity: deletingMessageId === item.id ? 0.5 : (pressed && isMe ? 0.8 : 1) },
+                            isMe ? [
+                                styles.myMessageBubble,
+                                {
+                                    backgroundColor: '#102F73',
+                                    borderBottomRightRadius: isLastInCluster ? 4 : 20
+                                }
+                            ] : [
+                                styles.theirMessageBubble,
+                                {
+                                    backgroundColor: theme.card,
+                                    borderColor: theme.border,
+                                    borderWidth: 1,
+                                    borderBottomLeftRadius: isLastInCluster ? 4 : 20
+                                }
+                            ]
+                        ]}
+                    >
                         {renderBubbleContent()}
-                    </View>
+                    </Pressable>
                 </View>
             </View>
         );
@@ -468,195 +484,231 @@ export default function ChatScreen() {
     }
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
+        <View style={{ flex: 1, backgroundColor: isDark ? '#010312' : '#FFFFFF' }}>
+            {isDark && (
+                <LinearGradient
+                    colors={['#010312', '#081333', '#010312']}
+                    style={StyleSheet.absoluteFill}
+                />
+            )}
             <ImageBackground
                 source={chatBgPattern}
-                style={{ flex: 1 }}
+                style={[StyleSheet.absoluteFill, { backgroundColor: 'transparent' }]}
                 resizeMode="repeat"
-                imageStyle={{ opacity: isDark ? 0.3 : 0.05 }}
+                imageStyle={{ opacity: isDark ? 0.4 : 0.05 }}
             >
-                <Header
-                    title="Investor Chat"
-                    subtitle={participantsCount ? `${participantsCount} participants` : 'Loading participants...'}
-                    showLogo={true}
-                    centered={true}
-                    backButtonStyle={{ marginLeft: -8 }}
-                    titleColor="#FFFFFF"
-                    titleSize={15}
-                    onBack={() => {
-                        if (router.canGoBack()) {
-                            router.back();
-                        } else {
-                            router.replace('/(tabs)/home');
-                        }
-                    }}
-                    onTitlePress={() => router.push('/chat-info')}
-                />
-
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                    enabled={false}
-                    style={styles.keyboardView}
-                    keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
-                >
-                    <FlatList
-                        ref={flatListRef}
-                        data={reversedMessages}
-                        renderItem={renderMessage}
-                        keyExtractor={(item) => item.id}
-                        contentContainerStyle={{ paddingHorizontal: 8, paddingBottom: 30 }}
-                        inverted
-                        showsVerticalScrollIndicator={false}
-                        ListHeaderComponent={
-                            <Animated.View style={{ height: Animated.add(marginAnim, 60) }} />
-                        }
+                <SafeAreaView style={[styles.container, { backgroundColor: isDark ? 'transparent' : '#FFFFFF' }]} edges={['top']}>
+                    <StatusBar
+                        barStyle={isDark ? 'light-content' : 'dark-content'}
+                        backgroundColor={isDark ? 'transparent' : '#FFFFFF'}
                     />
+                    <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+                        <Header
+                            title="Investor Chat"
+                            subtitle={participantsCount ? `${participantsCount} participants` : 'Loading participants...'}
+                            showLogo={true}
+                            centered={true}
+                            backButtonStyle={{ marginLeft: -8 }}
+                            titleColor={isDark ? "#FFFFFF" : "#102F73"}
+                            subtitleColor={isDark ? "rgba(255,255,255,0.7)" : "#102F73"}
+                            backColor={isDark ? "#FFFFFF" : "#102F73"}
+                            style={{ backgroundColor: isDark ? 'transparent' : '#FFFFFF', borderBottomWidth: 1, borderBottomColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
+                            titleSize={16}
+                            onBack={() => {
+                                if (router.canGoBack()) {
+                                    router.back();
+                                } else {
+                                    router.replace('/(tabs)/home');
+                                }
+                            }}
+                            onTitlePress={() => router.push('/chat-info')}
+                        />
 
-                    <LinearGradient
-                        colors={['transparent', isDark ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.8)']}
-                        style={{
-                            position: 'absolute',
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            height: 120,
-                            zIndex: 10,
-                        }}
-                        pointerEvents="none"
-                    />
+                        <KeyboardAvoidingView
+                            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                            enabled={true}
+                            style={styles.keyboardView}
+                            keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
+                        >
+                            <SectionList
+                                sections={sections}
+                                renderItem={renderMessage}
+                                style={{ flex: 1 }}
+                                renderSectionHeader={({ section }) => {
+                                    const firstMsg = section.data[0];
+                                    const isMe = firstMsg.senderId === user?.id || firstMsg.sender.email === user?.email;
+
+                                    if (isMe) return null;
+
+                                    return (
+                                        <View style={styles.stickyAvatarContainer}>
+                                            <View style={styles.avatarPlaceholderSticky}>
+                                                {firstMsg.sender.avatar ? (
+                                                    <RNImage source={{ uri: firstMsg.sender.avatar }} style={styles.avatarImage} />
+                                                ) : (
+                                                    <View style={[styles.initialsCircle, { backgroundColor: '#102F73' }]}>
+                                                        <Text style={styles.initialsText}>
+                                                            {firstMsg.sender.firstName[0]}
+                                                            {firstMsg.sender.lastName[0]}
+                                                        </Text>
+                                                    </View>
+                                                )}
+                                            </View>
+                                        </View>
+                                    );
+                                }}
+                                keyExtractor={(item) => item.id}
+                                contentContainerStyle={{ paddingHorizontal: 8, paddingBottom: 16, paddingTop: 8 }}
+                                inverted
+                                stickySectionHeadersEnabled={true}
+                                showsVerticalScrollIndicator={false}
+                                keyboardDismissMode={Platform.OS === 'ios' ? "interactive" : "on-drag"}
+                                keyboardShouldPersistTaps="handled"
+                                ListHeaderComponent={
+                                    <Animated.View style={{ height: Animated.add(marginAnim, 60) }} />
+                                }
+                            />
+
+                            {isDark && (
+                                <LinearGradient
+                                    colors={['transparent', 'rgba(0,0,0,0.8)']}
+                                    style={{
+                                        position: 'absolute',
+                                        bottom: 0,
+                                        left: 0,
+                                        right: 0,
+                                        height: 120,
+                                        zIndex: 10,
+                                    }}
+                                    pointerEvents="none"
+                                />
+                            )}
 
 
 
 
-
-                    <Animated.View style={[
-                        styles.inputSection,
-                        {
-                            marginBottom: marginAnim,
-                            paddingHorizontal: paddingAnim
-                        }
-                    ]}>
-                        <View style={styles.inputPodRow}>
-                            <BlurView intensity={isDark ? 40 : 60} tint={isDark ? 'dark' : 'light'} style={styles.attachmentPod}>
-                                <Pressable
-                                    onPress={handlePickFile}
-                                    onPressIn={handleAttachPressIn}
-                                    onPressOut={handleAttachPressOut}
-                                    style={styles.iconButton}
-                                >
-                                    <Animated.View style={{ transform: [{ scale: attachScaleAnim }] }}>
-                                        <Ionicons name="attach" size={26} color={theme.textTertiary} style={{ transform: [{ rotate: '45deg' }] }} />
-                                    </Animated.View>
-                                </Pressable>
-                            </BlurView>
 
                             <Animated.View style={[
-                                styles.textInputContainer,
+                                styles.inputSection,
                                 {
-                                    paddingRight: focusAnim.interpolate({
-                                        inputRange: [0, 1],
-                                        outputRange: [66, 0]
-                                    })
+                                    paddingBottom: isKeyboardVisible ? 0 : 0, // Reset bottom padding logic as we use marginBottom/absolute
+                                    marginBottom: marginAnim,
+                                    paddingHorizontal: paddingAnim
                                 }
                             ]}>
-                                <BlurView intensity={isDark ? 40 : 60} tint={isDark ? 'dark' : 'light'} style={styles.textInputPod}>
-                                    <AnimatedTextInput
-                                        style={[
-                                            styles.input,
-                                            {
-                                                color: theme.text,
-                                                paddingRight: focusAnim.interpolate({
-                                                    inputRange: [0, 1],
-                                                    outputRange: [12, 66]
-                                                })
-                                            }
-                                        ]}
-                                        placeholder="Type a message..."
-                                        placeholderTextColor={theme.textTertiary}
-                                        value={inputText}
-                                        onChangeText={setInputText}
-                                        multiline
-                                        maxLength={1000}
-                                    />
-                                </BlurView>
-
-                                <Animated.View
-                                    style={[
-                                        styles.inlineSendButton,
-                                        {
-                                            zIndex: 100,
-                                            transform: [
-                                                {
-                                                    translateX: focusAnim.interpolate({
-                                                        inputRange: [0, 1],
-                                                        outputRange: [0, 8]
-                                                    })
-                                                },
-                                                {
-                                                    scale: focusAnim.interpolate({
-                                                        inputRange: [0, 1],
-                                                        outputRange: [1, 0.86]
-                                                    })
-                                                }
-                                            ],
-                                            // Border logic stays on container
-                                            borderWidth: focusAnim.interpolate({
-                                                inputRange: [0, 1],
-                                                outputRange: [1, 0]
-                                            }),
-                                            borderColor: 'rgba(255,255,255,0.1)',
-                                            overflow: 'hidden', // Clip blur
-                                            backgroundColor: 'transparent',
-                                        }
-                                    ]}
-                                >
-                                    <BlurView
-                                        intensity={isDark ? 40 : 60}
-                                        tint={isDark ? 'dark' : 'light'}
-                                        style={StyleSheet.absoluteFill}
-                                    />
-
-                                    <Animated.View
-                                        style={[
-                                            StyleSheet.absoluteFill,
-                                            {
-                                                backgroundColor: sendAnim.interpolate({
-                                                    inputRange: [0, 1],
-                                                    outputRange: [
-                                                        'transparent',
-                                                        isDark ? 'rgba(10, 132, 255, 1)' : 'rgba(16, 47, 115, 1)'
-                                                    ]
-                                                })
-                                            }
-                                        ]}
-                                    />
-
-                                    <Pressable
-                                        onPress={handleSendText}
-                                        style={styles.innerSendAction}
-                                        disabled={!inputText.trim() || isSending}
-                                    >
-                                        {isSending ? (
-                                            <ActivityIndicator size="small" color="#FFFFFF" />
-                                        ) : (
-                                            <Animated.View style={{ transform: [{ scale: iconScaleAnim }] }}>
-                                                <Ionicons
-                                                    name="send"
-                                                    size={16}
-                                                    color={inputText.trim() ? "#FFFFFF" : theme.textTertiary}
-                                                />
+                                <View style={styles.inputPodRow}>
+                                    <BlurView intensity={isDark ? 40 : 60} tint={isDark ? 'dark' : 'light'} style={styles.attachmentPod}>
+                                        <Pressable
+                                            onPress={handlePickFile}
+                                            onPressIn={handleAttachPressIn}
+                                            onPressOut={handleAttachPressOut}
+                                            style={styles.iconButton}
+                                        >
+                                            <Animated.View style={{ transform: [{ scale: attachScaleAnim }] }}>
+                                                <Ionicons name="attach" size={26} color={isDark ? theme.textTertiary : '#102F73'} style={{ transform: [{ rotate: '45deg' }] }} />
                                             </Animated.View>
-                                        )}
-                                    </Pressable>
-                                </Animated.View>
+                                        </Pressable>
+                                    </BlurView>
+
+                                    <Animated.View style={[
+                                        styles.textInputContainer,
+                                        {
+                                            paddingRight: sendAnim.interpolate({
+                                                inputRange: [0, 1],
+                                                outputRange: [66, 52]
+                                            })
+                                        }
+                                    ]}>
+                                        <BlurView intensity={isDark ? 40 : 60} tint={isDark ? 'dark' : 'light'} style={styles.textInputPod}>
+                                            <AnimatedTextInput
+                                                style={[
+                                                    styles.input,
+                                                    {
+                                                        color: isDark ? theme.text : '#010312',
+                                                        paddingRight: 10
+                                                    }
+                                                ]}
+                                                placeholder="Type a message..."
+                                                placeholderTextColor={isDark ? theme.textTertiary : '#666666'}
+                                                value={inputText}
+                                                onChangeText={setInputText}
+                                                multiline
+                                                maxLength={1000}
+                                            />
+                                        </BlurView>
+
+                                        <Animated.View
+                                            style={[
+                                                styles.inlineSendButton,
+                                                {
+                                                    zIndex: 100,
+                                                    opacity: 1,
+                                                    transform: [
+                                                        {
+                                                            scale: sendAnim.interpolate({
+                                                                inputRange: [0, 1],
+                                                                outputRange: [0.95, 1]
+                                                            })
+                                                        },
+                                                        {
+                                                            translateX: sendAnim.interpolate({
+                                                                inputRange: [0, 1],
+                                                                outputRange: [2, 0]
+                                                            })
+                                                        }
+                                                    ],
+                                                    backgroundColor: 'transparent',
+                                                    overflow: 'hidden',
+                                                }
+                                            ]}
+                                        >
+                                            <BlurView
+                                                intensity={isDark ? 40 : 60}
+                                                tint={isDark ? 'dark' : 'light'}
+                                                style={StyleSheet.absoluteFill}
+                                            />
+
+                                            <Animated.View
+                                                style={[
+                                                    StyleSheet.absoluteFill,
+                                                    {
+                                                        backgroundColor: sendAnim.interpolate({
+                                                            inputRange: [0, 1],
+                                                            outputRange: [
+                                                                'transparent',
+                                                                isDark ? 'rgba(10, 132, 255, 1)' : 'rgba(16, 47, 115, 1)'
+                                                            ]
+                                                        })
+                                                    }
+                                                ]}
+                                            />
+
+                                            <Pressable
+                                                onPress={handleSendText}
+                                                style={styles.innerSendAction}
+                                                disabled={!inputText.trim() || isSending}
+                                            >
+                                                {isSending ? (
+                                                    <ActivityIndicator size="small" color="#FFFFFF" />
+                                                ) : (
+                                                    <Animated.View style={{ transform: [{ scale: iconScaleAnim }] }}>
+                                                        <Ionicons
+                                                            name="send"
+                                                            size={16}
+                                                            color={inputText.trim() ? "#FFFFFF" : (isDark ? theme.textTertiary : '#999999')}
+                                                        />
+                                                    </Animated.View>
+                                                )}
+                                            </Pressable>
+                                        </Animated.View>
+                                    </Animated.View>
+                                </View>
                             </Animated.View>
-                        </View>
-                    </Animated.View>
-                </KeyboardAvoidingView>
-
-
+                        </KeyboardAvoidingView>
+                    </View>
+                </SafeAreaView>
             </ImageBackground>
-        </SafeAreaView>
+        </View>
     );
 }
 
@@ -666,6 +718,7 @@ const styles = StyleSheet.create({
     },
     keyboardView: {
         flex: 1,
+        backgroundColor: 'transparent',
     },
     loadingContainer: {
         flex: 1,
@@ -712,8 +765,25 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
     },
+    stickyAvatarContainer: {
+        width: '100%',
+        height: 1, // Minimal height to help sticky engine
+        flexDirection: 'row',
+        zIndex: 100,
+        pointerEvents: 'none',
+    },
+    avatarPlaceholderSticky: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        marginRight: 8,
+        overflow: 'hidden',
+        position: 'absolute',
+        bottom: 8, // Just above the margin of the item
+        left: 0,
+    },
     messageBubbleWrapper: {
-        flex: 1,
+        // Removed flex: 1 to allow dynamic width
     },
     senderName: {
         fontSize: 11,
@@ -726,12 +796,12 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingTop: 12,
         paddingBottom: 6,
-        borderRadius: 20,
+        borderRadius: 16,
         elevation: 1,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 1,
+        shadowOpacity: 0.06,
+        shadowRadius: 2,
     },
     myMessageBubble: {
         borderBottomRightRadius: 4,
@@ -746,12 +816,13 @@ const styles = StyleSheet.create({
     messageTime: {
         fontSize: 10,
         alignSelf: 'flex-end',
-        marginTop: 0,
+        marginTop: 2, // Increased gap from 0
+        marginRight: -4, // Shifted to the right by 4px
         marginBottom: 2,
         lineHeight: 10,
     },
     messageImage: {
-        width: width * 0.6,
+        maxWidth: width * 0.7,
         height: 200,
         borderRadius: 12,
     },
@@ -775,7 +846,7 @@ const styles = StyleSheet.create({
     projectCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        width: width * 0.68,
+        width: width * 0.7, // Changed from maxWidth to fixed width for stability
         paddingVertical: 4,
     },
     projectImage: {

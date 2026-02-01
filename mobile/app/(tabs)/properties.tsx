@@ -44,9 +44,9 @@ export default function PropertiesScreen() {
     listingType: 'all', // Default set to 'all' to ensure everything is visible
     minPrice: null,
     maxPrice: null,
-    propertyType: 'all',
     bedrooms: 'any',
     location: 'any',
+    developerIds: 'any',
   });
 
   // Enable LayoutAnimation for Android
@@ -191,7 +191,7 @@ export default function PropertiesScreen() {
               <Pressable
                 style={({ pressed }) => [
                   styles.filterButton,
-                  { backgroundColor: theme.primaryLight, borderColor: theme.primary },
+                  { borderColor: theme.primary },
                   { opacity: pressed ? 0.7 : 1 }
                 ]}
                 onPress={() => router.push('/liked')}
@@ -221,7 +221,7 @@ export default function PropertiesScreen() {
               <Pressable
                 style={({ pressed }) => [
                   styles.filterButton,
-                  { backgroundColor: theme.primaryLight, borderColor: theme.primary },
+                  { borderColor: theme.primary },
                   { opacity: pressed ? 0.7 : 1 }
                 ]}
                 onPress={() => setFiltersVisible(true)}
@@ -554,7 +554,7 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 16,
+    paddingBottom: 100, // Increased to avoid TabBar overlap
   },
   propertyCard: {
     height: 280,

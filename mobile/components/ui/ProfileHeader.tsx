@@ -82,7 +82,7 @@ export default function ProfileHeader({ avatar, firstName, lastName, email, role
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    paddingTop: 0,
+    paddingTop: 24,
     paddingBottom: 12,
     paddingHorizontal: 16,
     backgroundColor: '#FFFFFF',

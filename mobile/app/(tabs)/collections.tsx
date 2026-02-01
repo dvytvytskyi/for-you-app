@@ -1,7 +1,10 @@
-import { View, Text, StyleSheet, FlatList, Pressable, Image, ActivityIndicator, Dimensions, Modal, TextInput, KeyboardAvoidingView, Platform, Keyboard, LayoutAnimation } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, FlatList, Pressable, Image, ActivityIndicator, Dimensions, Modal, TextInput, KeyboardAvoidingView, Platform, Keyboard, LayoutAnimation, ScrollView, Alert } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Header, SearchBar } from '@/components/ui';
+import { Header, SearchBar, QuickActionCard } from '@/components/ui';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BlurView } from 'expo-blur';
+
 import { useTheme } from '@/utils/theme';
 import { useTranslation } from '@/utils/i18n';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -13,10 +16,11 @@ import { useAuthStore } from '@/store/authStore';
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_PADDING = 16;
 const CARD_GAP = 12;
-const CARD_WIDTH = (SCREEN_WIDTH - (CARD_PADDING * 2) - CARD_GAP) / 2;
+const CARD_WIDTH = SCREEN_WIDTH - (CARD_PADDING * 2);
 
 export default function CollectionsScreen() {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const router = useRouter();
   const { user } = useAuthStore();
@@ -48,7 +52,7 @@ export default function CollectionsScreen() {
   // Collections store (реактивно)
   const collectionsFromStore = useCollectionsStore((state) => state.collections);
   const {
-    createCollection: createCollectionInStore,
+    createCollection,
     updateCollection,
     deleteCollection
   } = useCollectionsStore();
@@ -161,6 +165,63 @@ export default function CollectionsScreen() {
     setSearchQuery('');
   };
 
+  // Default categories visibility state
+  const [showDefaultCategories, setShowDefaultCategories] = useState(true);
+
+  useEffect(() => {
+    AsyncStorage.getItem('showDefaultCategories').then((value) => {
+      if (value !== null) {
+        setShowDefaultCategories(JSON.parse(value));
+      }
+    });
+  }, []);
+
+  const handleInfoPress = () => {
+    Alert.alert(
+      'View Settings',
+      'Manage default categories display.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: showDefaultCategories ? "Don't show default categories" : "Show default categories",
+          onPress: async () => {
+            const newValue = !showDefaultCategories;
+            setShowDefaultCategories(newValue);
+            await AsyncStorage.setItem('showDefaultCategories', JSON.stringify(newValue));
+          },
+          style: showDefaultCategories ? 'destructive' : 'default',
+        },
+      ]
+    );
+  };
+
+  /* Logic for handling Default Categories Click */
+  const handleDefaultCategoryPress = async (label: string) => {
+    const existing = collectionsFromStore.find(
+      (c) => c.title.trim().toLowerCase() === label.toLowerCase()
+    );
+
+    if (existing) {
+      router.push(`/collections/${existing.id}`);
+    } else {
+      try {
+        const newCollection = await createCollection(label, `${label} properties`);
+        if (newCollection && newCollection.id) {
+          // Small delay to ensure store update propagates suitable for navigation if needed
+          setTimeout(() => {
+            router.push(`/collections/${newCollection.id}`);
+          }, 100);
+        }
+      } catch (error) {
+        console.error('Failed to create default collection:', error);
+        Alert.alert('Error', 'Could not open collection');
+      }
+    }
+  };
+
   const handleSave = async () => {
     const trimmedName = collectionName.trim();
     const trimmedDescription = collectionDescription.trim();
@@ -176,7 +237,7 @@ export default function CollectionsScreen() {
     });
 
     try {
-      const newCollection = await createCollectionInStore(trimmedName, trimmedDescription);
+      const newCollection = await createCollection(trimmedName, trimmedDescription);
 
       if (newCollection && newCollection.id) {
         console.log('✅ Collection created:', {
@@ -200,17 +261,8 @@ export default function CollectionsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
-      {/* Header and Search */}
+      {/* Search Section */}
       <View>
-        <Header
-          title={t('tabs.collections.title')}
-          titleColor="#FFFFFF"
-          titleSize={20}
-          titleWeight="600"
-          user={user || undefined}
-          avatar={user?.avatar}
-        />
-
         <View style={styles.searchSection}>
           <View style={styles.searchBarWrapper}>
             <SearchBar
@@ -236,25 +288,51 @@ export default function CollectionsScreen() {
           )}
         </View>
 
-        {/* Collections Count */}
-        {collections.length > 0 && (
-          <View style={styles.countContainer}>
-            <Text style={[styles.countText, { color: theme.textSecondary }]}>
-              {collections.length} {t('tabs.collections.title').toLowerCase()}
-            </Text>
+        {/* Collections Count & Info */}
+        <View style={styles.countContainer}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+            {collections.length > 0 ? (
+              <Text style={[styles.countText, { color: theme.textSecondary }]}>
+                {collections.length} {t('tabs.collections.title').toLowerCase()}
+              </Text>
+            ) : (
+              <View />
+            )}
+
+            <Pressable onPress={handleInfoPress} hitSlop={10}>
+              <Ionicons name="information-circle-outline" size={20} color={theme.textTertiary} />
+            </Pressable>
           </View>
-        )}
+        </View>
       </View>
 
-      {/* Collections Grid */}
+      {/* Collections List */}
       <FlatList<MappedCollection>
         data={filteredCollections}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         keyboardDismissMode="on-drag"
-        numColumns={2}
-        columnWrapperStyle={styles.row}
+        ListHeaderComponent={
+          <>
+            {showDefaultCategories && (
+              <>
+                <View style={styles.categoriesGrid}>
+                  {DEFAULT_CATEGORIES.map((cat) => (
+                    <View key={cat.id} style={styles.categoryItemWrapper}>
+                      <QuickActionCard
+                        icon={cat.icon}
+                        label={cat.label}
+                        onPress={() => handleDefaultCategoryPress(cat.label)}
+                      />
+                    </View>
+                  ))}
+                </View>
+                <View style={[styles.sectionDivider, { backgroundColor: theme.border }]} />
+              </>
+            )}
+          </>
+        }
         renderItem={({ item }) => (
           <CollectionCard
             collection={item}
@@ -301,6 +379,7 @@ export default function CollectionsScreen() {
               {
                 backgroundColor: theme.background,
                 borderColor: theme.border,
+                paddingTop: insets.top, // Dynamic safe area
                 transform: [
                   {
                     translateX: slideAnim.interpolate({
@@ -317,17 +396,28 @@ export default function CollectionsScreen() {
               style={styles.modalContentWrapper}
             >
               {/* Header */}
-              <View style={styles.modalHeader}>
-                <Text style={[styles.modalTitle, { color: '#FFFFFF' }]}>
-                  Create Collection
-                </Text>
-                <Pressable onPress={closeModal}>
-                  <Ionicons name="close" size={24} color={theme.textSecondary} />
+              <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.closeButton,
+                    { opacity: pressed ? 0.6 : 1 }
+                  ]}
+                  onPress={closeModal}
+                >
+                  <Ionicons name="chevron-back" size={22} color={theme.primary} />
                 </Pressable>
+
+                <Text style={[styles.modalTitle, { color: theme.text }]}>Create Collection</Text>
+
+                <View style={styles.closeButton} />
               </View>
 
               {/* Form */}
-              <View style={styles.modalForm}>
+              <ScrollView
+                style={styles.modalForm}
+                contentContainerStyle={{ paddingBottom: 100 }}
+                keyboardShouldPersistTaps="handled"
+              >
                 <View style={styles.inputContainer}>
                   <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>
                     Name
@@ -356,26 +446,45 @@ export default function CollectionsScreen() {
                     numberOfLines={4}
                   />
                 </View>
-              </View>
+              </ScrollView>
 
-              {/* Actions */}
-              <View style={styles.modalActions}>
-                <Pressable
-                  style={[styles.modalButton, styles.cancelButton, { borderColor: theme.border }]}
-                  onPress={closeModal}
-                >
-                  <Text style={[styles.modalButtonText, { color: theme.textSecondary }]}>
-                    Cancel
-                  </Text>
-                </Pressable>
-                <Pressable
-                  style={[styles.modalButton, styles.saveButton, { backgroundColor: theme.primary }]}
-                  onPress={handleSave}
-                >
-                  <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>
-                    Save
-                  </Text>
-                </Pressable>
+              {/* Footer Island */}
+              <View style={styles.footerContainer}>
+                <View style={[styles.footerBackground, { backgroundColor: theme.card }]}>
+                  <BlurView
+                    intensity={100}
+                    tint={isDark ? 'dark' : 'light'}
+                    style={styles.footer}
+                  >
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.cancelButton,
+                        {
+                          borderColor: theme.border,
+                          backgroundColor: theme.card + 'CC',
+                          transform: [{ scale: pressed ? 0.96 : 1 }],
+                          opacity: pressed ? 0.7 : 1,
+                        }
+                      ]}
+                      onPress={closeModal}
+                    >
+                      <Text style={[styles.cancelButtonText, { color: theme.text }]}>Cancel</Text>
+                    </Pressable>
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.saveButton,
+                        {
+                          backgroundColor: theme.primary,
+                          transform: [{ scale: pressed ? 0.96 : 1 }],
+                          opacity: pressed ? 0.8 : 1,
+                        },
+                      ]}
+                      onPress={handleSave}
+                    >
+                      <Text style={styles.saveButtonText}>Save</Text>
+                    </Pressable>
+                  </BlurView>
+                </View>
               </View>
             </KeyboardAvoidingView>
           </Animated.View>
@@ -397,6 +506,14 @@ interface CollectionCardProps {
 }
 
 function CollectionCard({ collection, onPress, theme }: CollectionCardProps) {
+  // Mock data for display until backend update
+  const mockProjects = ['Sunrise Bay', 'Beach Isle', 'Marina Vista', 'Emaar Beachfront'];
+  const mockStats = {
+    totalValue: '$1,250,000',
+    avgPrice: '$416,000',
+    rooms: '1, 2, 3'
+  };
+
   return (
     <Pressable
       style={({ pressed }) => [
@@ -405,34 +522,54 @@ function CollectionCard({ collection, onPress, theme }: CollectionCardProps) {
           backgroundColor: theme.card,
           borderColor: theme.border,
           opacity: pressed ? 0.9 : 1,
-          transform: [{ scale: pressed ? 0.98 : 1 }]
+          transform: [{ scale: pressed ? 0.99 : 1 }]
         }
       ]}
       onPress={onPress}
     >
-      <Image
-        source={{
-          uri: collection.image && collection.image.trim().length > 0
-            ? collection.image
-            : 'https://via.placeholder.com/400x300?text=No+Image'
-        }}
-        style={styles.collectionImage}
-        defaultSource={require('@/assets/images/gradient-1.png')}
-      />
-      <View style={styles.collectionContent}>
-        <Text style={[styles.collectionTitle, { color: theme.text }]} numberOfLines={2}>
+      <View style={styles.cardHeader}>
+        <Text style={[styles.collectionTitle, { color: theme.text }]} numberOfLines={1}>
           {collection.title}
         </Text>
-        <Text style={[styles.collectionDescription, { color: theme.textSecondary }]} numberOfLines={2}>
-          {collection.description}
-        </Text>
         <Text style={[styles.collectionDate, { color: theme.textTertiary }]}>
-          Created {collection.createdDate}
+          {collection.createdDate}
         </Text>
+      </View>
+
+      <Text style={[styles.projectsList, { color: theme.textSecondary }]} numberOfLines={2}>
+        {collection.description || mockProjects.join(', ')}...
+      </Text>
+
+      <View style={[styles.divider, { backgroundColor: theme.border }]} />
+
+      <View style={styles.statsRow}>
+        <View style={styles.statItem}>
+          <Text style={[styles.statLabel, { color: theme.textTertiary }]}>Total Value</Text>
+          <Text style={[styles.statValue, { color: theme.text }]}>{mockStats.totalValue}</Text>
+        </View>
+        <View style={styles.statVerticalDivider} />
+        <View style={styles.statItem}>
+          <Text style={[styles.statLabel, { color: theme.textTertiary }]}>Avg Price</Text>
+          <Text style={[styles.statValue, { color: theme.text }]}>{mockStats.avgPrice}</Text>
+        </View>
+        <View style={styles.statVerticalDivider} />
+        <View style={styles.statItem}>
+          <Text style={[styles.statLabel, { color: theme.textTertiary }]}>Rooms</Text>
+          <Text style={[styles.statValue, { color: theme.text }]}>{mockStats.rooms}</Text>
+        </View>
       </View>
     </Pressable>
   );
 }
+
+const DEFAULT_CATEGORIES = [
+  { id: 'investment', label: 'Investment', icon: 'trending-up-outline' as const },
+  { id: 'families', label: 'Families', icon: 'people-outline' as const },
+  { id: 'low_budget', label: 'Low Budget', icon: 'wallet-outline' as const },
+  { id: 'mid_budget', label: 'Mid Budget', icon: 'briefcase-outline' as const },
+  { id: 'high_end', label: 'High End', icon: 'diamond-outline' as const },
+  { id: 'popular', label: 'Popular', icon: 'star-outline' as const },
+];
 
 const styles = StyleSheet.create({
   container: {
@@ -441,7 +578,7 @@ const styles = StyleSheet.create({
   searchSection: {
     flexDirection: 'row',
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 8,
     paddingBottom: 12,
     gap: 8,
     alignItems: 'center',
@@ -467,37 +604,79 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: CARD_PADDING,
-    paddingBottom: 16,
+    paddingBottom: 100,
   },
-  row: {
-    gap: CARD_GAP,
+  categoriesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 20,
+  },
+  categoryItemWrapper: {
+    width: (SCREEN_WIDTH - (CARD_PADDING * 2) - 24) / 3, // 3 columns with 12px gap
+    height: (SCREEN_WIDTH - (CARD_PADDING * 2) - 24) / 3, // Square
+  },
+  sectionDivider: {
+    height: 1,
+    marginBottom: 20,
+    width: '100%',
   },
   collectionCard: {
-    width: CARD_WIDTH,
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 1,
-    marginBottom: CARD_GAP,
-  },
-  collectionImage: {
     width: '100%',
-    height: 120,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 12,
   },
-  collectionContent: {
-    padding: 12,
-    gap: 4,
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   collectionTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
+    flex: 1,
+    marginRight: 8,
+  },
+  collectionDate: {
+    fontSize: 12,
+  },
+  projectsList: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  divider: {
+    height: 1,
+    width: '100%',
+    marginBottom: 12,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  statItem: {
+    alignItems: 'flex-start',
+  },
+  statLabel: {
+    fontSize: 11,
+    marginBottom: 2,
+  },
+  statValue: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  statVerticalDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#E5E5E5', // Will override with theme border
   },
   collectionDescription: {
     fontSize: 12,
     lineHeight: 16,
-  },
-  collectionDate: {
-    fontSize: 11,
-    marginTop: 4,
   },
   loadingContainer: {
     paddingVertical: 24,
@@ -541,7 +720,7 @@ const styles = StyleSheet.create({
   modalContent: {
     width: '100%',
     height: '100%',
-    paddingTop: 60,
+    // paddingTop removed (handled dynamically)
     paddingBottom: 40,
   },
   dragHandleContainer: {
@@ -557,57 +736,90 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    marginBottom: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 0.5,
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalTitle: {
-    fontSize: 22,
+    fontSize: 16,
     fontWeight: '600',
   },
   modalForm: {
+    flex: 1,
     paddingHorizontal: 20,
-    gap: 20,
+    paddingTop: 20,
   },
   inputContainer: {
-    gap: 8,
+    marginBottom: 20,
   },
   inputLabel: {
     fontSize: 14,
     fontWeight: '500',
+    marginBottom: 8,
   },
   input: {
     borderRadius: 12,
     borderWidth: 1,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    fontSize: 16,
+    fontSize: 15,
   },
   textArea: {
     height: 100,
     textAlignVertical: 'top',
   },
-  modalActions: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingHorizontal: 20,
-    marginTop: 24,
+  footerContainer: {
+    paddingHorizontal: 12,
+    paddingBottom: 20,
+    paddingTop: 8,
   },
-  modalButton: {
-    flex: 1,
-    height: 52,
-    borderRadius: 120,
-    alignItems: 'center',
-    justifyContent: 'center',
+  footerBackground: {
+    borderRadius: 999,
+    opacity: 0.85,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -3,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  footer: {
+    flexDirection: 'row',
+    gap: 10,
+    padding: 12,
+    borderRadius: 999,
+    overflow: 'hidden',
   },
   cancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 999,
     borderWidth: 1,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 15,
+    fontWeight: '500',
   },
   saveButton: {
-    borderWidth: 0,
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    alignItems: 'center',
   },
-  modalButtonText: {
-    fontSize: 16,
+  saveButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
     fontWeight: '600',
   },
 });

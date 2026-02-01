@@ -8,6 +8,7 @@ import {
   ScrollView,
   Dimensions,
   Animated,
+  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -16,6 +17,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '@/utils/theme';
 import { useTranslation } from '@/utils/i18n';
 import { propertiesApi } from '@/api/properties';
+import { developersApi } from '@/api/developers';
 import PriceRangeSlider from './PriceRangeSlider';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -24,9 +26,9 @@ export interface PropertyFilters {
   listingType: 'all' | 'offplan' | 'secondary';
   minPrice: number | null;
   maxPrice: number | null;
-  propertyType: string;
   bedrooms: string;
   location: string;
+  developerIds: string;
 }
 
 interface PropertyFiltersModalProps {
@@ -35,8 +37,6 @@ interface PropertyFiltersModalProps {
   filters: PropertyFilters;
   onApply: (filters: PropertyFilters) => void;
 }
-
-const BEDROOM_OPTIONS = ['studio', '1', '2', '3', '4', '5+'];
 
 const PRICE_OPTIONS = [
   { value: 100000, label: '$100K' },
@@ -66,33 +66,7 @@ const PRICE_OPTIONS = [
   { value: 30000000, label: '$30M' },
 ];
 
-const PROPERTY_TYPES = ['apartment', 'villa', 'penthouse', 'townhouse', 'duplex', 'office'];
 
-const PROPERTY_TYPE_ICONS: Record<string, string> = {
-  apartment: 'business-outline',
-  villa: 'home-outline',
-  penthouse: 'layers-outline',
-  townhouse: 'grid-outline',
-  duplex: 'copy-outline',
-  office: 'briefcase-outline',
-};
-
-const DUBAI_LOCATIONS = [
-  { id: 'Downtown Dubai', name: 'Downtown Dubai' },
-  { id: 'Dubai Marina', name: 'Dubai Marina' },
-  { id: 'Jumeirah Beach Residence (JBR)', name: 'Jumeirah Beach Residence (JBR)' },
-  { id: 'Palm Jumeirah', name: 'Palm Jumeirah' },
-  { id: 'Jumeirah Lake Towers (JLT)', name: 'Jumeirah Lake Towers (JLT)' },
-  { id: 'Business Bay', name: 'Business Bay' },
-  { id: 'Dubai Hills Estate', name: 'Dubai Hills Estate' },
-  { id: 'Dubai Creek Harbour', name: 'Dubai Creek Harbour' },
-  { id: 'Marbella', name: 'Marbella' },
-  { id: 'Golden Mile', name: 'Golden Mile' },
-  { id: 'Puerto Banus', name: 'Puerto Banus' },
-  { id: 'San Pedro de Alcantara', name: 'San Pedro de Alcantara' },
-  { id: 'Zagaleta', name: 'Zagaleta' },
-  { id: 'Sierra Blanca', name: 'Sierra Blanca' },
-];
 
 export default function PropertyFiltersModal({
   visible,
@@ -105,10 +79,27 @@ export default function PropertyFiltersModal({
   const insets = useSafeAreaInsets();
 
   const [filters, setFilters] = useState<PropertyFilters>(initialFilters);
+  const [scrollEnabled, setScrollEnabled] = useState(true);
   const modalSlideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
-  // Reverted to hardcoded locations due to 404 on API
-  const locations = DUBAI_LOCATIONS;
+  // Search and data states
+  const [locationSearch, setLocationSearch] = useState('');
+  const [developerSearch, setDeveloperSearch] = useState('');
+
+  const { data: locationsData } = useQuery({
+    queryKey: ['locations', locationSearch],
+    queryFn: () => propertiesApi.getLocations(locationSearch),
+    enabled: visible,
+  });
+
+  const { data: developersData } = useQuery({
+    queryKey: ['developers'],
+    queryFn: () => developersApi.getAll(),
+    enabled: visible,
+  });
+
+  const locations = locationsData || [];
+  const developers = developersData?.data || [];
 
   useEffect(() => {
     if (visible) {
@@ -118,8 +109,9 @@ export default function PropertyFiltersModal({
         damping: 18,
         stiffness: 120,
       }).start();
+      setFilters(initialFilters);
     }
-  }, [visible]);
+  }, [visible, initialFilters]);
 
   const closeModal = () => {
     Animated.timing(modalSlideAnim, {
@@ -136,9 +128,9 @@ export default function PropertyFiltersModal({
       listingType: 'all',
       minPrice: null,
       maxPrice: null,
-      propertyType: 'all',
       bedrooms: 'any',
       location: 'any',
+      developerIds: 'any',
     });
   };
 
@@ -179,21 +171,23 @@ export default function PropertyFiltersModal({
     }));
   };
 
-  const togglePropertyType = (type: string) => {
-    const current = filters.propertyType === 'all' ? [] : filters.propertyType.split(',').filter(Boolean);
-    let newTypes: string[];
+  const toggleDeveloper = (developerId: string) => {
+    const current = filters.developerIds === 'any' ? [] : filters.developerIds.split(',').filter(Boolean);
+    let newDevelopers: string[];
 
-    if (current.includes(type)) {
-      newTypes = current.filter(t => t !== type);
+    if (current.includes(developerId)) {
+      newDevelopers = current.filter(d => d !== developerId);
     } else {
-      newTypes = [...current, type];
+      newDevelopers = [...current, developerId];
     }
 
     setFilters(prev => ({
       ...prev,
-      propertyType: newTypes.length === 0 ? 'all' : newTypes.join(',')
+      developerIds: newDevelopers.length === 0 ? 'any' : newDevelopers.join(',')
     }));
   };
+
+
 
   return (
     <Modal
@@ -214,29 +208,30 @@ export default function PropertyFiltersModal({
         >
           <View style={[styles.safeArea, { paddingTop: insets.top }]}>
             {/* Header */}
-            <View style={[styles.headerContainer, { borderBottomColor: theme.border }]}>
+            <View style={[styles.header, { borderBottomColor: theme.border }]}>
               <Pressable
                 onPress={closeModal}
                 style={({ pressed }) => [
-                  styles.styledBackButton,
-                  { backgroundColor: theme.primaryLight },
-                  { opacity: pressed ? 0.7 : 1 }
+                  styles.backButton,
+                  { opacity: pressed ? 0.6 : 1 }
                 ]}
               >
                 <Ionicons name="chevron-back" size={24} color={theme.primary} />
               </Pressable>
 
-              <View style={styles.headerTitleWrapper}>
-                <Text style={[styles.headerTitleText, { color: theme.text }]}>
-                  {t('properties.filters')}
-                </Text>
-              </View>
+              <Text style={[styles.headerTitle, { color: theme.text }]}>
+                {t('properties.filters')}
+              </Text>
+
+              <View style={styles.backButton} />
             </View>
 
             <ScrollView
               style={styles.scrollView}
               contentContainerStyle={styles.scrollContent}
               showsVerticalScrollIndicator={false}
+              scrollEnabled={scrollEnabled}
+              nestedScrollEnabled={true}
             >
               {/* Price Range */}
               <View style={styles.section}>
@@ -245,8 +240,11 @@ export default function PropertyFiltersModal({
                   maxPrice={filters.maxPrice}
                   priceOptions={PRICE_OPTIONS}
                   onValueChange={(min, max) => setFilters(prev => ({ ...prev, minPrice: min, maxPrice: max }))}
+                  onToggleScroll={setScrollEnabled}
                 />
               </View>
+
+
 
               {/* Bedrooms */}
               <View style={styles.section}>
@@ -254,7 +252,7 @@ export default function PropertyFiltersModal({
                   Bedrooms
                 </Text>
 
-                <View style={styles.bedsGridContainer}>
+                <View style={[styles.bedsGridContainer, { zIndex: 1 }]}>
                   <View style={styles.bedsRow}>
                     {['studio', '1', '2'].map((option) => (
                       <BedOption
@@ -281,30 +279,44 @@ export default function PropertyFiltersModal({
               </View>
 
               {/* Location */}
-              <View style={styles.section}>
+              <View style={[styles.section, { zIndex: 100 }]}>
                 <Text style={[styles.sectionTitle, { color: theme.textSecondary, marginBottom: 16 }]}>
                   {t('properties.location')}
                 </Text>
 
-                <View style={styles.locationsWrapper}>
-                  {locations.map((location) => {
-                    const isSelected = filters.location !== 'any' && filters.location.split('|').includes(location.id);
-                    return (
-                      <LocationOption
-                        key={location.id}
-                        label={location.name}
-                        isSelected={isSelected}
-                        onPress={() => toggleLocation(location.id)}
-                        theme={theme}
-                      />
-                    );
-                  })}
-                </View>
+                <DropdownMultiSelect
+                  placeholder="Select locations..."
+                  searchPlaceholder="Search locations..."
+                  searchValue={locationSearch}
+                  onSearchChange={setLocationSearch}
+                  options={locations.map(l => ({ id: l.name, label: l.name }))}
+                  selectedIds={filters.location === 'any' ? [] : filters.location.split('|')}
+                  onToggle={toggleLocation}
+                  theme={theme}
+                />
+              </View>
+
+              {/* Developers */}
+              <View style={[styles.section, { zIndex: 90 }]}>
+                <Text style={[styles.sectionTitle, { color: theme.textSecondary, marginBottom: 16 }]}>
+                  Developers
+                </Text>
+
+                <DropdownMultiSelect
+                  placeholder="Select developers..."
+                  searchPlaceholder="Search developers..."
+                  searchValue={developerSearch}
+                  onSearchChange={setDeveloperSearch}
+                  options={developers.map(d => ({ id: d.id, label: d.name }))}
+                  selectedIds={filters.developerIds === 'any' ? [] : filters.developerIds.split(',')}
+                  onToggle={toggleDeveloper}
+                  theme={theme}
+                />
               </View>
             </ScrollView>
 
             {/* Floating Footer Island */}
-            <View style={[styles.footerIsland, { borderColor: theme.border }]}>
+            <View style={[styles.footerIsland, { borderColor: theme.border, zIndex: 1000 }]}>
               <BlurView
                 intensity={80}
                 tint={isDark ? 'dark' : 'light'}
@@ -315,12 +327,13 @@ export default function PropertyFiltersModal({
                 style={({ pressed }) => [
                   styles.resetButton,
                   {
-                    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                    borderWidth: 1,
+                    borderColor: 'rgba(255, 59, 48, 0.3)',
                     opacity: pressed ? 0.7 : 1,
                   },
                 ]}
               >
-                <Text style={[styles.resetButtonText, { color: '#999' }]}>
+                <Text style={[styles.resetButtonText, { color: '#FF3B30' }]}>
                   Reset
                 </Text>
               </Pressable>
@@ -347,51 +360,100 @@ export default function PropertyFiltersModal({
   );
 }
 
-function PropertyTypeButton({ type, label, isSelected, onPress, theme }: any) {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    Animated.spring(scaleAnim, {
-      toValue: isSelected ? 1 : 0.95,
-      useNativeDriver: true,
-      friction: 8,
-      tension: 40,
-    }).start();
-  }, [isSelected]);
-
-  const handlePressIn = () => Animated.spring(scaleAnim, { toValue: 0.9, useNativeDriver: true }).start();
-  const handlePressOut = () => Animated.spring(scaleAnim, { toValue: isSelected ? 1 : 0.95, useNativeDriver: true }).start();
+function DropdownMultiSelect({
+  placeholder,
+  searchPlaceholder,
+  searchValue,
+  onSearchChange,
+  options,
+  selectedIds,
+  onToggle,
+  theme
+}: any) {
+  const [expanded, setExpanded] = useState(false);
 
   return (
-    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+    <View style={styles.dropdownContainer}>
       <Pressable
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        onPress={onPress}
+        onPress={() => setExpanded(!expanded)}
         style={[
-          styles.propertyChip,
+          styles.dropdownHeader,
           {
-            backgroundColor: isSelected ? theme.primary : theme.card,
-            borderColor: isSelected ? theme.primary : theme.border,
+            backgroundColor: theme.card,
+            borderColor: theme.border,
+            borderBottomLeftRadius: expanded ? 0 : 12,
+            borderBottomRightRadius: expanded ? 0 : 12,
           }
         ]}
       >
-        <Ionicons
-          name={PROPERTY_TYPE_ICONS[type] as any}
-          size={20}
-          color={isSelected ? '#FFF' : theme.text}
-          style={styles.propertyChipIcon}
-        />
         <Text style={[
-          styles.propertyChipText,
-          { color: isSelected ? '#FFF' : theme.textSecondary }
+          styles.dropdownPlaceholder,
+          { color: selectedIds.length > 0 ? theme.text : theme.textTertiary }
         ]}>
-          {label}
+          {selectedIds.length > 0
+            ? `${selectedIds.length} selected`
+            : placeholder
+          }
         </Text>
+        <Ionicons
+          name={expanded ? "chevron-up" : "chevron-down"}
+          size={20}
+          color={theme.textSecondary}
+        />
       </Pressable>
-    </Animated.View>
+
+      {expanded && (
+        <View style={[
+          styles.dropdownList,
+          {
+            backgroundColor: theme.card,
+            borderColor: theme.border,
+          }
+        ]}>
+          <View style={[styles.dropdownSearch, { borderBottomColor: theme.border }]}>
+            <Ionicons name="search-outline" size={18} color={theme.textTertiary} />
+            <TextInput
+              style={[styles.dropdownInput, { color: theme.text }]}
+              placeholder={searchPlaceholder}
+              placeholderTextColor={theme.textTertiary}
+              value={searchValue}
+              onChangeText={onSearchChange}
+            />
+          </View>
+          <ScrollView style={styles.dropdownScroll} nestedScrollEnabled={true}>
+            {options.map((option: any) => {
+              const isSelected = selectedIds.includes(option.id);
+              return (
+                <Pressable
+                  key={option.id}
+                  style={[styles.dropdownOption, { borderBottomColor: theme.border }]}
+                  onPress={() => onToggle(option.id)}
+                >
+                  <Text style={[
+                    styles.dropdownOptionText,
+                    { color: isSelected ? theme.primary : theme.text }
+                  ]}>
+                    {option.label}
+                  </Text>
+                  {isSelected && (
+                    <Ionicons name="checkmark" size={20} color={theme.primary} />
+                  )}
+                </Pressable>
+              );
+            })}
+            {options.length === 0 && (
+              <View style={styles.emptyResults}>
+                <Text style={{ color: theme.textTertiary }}>No results found</Text>
+              </View>
+            )}
+          </ScrollView>
+        </View>
+      )}
+    </View>
   );
 }
+
+
 
 function BedOption({ label, isSelected, onPress, theme }: any) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -431,44 +493,6 @@ function BedOption({ label, isSelected, onPress, theme }: any) {
   );
 }
 
-function LocationOption({ label, isSelected, onPress, theme }: any) {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    Animated.spring(scaleAnim, {
-      toValue: isSelected ? 1 : 0.98,
-      useNativeDriver: true,
-    }).start();
-  }, [isSelected]);
-
-  const handlePressIn = () => Animated.spring(scaleAnim, { toValue: 0.95, useNativeDriver: true }).start();
-  const handlePressOut = () => Animated.spring(scaleAnim, { toValue: isSelected ? 1 : 0.98, useNativeDriver: true }).start();
-
-  return (
-    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-      <Pressable
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        onPress={onPress}
-        style={[
-          styles.locationChip,
-          {
-            backgroundColor: isSelected ? theme.primary : theme.card,
-            borderColor: isSelected ? theme.primary : theme.border,
-          }
-        ]}
-      >
-        <Text style={[
-          styles.locationChipText,
-          { color: isSelected ? '#FFF' : theme.text }
-        ]}>
-          {label}
-        </Text>
-      </Pressable>
-    </Animated.View>
-  );
-}
-
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
@@ -486,40 +510,23 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  headerContainer: {
-    height: 56,
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 0.5,
-    position: 'relative',
   },
-  headerTitleWrapper: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
+  backButton: {
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1,
   },
-  styledBackButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  headerTitleText: {
-    fontSize: 17,
-    fontWeight: '700',
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   scrollView: {
     flex: 1,
@@ -527,7 +534,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingTop: 20,
-    paddingBottom: 140, // Increased to account for floating footer
+    paddingBottom: 140,
   },
   section: {
     marginBottom: 24,
@@ -539,26 +546,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
-  propertyTypeScrollContent: {
-    gap: 12,
-  },
-  propertyChip: {
-    width: 100,
-    height: 100,
-    borderRadius: 20,
-    padding: 12,
-    borderWidth: 1,
-    justifyContent: 'space-between',
-  },
-  propertyChipIcon: {
-    alignSelf: 'flex-start',
-  },
-  propertyChipText: {
-    fontSize: 12,
-    fontWeight: '600',
-    alignSelf: 'flex-end',
-    textAlign: 'right',
-  },
+
   bedsGridContainer: {
     gap: 8,
   },
@@ -577,22 +565,61 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  locationsWrapper: {
+  dropdownContainer: {
+    marginBottom: 8,
+  },
+  dropdownHeader: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  locationChip: {
-    height: 48,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    height: 52,
+    borderWidth: 1,
+    borderRadius: 12,
   },
-  locationChipText: {
-    fontSize: 13,
+  dropdownPlaceholder: {
+    fontSize: 14,
     fontWeight: '500',
+  },
+  dropdownList: {
+    borderWidth: 1,
+    borderTopWidth: 0,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    maxHeight: 250,
+    overflow: 'hidden',
+  },
+  dropdownSearch: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    height: 44,
+    borderBottomWidth: 0.5,
+  },
+  dropdownInput: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 14,
+    height: '100%',
+  },
+  dropdownScroll: {
+    flexGrow: 0,
+  },
+  dropdownOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 0.5,
+  },
+  dropdownOptionText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  emptyResults: {
+    padding: 20,
+    alignItems: 'center',
   },
   footerIsland: {
     position: 'absolute',

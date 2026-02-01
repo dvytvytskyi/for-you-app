@@ -3,7 +3,7 @@ import { BlurView } from 'expo-blur';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Header, CollectionPropertyCard } from '@/components/ui';
-import AddPropertyToCollectionModal from '@/components/ui/AddPropertyToCollectionModal';
+// import AddPropertyToCollectionModal from '@/components/ui/AddPropertyToCollectionModal'; // Removed
 import { useTheme } from '@/utils/theme';
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,11 +17,10 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default function CollectionDetailScreen() {
   const { id } = useLocalSearchParams();
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [showDescription, setShowDescription] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
 
   // Завантажуємо колекцію з store (реактивно)
   const collections = useCollectionsStore((state) => state.collections);
@@ -181,81 +180,7 @@ export default function CollectionDetailScreen() {
     }
   }, [collection?.id, removePropertyFromCollection]);
 
-  // Обробка додавання properties
-  const handleAddProperties = useCallback((propertyIdsToAdd: string[]) => {
-    if (!collection?.id) {
-      console.warn('⚠️ Collection ID is missing');
-      return;
-    }
 
-    if (!propertyIdsToAdd || propertyIdsToAdd.length === 0) {
-      console.warn('⚠️ No property IDs provided');
-      return;
-    }
-
-    console.log('➕ Adding properties to collection:', {
-      collectionId: collection.id,
-      propertyIdsToAdd,
-      count: propertyIdsToAdd.length,
-      currentPropertyIds: propertyIds,
-    });
-
-    // Завантажуємо дані properties, щоб отримати їх зображення
-    const loadPropertiesAndAdd = async () => {
-      try {
-        // Завантажуємо дані для кожного property
-        const propertiesPromises = propertyIdsToAdd.map(async (propertyId) => {
-          try {
-            const response = await propertiesApi.getById(propertyId);
-            if (response.success && response.data) {
-              const property = response.data;
-              // Отримуємо перше зображення
-              const firstImage = property.photos && property.photos.length > 0
-                ? property.photos[0]
-                : null;
-              return { propertyId, image: firstImage };
-            }
-          } catch (error) {
-            console.warn(`⚠️ Failed to load property ${propertyId}:`, error);
-          }
-          return { propertyId, image: null };
-        });
-
-        const propertiesData = await Promise.all(propertiesPromises);
-
-        // Додаємо properties з їх зображеннями
-        propertiesData.forEach(({ propertyId, image }) => {
-          console.log('➕ Adding property with image:', {
-            propertyId,
-            hasImage: !!image,
-            imagePreview: image?.substring(0, 50) || 'none',
-          });
-          addPropertyToCollection(collection.id, propertyId, image);
-        });
-      } catch (error) {
-        console.error('❌ Error loading properties data:', error);
-        // Якщо не вдалося завантажити дані, додаємо без зображень
-        propertyIdsToAdd.forEach(propertyId => {
-          addPropertyToCollection(collection.id, propertyId, null);
-        });
-      }
-    };
-
-    loadPropertiesAndAdd();
-
-    // Оновлюємо query після додавання
-    // Query автоматично оновиться, оскільки propertyIds зміниться через useMemo
-    // Але також викликаємо refetch для гарантії
-    setTimeout(() => {
-      console.log('🔄 Refetching collection properties after adding...');
-      console.log('📋 Expected propertyIds after add:', {
-        current: propertyIds,
-        added: propertyIdsToAdd,
-        expected: [...propertyIds, ...propertyIdsToAdd],
-      });
-      refetch();
-    }, 500);
-  }, [collection?.id, propertyIds, addPropertyToCollection, refetch]);
 
   // Обробка очищення колекції (видалення всіх елементів)
   const handleClearCollection = useCallback(() => {
@@ -299,51 +224,22 @@ export default function CollectionDetailScreen() {
     );
   }, [collection?.id, router]);
 
-  const SwipeableItem = ({ item }: { item: ReturnType<typeof convertPropertyToCard> }) => {
-    const panX = useRef(new Animated.Value(0)).current;
-    const deleteOpacity = useRef(new Animated.Value(0)).current;
+  const handleLongPressProperty = useCallback((propertyId: string) => {
+    Alert.alert(
+      'Remove from collection?',
+      'Are you sure you want to remove this property?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => deleteProperty(propertyId)
+        }
+      ]
+    );
+  }, [deleteProperty]);
 
-    const panResponder = useRef(
-      PanResponder.create({
-        onMoveShouldSetPanResponder: (_, gestureState) => {
-          return Math.abs(gestureState.dx) > 10;
-        },
-        onPanResponderMove: (_, gestureState) => {
-          if (gestureState.dx < 0) {
-            panX.setValue(gestureState.dx);
-            deleteOpacity.setValue(Math.min(Math.abs(gestureState.dx) / 80, 1));
-          }
-        },
-        onPanResponderRelease: (_, gestureState) => {
-          if (gestureState.dx < -80) {
-            Animated.parallel([
-              Animated.spring(panX, {
-                toValue: -80,
-                useNativeDriver: true,
-              }),
-              Animated.timing(deleteOpacity, {
-                toValue: 1,
-                duration: 200,
-                useNativeDriver: true,
-              }),
-            ]).start();
-          } else {
-            Animated.parallel([
-              Animated.spring(panX, {
-                toValue: 0,
-                useNativeDriver: true,
-              }),
-              Animated.timing(deleteOpacity, {
-                toValue: 0,
-                duration: 200,
-                useNativeDriver: true,
-              }),
-            ]).start();
-          }
-        },
-      })
-    ).current;
-
+  const renderPropertyItem = ({ item }: { item: ReturnType<typeof convertPropertyToCard> }) => {
     // Форматуємо дані для картки з валідацією URI
     const getValidImageUri = (images: string[] | undefined): string => {
       if (!images || images.length === 0) {
@@ -359,74 +255,81 @@ export default function CollectionDetailScreen() {
       }
       return 'https://via.placeholder.com/400x300?text=No+Image';
     };
+
     const image = getValidImageUri(item.images);
     const title = item.title;
-    const description = item.location; // Використовуємо location як description
+    const description = item.location;
     const price = formatPrice(item.price, 'USD');
     const handoverDate = item.handoverDate || (item.type === 'off-plan' ? 'TBA' : 'N/A');
 
     return (
-      <View style={styles.swipeableContainer}>
-        <Animated.View
-          style={[
-            styles.deleteButton,
-            {
-              opacity: deleteOpacity,
-            },
-          ]}
-        >
-          <Pressable
-            onPress={() => deleteProperty(item.id)}
-            style={styles.deleteButtonInner}
-          >
-            <Ionicons name="trash-outline" size={24} color="#FFFFFF" />
-          </Pressable>
-        </Animated.View>
-        <Animated.View
-          style={{ transform: [{ translateX: panX }] }}
-          {...panResponder.panHandlers}
-        >
-          <CollectionPropertyCard
-            image={image}
-            title={title}
-            description={description}
-            price={price}
-            handoverDate={handoverDate}
-            onPress={() => router.push(`/property/${item.id}?fromCollection=${collection?.id}`)}
-          />
-        </Animated.View>
-      </View>
+      <CollectionPropertyCard
+        image={image}
+        title={title}
+        description={description}
+        price={price}
+        handoverDate={handoverDate}
+        onPress={() => router.push(`/property/${item.id}?fromCollection=${collection?.id}`)}
+        onLongPress={() => handleLongPressProperty(item.id)}
+      />
     );
   };
 
-  const renderPropertyItem = ({ item }: { item: ReturnType<typeof convertPropertyToCard> }) => (
-    <SwipeableItem item={item} />
-  );
+  const stats = useMemo(() => {
+    if (!propertiesData || propertiesData.length === 0) return { totalValue: 0, avgPrice: 0, totalRooms: 0 };
+    const total = propertiesData.reduce((sum: number, p: any) => sum + (Number(p.price) || 0), 0);
+    const rooms = propertiesData.reduce((sum: number, p: any) => sum + (Number(p.bedrooms) || 0), 0);
+    return {
+      totalValue: total,
+      avgPrice: total / propertiesData.length,
+      totalRooms: rooms
+    };
+  }, [propertiesData]);
 
   const ListHeaderComponent = () => (
-    <>
-      <View style={styles.titleRow}>
-        <Text style={[styles.title, { color: theme.textSecondary }]}>
+    <View style={[styles.infoCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+      <View>
+        <Text style={[styles.cardTitle, { color: theme.text }]}>
           {collection?.title || 'Loading...'}
         </Text>
-        <Pressable onPress={() => setShowDescription(!showDescription)}>
-          <Text style={[styles.viewDescriptionButton, { color: theme.primary }]}>
-            {showDescription ? 'Hide description' : 'View description'}
+        {collection?.description ? (
+          <Text style={[styles.cardDescription, { color: theme.textSecondary }]}>
+            {collection.description}
           </Text>
-        </Pressable>
+        ) : null}
       </View>
 
-      {showDescription && (
-        <Text style={[styles.description, { color: theme.textSecondary }]}>
-          {collection?.description || 'No description'}
-        </Text>
-      )}
+      <View style={[styles.separator, { backgroundColor: theme.border }]} />
 
-      {/* Stats Cards - поки що прибрано, можна додати пізніше при наявності API */}
-      {/* <View style={styles.statsContainer}>
-        ...
-      </View> */}
-    </>
+      <View style={styles.statsRow}>
+        <View style={styles.statItem}>
+          <Text style={[styles.statValue, { color: theme.text }]}>
+            {formatPrice(stats.totalValue, 'USD')}
+          </Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
+            Total Value
+          </Text>
+        </View>
+
+        <View style={styles.statItem}>
+          <Text style={[styles.statValue, { color: theme.text }]}>
+            {formatPrice(stats.avgPrice, 'USD')}
+          </Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
+            Avg Price
+          </Text>
+        </View>
+
+        <View style={styles.statItem}>
+          <Text style={[styles.statValue, { color: theme.text }]}>
+            {stats.totalRooms}
+          </Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
+            Rooms
+          </Text>
+        </View>
+      </View>
+    </View>
   );
 
   // Показуємо помилку, якщо колекція не знайдена
@@ -514,42 +417,76 @@ export default function CollectionDetailScreen() {
         />
       )}
 
-      {/* Bottom Action Buttons Island */}
-      <View style={[styles.islandWrapper, { bottom: insets.bottom > 0 ? insets.bottom + 10 : 30 }]}>
-        <BlurView intensity={25} tint="dark" style={[styles.blurIsland, { borderColor: 'rgba(255,255,255,0.1)' }]}>
-          {propertyIds.length > 0 && (
+      {/* Bottom Action Buttons Island (Restored Premium Style) */}
+      <View style={[styles.footerContainer, { paddingBottom: insets.bottom > 0 ? insets.bottom + 10 : 20 }]}>
+        <View style={[
+          styles.footerBackground,
+          {
+            backgroundColor: isDark ? 'rgba(30,30,30,0.85)' : 'rgba(255,255,255,0.85)',
+          }
+        ]}>
+          <BlurView
+            intensity={100}
+            tint={isDark ? 'dark' : 'light'}
+            style={styles.footer}
+          >
+            {propertyIds.length > 0 && (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.cancelButton,
+                  {
+                    backgroundColor: 'transparent',
+                    borderColor: theme.border,
+                    width: 48,
+                    paddingHorizontal: 0,
+                    transform: [{ scale: pressed ? 0.96 : 1 }],
+                    opacity: pressed ? 0.7 : 1,
+                  }
+                ]}
+                onPress={handleClearCollection}
+              >
+                <Ionicons name="close-outline" size={22} color={theme.text} />
+              </Pressable>
+            )}
+
             <Pressable
-              style={[styles.clearButton, { backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.1)' }]}
-              onPress={handleClearCollection}
+              style={({ pressed }) => [
+                styles.submitButton,
+                {
+                  backgroundColor: theme.primary,
+                  transform: [{ scale: pressed ? 0.96 : 1 }],
+                  opacity: pressed ? 0.8 : 1,
+                }
+              ]}
+              onPress={() => router.push({
+                pathname: '/collections/add-property',
+                params: { collectionId: collection?.id }
+              })}
             >
-              <Ionicons name="close-outline" size={22} color={theme.textSecondary} />
+              <Text style={styles.submitButtonText}>Add to collection</Text>
             </Pressable>
-          )}
 
-          <Pressable
-            style={[styles.bottomButton, { backgroundColor: theme.primary }]}
-            onPress={() => setShowAddModal(true)}
-          >
-            <Text style={styles.bottomButtonText}>Add to collection</Text>
-          </Pressable>
-
-          <Pressable
-            style={[styles.deleteCollectionButton, { backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.1)' }]}
-            onPress={handleDeleteCollection}
-          >
-            <Ionicons name="trash-outline" size={22} color="#FF3B30" />
-          </Pressable>
-        </BlurView>
+            <Pressable
+              style={({ pressed }) => [
+                styles.cancelButton,
+                {
+                  backgroundColor: 'transparent',
+                  borderColor: theme.border,
+                  width: 48,
+                  paddingHorizontal: 0,
+                  transform: [{ scale: pressed ? 0.96 : 1 }],
+                  opacity: pressed ? 0.7 : 1,
+                }
+              ]}
+              onPress={handleDeleteCollection}
+            >
+              <Ionicons name="trash-outline" size={22} color="#FF3B30" />
+            </Pressable>
+          </BlurView>
+        </View>
       </View>
 
-      {/* Add Property Modal */}
-      <AddPropertyToCollectionModal
-        visible={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        collectionId={collection?.id || ''}
-        onAddProperties={handleAddProperties}
-        existingPropertyIds={propertyIds}
-      />
+
     </SafeAreaView>
   );
 }
@@ -560,7 +497,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
-    paddingBottom: 100, // Додаємо padding знизу для кнопки
+    paddingBottom: 150, // Increased to avoid overlap with floating footer
     gap: 12,
   },
   header: {
@@ -581,24 +518,40 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  titleRow: {
+  infoCard: {
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 16,
+  },
+  cardTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  cardDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  separator: {
+    height: 1,
+    width: '100%',
+  },
+  statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+    gap: 12,
   },
-  title: {
-    fontSize: 16,
-    fontWeight: '400',
+  statItem: {
     flex: 1,
   },
-  viewDescriptionButton: {
-    fontSize: 14,
+  statValue: {
+    fontSize: 15,
     fontWeight: '600',
+    marginBottom: 2,
   },
-  description: {
-    fontSize: 16,
-    marginBottom: 8,
+  statLabel: {
+    fontSize: 12,
   },
   loadingContainer: {
     flex: 1,
@@ -627,66 +580,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: 'center',
   },
-  statsContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-  },
-  statCard: {
-    flex: 1,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    gap: 8,
-  },
-  statHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  statTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 1,
-  },
-  statIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statGraph: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    height: 40,
-    gap: 4,
-  },
-  graphBar: {
-    flex: 1,
-    height: 16,
-    backgroundColor: 'rgba(16, 47, 115, 0.2)',
-    borderRadius: 2,
-  },
-  graphBarShort: {
-    height: 8,
-  },
-  graphBarMedium: {
-    height: 12,
-  },
-  graphBarTall: {
-    height: 24,
-    backgroundColor: 'rgba(155, 89, 182, 0.2)',
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginTop: 4,
-  },
-  statPeriod: {
-    fontSize: 12,
-    fontWeight: '400',
-  },
+
+
   swipeableContainer: {
     position: 'relative',
     overflow: 'hidden',
@@ -710,58 +605,51 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 12,
   },
-  islandWrapper: {
+
+  footerContainer: {
     position: 'absolute',
-    left: 20,
-    right: 20,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 12,
+    paddingTop: 8,
     zIndex: 10,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.4,
-        shadowRadius: 12,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
   },
-  blurIsland: {
-    padding: 10,
-    borderRadius: 24,
+  footerBackground: {
+    borderRadius: 999,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  footer: {
     flexDirection: 'row',
-    gap: 8,
-    borderWidth: 1,
+    gap: 10,
+    padding: 12,
+    borderRadius: 999,
     overflow: 'hidden',
+    alignItems: 'center',
   },
-  bottomButton: {
+  cancelButton: {
+    height: '100%',
+    aspectRatio: 1, // Icon button
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  submitButton: {
     flex: 1,
     height: 48,
-    borderRadius: 16,
+    paddingHorizontal: 16,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  bottomButtonText: {
+  submitButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
     color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  clearButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-  },
-  deleteCollectionButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
   },
 });

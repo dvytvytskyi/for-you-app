@@ -41,4 +41,12 @@ export const chatApi = {
         }
         return response.data;
     },
+
+    /**
+     * Видалити повідомлення
+     */
+    async deleteMessage(messageId: string): Promise<boolean> {
+        const response = await backendApiClient.delete(`/chat/${messageId}`);
+        return response.data && response.data.success;
+    },
 };

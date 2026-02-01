@@ -58,7 +58,7 @@ export default function TabsLayout() {
         name="crm"
         options={{
           title: 'CRM',
-          href: !isInvestor ? '/crm' : null,
+          href: isInvestor ? null : '/crm',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'people' : 'people-outline'} size={24} color={color} />
           ),

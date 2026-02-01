@@ -15,18 +15,20 @@ interface HeaderProps {
   titleColor?: string;
   titleSize?: number;
   titleWeight?: any;
+  subtitleColor?: string;
   backColor?: string;
   hideRight?: boolean;
   backIconName?: any; // Ionicons name
   backButtonStyle?: any;
+  style?: any;
 }
 
-export default function Header({ title, subtitle, avatar, user, onBack, showLogo, onTitlePress, centered, titleColor, titleSize, titleWeight, backColor, hideRight, backButtonStyle, backIconName, mode = 'default' }: HeaderProps & { mode?: 'default' | 'home' }) {
+export default function Header({ title, subtitle, avatar, user, onBack, showLogo, onTitlePress, centered, titleColor, titleSize, titleWeight, subtitleColor, backColor, hideRight, backButtonStyle, backIconName, style, mode = 'default' }: HeaderProps & { mode?: 'default' | 'home' }) {
   const router = useRouter();
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }, style]}>
       {/* Left side: Back Button */}
       {onBack && (
         <Pressable onPress={onBack} style={[styles.backButton, backButtonStyle]}>
@@ -66,7 +68,7 @@ export default function Header({ title, subtitle, avatar, user, onBack, showLogo
               <Text
                 style={[
                   styles.subtitle,
-                  { color: theme.textSecondary },
+                  { color: subtitleColor || theme.textSecondary },
                   centered && styles.centeredText
                 ]}
               >
@@ -84,7 +86,7 @@ export default function Header({ title, subtitle, avatar, user, onBack, showLogo
             <View style={styles.logoCircle}>
               <Image
                 source={require('../../assets/images/new logo blue.png')}
-                style={styles.logo}
+                style={[styles.logo, !isDark && { tintColor: '#102F73' }]}
                 resizeMode="contain"
               />
             </View>

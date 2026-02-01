@@ -1,4 +1,10 @@
+// @ts-ignore
+if (typeof global !== 'undefined' && !global.__reanimatedLoggerConfig) {
+  // @ts-ignore
+  global.__reanimatedLoggerConfig = { level: 0, out: console.log };
+}
 import { Stack } from 'expo-router';
+import { useColorScheme } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts, CormorantGaramond_300Light, CormorantGaramond_400Regular, CormorantGaramond_600SemiBold, CormorantGaramond_700Bold } from '@expo-google-fonts/cormorant-garamond';
 import * as SplashScreen from 'expo-splash-screen';
@@ -24,7 +30,10 @@ const queryClient = new QueryClient({
   },
 });
 
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
 export default function RootLayout() {
+  const colorScheme = useColorScheme();
   const [fontsLoaded] = useFonts({
     CormorantGaramond_300Light,
     CormorantGaramond_400Regular,
@@ -35,6 +44,7 @@ export default function RootLayout() {
   const initializeLanguage = useLanguageStore((state) => state.initializeLanguage);
   const initializeTheme = useThemeStore((state) => state.initializeTheme);
   const themeMode = useThemeStore((state) => state.mode);
+  const isDark = themeMode === 'dark' || (themeMode === 'system' && colorScheme === 'dark');
   const { isAuthenticated, loadUser } = useAuthStore();
   const syncFromServer = useFavoritesStore((state) => state.syncFromServer);
 
@@ -68,92 +78,88 @@ export default function RootLayout() {
   }
 
   // Determine status bar style based on theme mode
-  const getStatusBarStyle = () => {
-    if (themeMode === 'dark') return 'light';
-    if (themeMode === 'light') return 'dark';
-    // For 'system', use 'auto' which adapts to system theme
-    return 'auto';
-  };
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <StatusBar style={getStatusBarStyle()} />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen
-          name="investor-chat"
-          options={{
-            animation: 'slide_from_right',
-            presentation: 'card',
-          }}
-        />
-        <Stack.Screen
-          name="profile"
-          options={{
-            animation: 'slide_from_right',
-            presentation: 'card',
-          }}
-        />
-        <Stack.Screen
-          name="property/[id]"
-          options={{
-            animation: 'slide_from_right',
-            presentation: 'card',
-          }}
-        />
-        <Stack.Screen
-          name="collections/[id]"
-          options={{
-            animation: 'slide_from_right',
-            presentation: 'card',
-          }}
-        />
-        <Stack.Screen
-          name="lead/[id]"
-          options={{
-            animation: 'slide_from_right',
-            presentation: 'card',
-          }}
-        />
-        <Stack.Screen
-          name="project/[id]"
-          options={{
-            animation: 'slide_from_right',
-            presentation: 'card',
-          }}
-        />
-        <Stack.Screen
-          name="news/[slug]"
-          options={{
-            animation: 'slide_from_right',
-            presentation: 'card',
-          }}
-        />
-        <Stack.Screen
-          name="developers"
-          options={{
-            animation: 'slide_from_right',
-            presentation: 'card',
-          }}
-        />
-        <Stack.Screen
-          name="developers/[id]"
-          options={{
-            animation: 'slide_from_right',
-            presentation: 'card',
-          }}
-        />
-        <Stack.Screen
-          name="liked"
-          options={{
-            animation: 'slide_from_right',
-            presentation: 'card',
-          }}
-        />
-      </Stack>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen
+            name="investor-chat"
+            options={{
+              animation: 'slide_from_right',
+              presentation: 'card',
+            }}
+          />
+          <Stack.Screen
+            name="profile"
+            options={{
+              animation: 'slide_from_right',
+              presentation: 'card',
+            }}
+          />
+          <Stack.Screen
+            name="property/[id]"
+            options={{
+              animation: 'slide_from_right',
+              presentation: 'card',
+            }}
+          />
+          <Stack.Screen
+            name="collections/[id]"
+            options={{
+              animation: 'slide_from_right',
+              presentation: 'card',
+            }}
+          />
+          <Stack.Screen
+            name="lead/[id]"
+            options={{
+              animation: 'slide_from_right',
+              presentation: 'card',
+            }}
+          />
+          <Stack.Screen
+            name="project/[id]"
+            options={{
+              animation: 'slide_from_right',
+              presentation: 'card',
+            }}
+          />
+          <Stack.Screen
+            name="news/[slug]"
+            options={{
+              animation: 'slide_from_right',
+              presentation: 'card',
+            }}
+          />
+          <Stack.Screen
+            name="developers"
+            options={{
+              animation: 'slide_from_right',
+              presentation: 'card',
+            }}
+          />
+          <Stack.Screen
+            name="developers/[id]"
+            options={{
+              animation: 'slide_from_right',
+              presentation: 'card',
+            }}
+          />
+          <Stack.Screen
+            name="liked"
+            options={{
+              animation: 'slide_from_right',
+              presentation: 'card',
+            }}
+          />
+        </Stack>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }
 

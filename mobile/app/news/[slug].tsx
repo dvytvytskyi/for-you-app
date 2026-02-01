@@ -16,7 +16,7 @@ export default function NewsDetailScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { slug } = useLocalSearchParams();
-  
+
   // Завантаження новини з API
   const { data: newsResponse, isLoading, error } = useQuery({
     queryKey: ['news', slug],
@@ -38,7 +38,7 @@ export default function NewsDetailScreen() {
   // Форматування дати
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '';
-    
+
     const date = new Date(dateString);
     return date.toLocaleDateString('en-GB', {
       day: 'numeric',
@@ -82,7 +82,7 @@ export default function NewsDetailScreen() {
             )}
           </View>
         );
-      
+
       case 'image':
         return (
           <View key={content.id || index} style={styles.contentBlock}>
@@ -105,7 +105,7 @@ export default function NewsDetailScreen() {
             )}
           </View>
         );
-      
+
       case 'video':
         return (
           <View key={content.id || index} style={styles.contentBlock}>
@@ -129,7 +129,7 @@ export default function NewsDetailScreen() {
             )}
           </View>
         );
-      
+
       default:
         return null;
     }
@@ -140,7 +140,7 @@ export default function NewsDetailScreen() {
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={24} color={theme.text} />
+            <Ionicons name="chevron-back" size={22} color={theme.text} />
           </Pressable>
         </View>
         <View style={styles.loadingContainer}>
@@ -158,7 +158,7 @@ export default function NewsDetailScreen() {
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={24} color={theme.text} />
+            <Ionicons name="chevron-back" size={22} color={theme.text} />
           </Pressable>
         </View>
         <View style={styles.errorContainer}>
@@ -187,7 +187,7 @@ export default function NewsDetailScreen() {
           ]}
           onPress={() => router.back()}
         >
-          <Ionicons name="chevron-back" size={24} color={theme.text} />
+          <Ionicons name="chevron-back" size={22} color={theme.primary} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: theme.text }]}>News</Text>
         <View style={styles.backButton} />
@@ -253,13 +253,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
   },
   scrollView: {

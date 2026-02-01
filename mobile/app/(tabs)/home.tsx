@@ -1,18 +1,20 @@
-import { View, Text, StyleSheet, ScrollView, FlatList, Dimensions, NativeScrollEvent, NativeSyntheticEvent, Pressable, ActivityIndicator, LayoutAnimation, Keyboard, Platform, UIManager, Animated, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, FlatList, Dimensions, NativeScrollEvent, NativeSyntheticEvent, Pressable, ActivityIndicator, LayoutAnimation, Keyboard, Platform, UIManager, Animated, TextInput, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { UserRole } from '@/types/user';
 import { Header, SearchBar, LocationFilter, PropertyCard, PaginationDots, CollectionCard, StatsCard, SmallStatCard, QuickActionCard, NewsCard, DeveloperCard } from '@/components/ui';
 import { useRouter, useNavigation } from 'expo-router';
 import { useTranslation } from '@/utils/i18n';
 import { useTheme } from '@/utils/theme';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '@/store/authStore';
 import { propertiesApi, OffPlanProperty, SecondaryProperty } from '@/api/properties';
 import { newsApi } from '@/api/news';
 import { coursesApi } from '@/api/courses';
 import { developersApi } from '@/api/developers';
+import { leadsApi } from '@/api/leads';
 import { formatPrice } from '@/utils/property-utils';
 import { crmStatsApi } from '@/api/crm-stats';
 import { useCollectionsStore } from '@/store/collectionsStore';
@@ -78,6 +80,82 @@ export default function HomeScreen() {
     staleTime: 30000, // Дані вважаються актуальними 30 секунд
   });
 
+  // Завантаження properties з API
+  const { data: propertiesResponse, isLoading: propertiesLoading, error: propertiesError } = useQuery({
+    queryKey: ['home-properties'],
+    queryFn: async () => {
+      console.log('🔄 Завантаження properties для home...');
+      try {
+        const response = await propertiesApi.getAll({
+          page: 1,
+          limit: 30, // Increased limit for vertical feed
+          sortBy: 'createdAt',
+          sortOrder: 'DESC',
+        });
+        console.log('✅ Properties завантажено:', response?.data?.data?.length || 0);
+        return response;
+      } catch (error: any) {
+        console.error('❌ Помилка завантаження properties:', error);
+        throw error;
+      }
+    },
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Завантаження лідів для правого слайду
+  const { data: leadsResponse, isLoading: leadsLoading } = useQuery({
+    queryKey: ['home-all-leads'],
+    queryFn: async () => {
+      if (isInvestor) return { data: [], total: 0 };
+      try {
+        const result = await leadsApi.getAll({ limit: 10 }); // Наприклад, показуємо перші 10
+        return result;
+      } catch (error) {
+        console.error('Error fetching leads for home:', error);
+        return { data: [], total: 0 };
+      }
+    },
+    enabled: !isInvestor && !!user,
+  });
+
+  const allLeads = useMemo(() => leadsResponse?.data || [], [leadsResponse]);
+
+  // Завантаження Liked properties для лівого слайду
+  const { data: likedPropertiesResponse, isLoading: likedLoading } = useQuery({
+    queryKey: ['home-liked-properties', favoriteIds],
+    queryFn: async () => {
+      if (favoriteIds.length === 0) return [];
+      try {
+        // Отримуємо декілька пропертіс по ID
+        // Оскільки у нас немає getByIds, можемо просто взяти з Featured або зробити пошук
+        // Для спрощення, поки беремо результати які є або мокаємо
+        const response = await propertiesApi.getAll({ limit: 10 });
+        return response?.data?.data?.filter(p => favoriteIds.includes(p.id)) || [];
+      } catch (error) {
+        console.error('Error fetching liked for home:', error);
+        return [];
+      }
+    },
+    enabled: favoriteIds.length > 0,
+  });
+
+  const likedProperties = useMemo(() => {
+    // Якщо у нас є дані з основного запиту, використовуємо їх також
+    const allFetched = propertiesResponse?.data?.data || [];
+    const fromMain = allFetched.filter(p => favoriteIds.includes(p.id));
+
+    // Об'єднуємо
+    const combined = [...fromMain];
+    const combinedIds = new Set(combined.map(p => p.id));
+
+    (likedPropertiesResponse || []).forEach(p => {
+      if (!combinedIds.has(p.id)) combined.push(p);
+    });
+
+    return combined;
+  }, [likedPropertiesResponse, propertiesResponse, favoriteIds]);
+
   // Форматування total amount
   const formatTotalAmount = (amount: number): string => {
     if (amount >= 1000000) {
@@ -93,13 +171,39 @@ export default function HomeScreen() {
   }
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 400); // 400ms debounce
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
   const [showSearchResults, setShowSearchResults] = useState(false);
-  const [selectedLocations, setSelectedLocations] = useState<string[]>(['Dubai Marina']);
+  const [selectedLocations, setSelectedLocations] = useState<string[]>([]); // Default empty
   const [currentSlide, setCurrentSlide] = useState(0);
 
   // Search Animation State
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const searchInputRef = useRef<TextInput>(null);
+
+  // Action Button Animation (Heart -> Search)
+  const [showSearchAction, setShowSearchAction] = useState(false);
+  const actionButtonAnim = useRef(new Animated.Value(0)).current;
+
+  // New swipable block state
+  const pagerRef = useRef<ScrollView>(null);
+  const [activePageIndex, setActivePageIndex] = useState(1); // Default to center (home widgets)
+  const [isPagerInitialized, setIsPagerInitialized] = useState(false);
+
+  useEffect(() => {
+    Animated.timing(actionButtonAnim, {
+      toValue: showSearchAction ? 1 : 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [showSearchAction]);
 
   const handleSearchFocus = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -130,54 +234,57 @@ export default function HomeScreen() {
   };
 
   // Search results logic
-  const { data: searchResultsResponse, isLoading: searchLoading } = useQuery({
-    queryKey: ['property-search', searchQuery], // We filter client-side for now, or could add selectedTypes to key if we passed it to API
-    queryFn: async () => {
-      if (!searchQuery || searchQuery.trim().length < 2) return null;
-      try {
-        const response = await propertiesApi.getAll({
-          search: searchQuery.trim(),
-          limit: 20 // Increase limit to improve client-side filtering odds
-        });
-        return response;
-      } catch (error) {
-        console.error('Search error:', error);
-        return null;
+  // Search results logic
+  const {
+    data: searchResultsData,
+    isLoading: searchLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ['property-search', debouncedSearchQuery],
+    initialPageParam: 1,
+    queryFn: async ({ pageParam = 1 }) => {
+      const isInitial = !debouncedSearchQuery || debouncedSearchQuery.trim().length === 0;
+
+      const params: any = {
+        limit: isInitial ? 50 : 20,
+        page: pageParam as number,
+      };
+
+      if (!isInitial) {
+        params.search = debouncedSearchQuery.trim();
       }
+
+      const response = await propertiesApi.getAll(params);
+
+      // Manual A-Z sort for initial load if backend doesn't support generic 'name_asc'
+      if (isInitial && response?.data?.data && pageParam === 1) {
+        response.data.data.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+      }
+      return response;
     },
-    enabled: searchQuery.trim().length >= 2,
+    getNextPageParam: (lastPage: any) => {
+      if (lastPage?.data?.pagination) {
+        const { page, totalPages } = lastPage.data.pagination;
+        return page < totalPages ? page + 1 : undefined;
+      }
+      return undefined;
+    },
+    enabled: true,
     staleTime: 10000,
   });
 
+  const scrollX = useRef(new Animated.Value(0)).current;
+
+  const handlePagerScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+    { useNativeDriver: false }
+  );
+
   const searchResults = useMemo(() => {
-    const rawResults = searchResultsResponse?.data?.data || [];
-
-    if (selectedLocations.length === 0) return rawResults;
-
-    const lowerLocations = selectedLocations.map(l => l.toLowerCase());
-
-    return rawResults.filter((item) => {
-      const name = item.name?.toLowerCase() || '';
-      const desc = item.description?.toLowerCase() || '';
-      const city = item.city?.nameEn?.toLowerCase() || '';
-
-      // Handle area being potentially an object or string
-      let area = '';
-      if (typeof item.area === 'string') {
-        area = item.area.toLowerCase();
-      } else if (item.area && typeof item.area === 'object' && (item.area as any).nameEn) {
-        area = (item.area as any).nameEn.toLowerCase();
-      }
-
-      // Check if any selected location matches name, description, city or area
-      return lowerLocations.some(loc =>
-        name.includes(loc) ||
-        desc.includes(loc) ||
-        city.includes(loc) ||
-        area.includes(loc)
-      );
-    });
-  }, [searchResultsResponse, selectedLocations]);
+    return searchResultsData?.pages.flatMap((page: any) => page?.data?.data || []) || [];
+  }, [searchResultsData]);
 
   useEffect(() => {
     if (searchQuery.trim().length >= 2) {
@@ -190,28 +297,7 @@ export default function HomeScreen() {
   // Collections count from store
   const collectionsFromStore = useCollectionsStore((state) => state.collections);
 
-  // Завантаження properties з API
-  const { data: propertiesResponse, isLoading: propertiesLoading, error: propertiesError } = useQuery({
-    queryKey: ['home-properties'],
-    queryFn: async () => {
-      console.log('🔄 Завантаження properties для home...');
-      try {
-        const response = await propertiesApi.getAll({
-          page: 1,
-          limit: 10,
-          sortBy: 'createdAt',
-          sortOrder: 'DESC',
-        });
-        console.log('✅ Properties завантажено:', response?.data?.data?.length || 0);
-        return response;
-      } catch (error: any) {
-        console.error('❌ Помилка завантаження properties:', error);
-        throw error;
-      }
-    },
-    retry: 1,
-    staleTime: 5 * 60 * 1000,
-  });
+
 
   // Конвертуємо properties для UI
   const properties = useMemo(() => {
@@ -228,7 +314,7 @@ export default function HomeScreen() {
       return [];
     }
 
-    const propertiesList = propertiesResponse.data.data.slice(0, 10);
+    const propertiesList = propertiesResponse.data.data.slice(0, 30);
     console.log('✅ Конвертація:', propertiesList.length, 'properties');
 
     return propertiesList.map((property) => {
@@ -333,7 +419,7 @@ export default function HomeScreen() {
     return sortedNews.map((newsItem) => {
       // Форматуємо дату
       const formatTimestamp = (dateString: string | null) => {
-        if (!dateString) return 'Recently';
+        if (!dateString) return '';
 
         const date = new Date(dateString);
         const now = new Date();
@@ -371,7 +457,8 @@ export default function HomeScreen() {
         image: getValidImageUri(newsItem.imageUrl || newsItem.image),
         title: newsItem.title,
         description: newsItem.description || '',
-        timestamp: formatTimestamp(newsItem.publishedAt),
+        timestamp: formatTimestamp(newsItem.publishedAt || newsItem.createdAt || null),
+        rawDate: newsItem.publishedAt || newsItem.createdAt || null,
         slug: newsItem.slug || newsItem.id,
       };
     });
@@ -564,10 +651,10 @@ export default function HomeScreen() {
     return (
       <View style={{ width: CARD_WIDTH }}>
         <PropertyCard
-          property={item}
+          {...item}
           theme={theme}
-          onPress={handlePropertyPress} // PropertyCard expects (id) => void
-          onToggleFavorite={handleFavoriteToggle} // PropertyCard expects (id, e) => void
+          onPress={handlePropertyPress}
+          onToggleFavorite={handleFavoriteToggle}
           isFavorite={isFav}
         />
       </View>
@@ -581,7 +668,7 @@ export default function HomeScreen() {
 
   const renderSearchSection = () => (
     <View style={styles.searchSection}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <View style={{ flex: 1 }}>
           <SearchBar
             inputRef={searchInputRef as any}
@@ -589,191 +676,279 @@ export default function HomeScreen() {
             onChangeText={setSearchQuery}
             onFocus={handleSearchFocus}
             autoFocus={isSearchFocused}
+            containerStyle={isSearchFocused ? { height: 40, borderRadius: 12 } : undefined}
           />
         </View>
 
         {isSearchFocused ? (
-          <Pressable onPress={handleCancelSearch} style={{ paddingHorizontal: 4, justifyContent: 'center' }}>
-            <Text style={{ color: theme.primary, fontSize: 14 }}>Cancel</Text>
+          <Pressable
+            onPress={handleCancelSearch}
+            style={({ pressed }) => ({
+              width: 40,
+              height: 40,
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: 12,
+              backgroundColor: theme.background,
+              borderWidth: 1,
+              borderColor: theme.border,
+              opacity: pressed ? 0.7 : 1
+            })}
+          >
+            <Ionicons name="close" size={24} color={theme.primary} />
           </Pressable>
         ) : (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Pressable
               style={({ pressed }) => [
                 styles.filterButton,
-                { backgroundColor: theme.primaryLight, borderColor: theme.primary },
+                { borderColor: theme.primary },
                 { opacity: pressed ? 0.7 : 1 }
               ]}
-              onPress={() => router.push('/liked')}
+              onPress={() => {
+                if (showSearchAction) {
+                  // Перехід на Properties з вибраною локацією
+                  const params: any = { propertyType: 'all' };
+                  if (selectedLocations.length > 0) {
+                    params.location = selectedLocations.join(',');
+                  }
+                  router.push({ pathname: '/(tabs)/properties', params });
+                } else {
+                  // Перехід на Liked
+                  router.push('/liked');
+                }
+              }}
             >
-              <Ionicons name="heart-outline" size={20} color={theme.primary} />
-              {favoriteIds.length > 0 && (
-                <View style={{
+              <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                {/* Heart Icon (Default) */}
+                <Animated.View style={{
                   position: 'absolute',
-                  top: -4,
-                  right: -4,
-                  backgroundColor: '#FF3B30',
-                  borderRadius: 8,
-                  minWidth: 16,
-                  height: 16,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  paddingHorizontal: 4,
-                  zIndex: 10,
+                  opacity: actionButtonAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
+                  transform: [{ scale: actionButtonAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }]
                 }}>
-                  <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>
-                    {favoriteIds.length}
-                  </Text>
-                </View>
-              )}
+                  <Ionicons name="heart-outline" size={24} color={theme.primary} />
+                  {favoriteIds.length > 0 && !showSearchAction && (
+                    <View style={{
+                      position: 'absolute',
+                      top: -6,
+                      right: -8,
+                      backgroundColor: '#FF3B30',
+                      borderRadius: 8,
+                      minWidth: 16,
+                      height: 16,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      paddingHorizontal: 4,
+                    }}>
+                      <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>
+                        {favoriteIds.length}
+                      </Text>
+                    </View>
+                  )}
+                </Animated.View>
+
+                {/* Search Icon (Active) */}
+                <Animated.View style={{
+                  opacity: actionButtonAnim,
+                  transform: [
+                    { scale: actionButtonAnim },
+                    { rotate: actionButtonAnim.interpolate({ inputRange: [0, 1], outputRange: ['-90deg', '0deg'] }) }
+                  ]
+                }}>
+                  <Ionicons name="search" size={24} color={theme.primary} />
+                </Animated.View>
+              </View>
             </Pressable>
           </View>
         )}
       </View>
 
-      <LocationFilter
-        selectedLocations={selectedLocations}
-        onLocationsChange={setSelectedLocations}
-      />
+      {!isSearchFocused && (
+        <LocationFilter
+          selectedLocations={selectedLocations}
+          onLocationsChange={(locs) => {
+            setSelectedLocations(locs);
+            // Якщо вибрано локації, перемикаємось на іконку пошуку
+            if (locs.length > 0) {
+              setShowSearchAction(true);
+            } else {
+              // Якщо нічого не вибрано, можна повернути лайк (опціонально)
+              // setShowSearchAction(false);
+            }
+          }}
+        />
+      )}
     </View>
   );
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
-      {/* Fixed Top Section: Header + Search (only when focused) */}
+      {/* Fixed Top Section: Search (only when focused) */}
       <View style={{ zIndex: 100, backgroundColor: theme.background }}>
-
-
         {isSearchFocused && renderSearchSection()}
       </View>
 
       {/* Main Content Area */}
       <View style={{ flex: 1, zIndex: 1 }}>
-        {isSearchFocused ? (
-          <View style={{ flex: 1 }}>
+        {isSearchFocused && (
+          <View style={{ flex: 1, position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10, backgroundColor: theme.background }}>
             {searchLoading ? (
               <View style={styles.searchLoading}>
                 <ActivityIndicator size="small" color={theme.primary} />
               </View>
-            ) : showSearchResults && searchQuery.trim().length >= 2 ? (
-              searchResults.length > 0 ? (
-                <ScrollView
-                  style={{ flex: 1, width: '100%', backgroundColor: theme.background }}
-                  contentContainerStyle={{ paddingBottom: 10 }}
-                  keyboardShouldPersistTaps="handled"
-                  keyboardDismissMode="on-drag"
-                  showsVerticalScrollIndicator={true}
-                >
-                  {searchResults.map((item) => (
-                    <Pressable
-                      key={item.id}
-                      style={({ pressed }) => [
-                        styles.searchResultItem,
-                        {
-                          backgroundColor: pressed ? theme.border : theme.background,
-                          borderBottomWidth: 1,
-                          borderBottomColor: theme.border,
-                          flexDirection: 'row',
-                          paddingHorizontal: 16,
-                          paddingVertical: 14
-                        }
-                      ]}
-                      onPress={() => {
-                        router.push(`/property/${item.id}`);
-                      }}
-                    >
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.searchResultTitle, { color: theme.text }]} numberOfLines={1}>
-                          {item.name}
-                        </Text>
-                        <Text style={[styles.searchResultLocation, { color: theme.textSecondary }]} numberOfLines={1}>
-                          {item.city.nameEn}
-                          {item.propertyType === 'off-plan'
-                            ? (item.area ? ` • ${item.area} ` : '')
-                            : (item.area && typeof item.area === 'object' ? ` • ${item.area.nameEn} ` : '')}
-                        </Text>
-                      </View>
-                      <Ionicons name="chevron-forward" size={16} color={theme.textTertiary} />
-                    </Pressable>
-                  ))}
-                </ScrollView>
-              ) : (
-                <View style={styles.searchNoResults}>
-                  <Text style={[styles.searchNoResultsText, { color: theme.textSecondary }]}>
-                    {t('home.noProperties') || 'No properties found'}
-                  </Text>
-                </View>
-              )
             ) : (
-              <View style={{ flex: 1 }} onTouchStart={() => Keyboard.dismiss()} />
+              <FlatList
+                data={searchResults}
+                keyExtractor={(item) => item.id}
+                style={{ flex: 1, width: '100%', backgroundColor: theme.background }}
+                contentContainerStyle={{ paddingBottom: 20 }}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+                showsVerticalScrollIndicator={true}
+                onEndReached={() => {
+                  if (hasNextPage) fetchNextPage();
+                }}
+                onEndReachedThreshold={0.5}
+                ItemSeparatorComponent={() => (
+                  <View style={{ height: 1, backgroundColor: theme.border, marginLeft: 84 }} />
+                )}
+                ListFooterComponent={() => (
+                  isFetchingNextPage ? (
+                    <View style={{ padding: 20, alignItems: 'center' }}>
+                      <ActivityIndicator size="small" color={theme.primary} />
+                    </View>
+                  ) : <View style={{ height: 20 }} />
+                )}
+                ListEmptyComponent={() => (
+                  <View style={styles.searchNoResults}>
+                    <Text style={[styles.searchNoResultsText, { color: theme.textSecondary }]}>
+                      {t('home.noProperties') || 'No properties found'}
+                    </Text>
+                  </View>
+                )}
+                renderItem={({ item }) => (
+                  <Pressable
+                    key={item.id}
+                    style={({ pressed }) => [
+                      {
+                        backgroundColor: pressed ? theme.backgroundSecondary : theme.background,
+                        flexDirection: 'row',
+                        paddingHorizontal: 16,
+                        paddingVertical: 8,
+                        alignItems: 'center',
+                        gap: 12,
+                      }
+                    ]}
+                    onPress={() => {
+                      router.push(`/property/${item.id}`);
+                    }}
+                  >
+                    <View style={{ width: 56, height: 56, borderRadius: 8, backgroundColor: theme.border, overflow: 'hidden' }}>
+                      {item.photos?.[0] && (
+                        <Image source={{ uri: item.photos[0] }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                      )}
+                    </View>
+
+                    <View style={{ flex: 1, justifyContent: 'center', gap: 2 }}>
+                      <Text style={[{ color: theme.text, fontSize: 14, fontWeight: '600' }]} numberOfLines={2}>
+                        {item.name}
+                      </Text>
+                      <Text style={[{ color: theme.textSecondary, fontSize: 13 }]} numberOfLines={1}>
+                        {item.propertyType === 'off-plan'
+                          ? (item.area || '')
+                          : (item.area && typeof item.area === 'object' ? item.area.nameEn : '')}
+                      </Text>
+                    </View>
+
+                    <View style={{ alignSelf: 'stretch', alignItems: 'flex-end', justifyContent: 'flex-end', paddingBottom: 2 }}>
+                      <Text style={{ fontSize: 13, fontWeight: '600', color: theme.primary }}>
+                        {formatPrice(Number(item.propertyType === 'off-plan' ? item.priceFrom : item.price) || 0)}
+                      </Text>
+                    </View>
+                  </Pressable>
+                )}
+              />
             )}
           </View>
-        ) : (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 10 }}>
+        )}
+        <View style={{ flex: 1, display: isSearchFocused ? 'none' : 'flex' }}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 90 }}
+          >
             <Header
               title=""
               avatar={user?.avatar || undefined}
-              user={user || undefined}
+              user={user ? { firstName: user.firstName || '', lastName: user.lastName || '' } : undefined}
               mode="home"
             />
-            {renderSearchSection()}
-            {/* Stats Section - Only for Broker */}
-            {!isInvestor && (
-              <View style={styles.statsSection}>
-                <StatsCard
-                  title={t('home.newLeads')}
-                  value={crmStatsLoading ? '...' : (crmStats?.totalLeads?.toString() || '0')}
-                  buttonText={t('home.explore')}
-                  onPress={() => router.push('/(tabs)/crm')}
-                />
-
-                <View style={styles.smallStatsRow}>
-                  <SmallStatCard
-                    icon="layers-outline"
-                    title={t('home.collections')}
-                    value={collectionsFromStore.length.toString()}
-                  />
-                  <SmallStatCard
-                    icon="heart-outline"
-                    title="Total likes"
-                    value={String(favoriteIds.length)}
-                  />
-                </View>
-              </View>
-            )}
-
-            <View style={styles.collectionSection}>
-              <CollectionCard
-                icon="thumbs-up"
-                title={t('home.yourLikedProjects')}
-                description={t('home.collectionDescription')}
-                gradientImage={require('@/assets/images/gradient-1.png')}
-                onPress={() => router.push('/liked')}
-              />
-            </View>
-
-            {/* Quick Actions */}
-            <View style={styles.quickActionsSection}>
+            {/* Main Home Widgets (Pager Removed) */}
+            <View style={{ marginBottom: 20 }}>
+              {renderSearchSection()}
+              {/* Stats Section - Only for Broker */}
               {!isInvestor && (
-                <QuickActionCard
-                  icon="people"
-                  label={t('home.myLeads')}
-                  onPress={() => router.push('/(tabs)/crm')}
-                />
+                <View style={styles.statsSection}>
+                  <StatsCard
+                    title={t('home.newLeads')}
+                    value={crmStatsLoading ? '...' : (crmStats?.totalLeads?.toString() || '0')}
+                    buttonText={t('home.explore')}
+                    onPress={() => router.push('/(tabs)/crm')}
+                  />
+
+                  <View style={styles.smallStatsRow}>
+                    <SmallStatCard
+                      icon="layers-outline"
+                      title={t('home.collections')}
+                      value={collectionsFromStore.length.toString()}
+                    />
+                    <SmallStatCard
+                      icon="heart-outline"
+                      title="Total likes"
+                      value={String(favoriteIds.length)}
+                    />
+                  </View>
+                </View>
               )}
-              <QuickActionCard
-                icon="home"
-                label={t('home.properties')}
-                onPress={() => router.push('/(tabs)/properties')}
-              />
-              <QuickActionCard
-                icon={isInvestor ? "wallet" : "layers"}
-                label={isInvestor ? "Portfolio" : t('home.collections')}
-                onPress={() => router.push(isInvestor ? '/portfolio' : '/collections')}
-              />
+
+              <View style={styles.collectionSection}>
+                <CollectionCard
+                  icon="thumbs-up"
+                  title={t('home.yourLikedProjects')}
+                  description={t('home.collectionDescription')}
+                  gradientImage={require('@/assets/images/gradient-1.png')}
+                  onPress={() => router.push('/liked')}
+                />
+              </View>
+
+              <View style={styles.quickActionsSection}>
+                {!isInvestor && (
+                  <QuickActionCard
+                    icon="people"
+                    label={t('home.myLeads')}
+                    onPress={() => router.push('/(tabs)/crm')}
+                  />
+                )}
+                <QuickActionCard
+                  icon="home"
+                  label={t('home.properties')}
+                  onPress={() => router.push('/(tabs)/properties')}
+                />
+                <QuickActionCard
+                  icon={isInvestor ? "wallet" : "layers"}
+                  label={isInvestor ? "Portfolio" : t('home.collections')}
+                  onPress={() => router.push(isInvestor ? '/portfolio' : '/collections')}
+                />
+              </View>
             </View>
 
             <View style={styles.propertySection}>
+              <View style={{ paddingHorizontal: 16, marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>Featured Properties</Text>
+                <Pressable onPress={() => router.push('/(tabs)/properties')}>
+                  <Text style={[styles.viewAllText, { color: theme.primary }]}>{t('home.viewAll')}</Text>
+                </Pressable>
+              </View>
+
               {propertiesLoading ? (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator size="large" color={theme.primary} />
@@ -792,7 +967,7 @@ export default function HomeScreen() {
                 </View>
               ) : (
                 <FlatList
-                  data={properties}
+                  data={properties.slice(0, 6)}
                   renderItem={renderPropertyCard}
                   keyExtractor={(item) => item.id}
                   horizontal
@@ -807,7 +982,7 @@ export default function HomeScreen() {
               )}
 
               <View style={styles.dotsContainer}>
-                <PaginationDots total={properties.length} current={currentSlide} />
+                <PaginationDots total={properties.slice(0, 6).length} current={currentSlide} />
               </View>
             </View>
 
@@ -816,7 +991,7 @@ export default function HomeScreen() {
               <View style={styles.developersHeader}>
                 <Text style={[styles.sectionTitle, { color: theme.text }]}>Developers</Text>
                 <Pressable onPress={() => router.push('/developers')}>
-                  <Text style={[styles.viewAllText, { color: theme.textTertiary }]}>View All</Text>
+                  <Text style={[styles.viewAllText, { color: theme.primary }]}>{t('home.viewAll')}</Text>
                 </Pressable>
               </View>
 
@@ -918,16 +1093,80 @@ export default function HomeScreen() {
                   </Text>
                 </View>
               ) : (
-                news.map((item) => (
-                  <NewsCard
-                    key={item.id}
-                    image={item.image}
-                    title={item.title}
-                    description={item.description}
-                    timestamp={item.timestamp}
-                    onPress={() => router.push(`/news/${item.slug}`)}
-                  />
-                ))
+                news.map((item, index) => {
+                  if (index === 0) {
+                    return (
+                      <Pressable
+                        key={item.id}
+                        onPress={() => router.push(`/news/${item.slug}`)}
+                        style={{
+                          marginBottom: 8,
+                          borderRadius: 16,
+                          overflow: 'hidden',
+                          backgroundColor: theme.card,
+                          shadowColor: '#000',
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.1,
+                          shadowRadius: 4,
+                          elevation: 3,
+                        }}
+                      >
+                        <Image
+                          source={{ uri: item.image || 'https://via.placeholder.com/400x300' }}
+                          style={{ width: '100%', aspectRatio: 1 }}
+                          resizeMode="cover"
+                        />
+                        <LinearGradient
+                          colors={['transparent', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.95)']}
+                          style={{
+                            position: 'absolute',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            padding: 16,
+                            paddingTop: 80,
+                            justifyContent: 'flex-end',
+                          }}
+                        >
+                          <View style={{ alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginBottom: 12 }}>
+                            <Text style={{ color: '#fff', fontSize: 10, fontWeight: '600', textTransform: 'uppercase' }}>
+                              Today
+                            </Text>
+                          </View>
+
+                          <Text style={{ color: '#fff', fontSize: 22, fontWeight: '700', marginBottom: 16, lineHeight: 28 }} numberOfLines={3}>
+                            {item.title}
+                          </Text>
+
+                          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                              <Image
+                                source={require('@/assets/images/new logo.png')}
+                                style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#1A1A1A' }}
+                                resizeMode="contain"
+                              />
+                              <Text style={{ color: '#fff', fontSize: 11, fontWeight: '600' }}>ForYou Real Estate</Text>
+                            </View>
+                            <Text style={{ color: '#ccc', fontSize: 11 }}>
+                              {new Date((item as any).rawDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                            </Text>
+                          </View>
+                        </LinearGradient>
+                      </Pressable>
+                    );
+                  }
+
+                  return (
+                    <NewsCard
+                      key={item.id}
+                      image={item.image}
+                      title={item.title}
+                      description={item.description}
+                      timestamp={item.timestamp}
+                      onPress={() => router.push(`/news/${item.slug}`)}
+                    />
+                  );
+                })
               )}
             </View>
 
@@ -937,7 +1176,7 @@ export default function HomeScreen() {
                 <View style={styles.knowledgeBaseHeader}>
                   <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('home.knowledgeBase')}</Text>
                   <Pressable onPress={() => router.push('/profile/knowledge-base')}>
-                    <Text style={[styles.viewAllText, { color: theme.textTertiary }]}>{t('home.viewAll')}</Text>
+                    <Text style={[styles.viewAllText, { color: theme.primary }]}>{t('home.viewAll')}</Text>
                   </Pressable>
                 </View>
 
@@ -985,8 +1224,9 @@ export default function HomeScreen() {
                 )}
               </View>
             )}
+            {/* Vertical Property Feed (New Content) - Removed */}
           </ScrollView>
-        )}
+        </View>
       </View>
     </SafeAreaView >
   );
@@ -1000,12 +1240,12 @@ const styles = StyleSheet.create({
   searchSection: {
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 8,
-    gap: 12,
+    paddingBottom: 4,
+    gap: 8,
   },
   filterButton: {
     width: 44,
-    height: 40,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 10,
@@ -1014,7 +1254,7 @@ const styles = StyleSheet.create({
   },
   statsSection: {
     paddingHorizontal: 16,
-    paddingTop: 0,
+    paddingTop: 8,
     gap: 12,
   },
   smallStatsRow: {
@@ -1022,7 +1262,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   propertySection: {
-    paddingTop: 24,
+    paddingTop: 12,
   },
   flatListContent: {
     paddingHorizontal: 16,
@@ -1032,7 +1272,7 @@ const styles = StyleSheet.create({
   },
   collectionSection: {
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 8,
     gap: 12,
   },
   quickActionsSection: {
@@ -1057,11 +1297,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 32,
     paddingBottom: 24,
-    gap: 8,
+    gap: 12,
   },
   knowledgeBaseSection: {
     paddingHorizontal: 16,
-    paddingTop: 24,
+    paddingTop: 32,
     paddingBottom: 100,
     gap: 12,
   },
@@ -1072,7 +1312,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   viewAllText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
   },
   knowledgeModuleCard: {
@@ -1087,16 +1327,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   knowledgeModuleTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   knowledgeStatusBadge: {
     alignSelf: 'flex-start',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   knowledgeStatusBadgeText: {
     fontSize: 12,
@@ -1218,6 +1458,72 @@ const styles = StyleSheet.create({
   },
   searchNoResultsText: {
     fontSize: 14,
+  },
+  slideHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  emptySlideContainer: {
+    height: 150,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  emptySlideText: {
+    fontSize: 14,
+  },
+  smallCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 12,
+  },
+  smallCardImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+  },
+  smallCardTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  leadItemRowNew: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 12,
+    marginBottom: 4,
+  },
+  leadAvatarCircleNew: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  leadItemNameNew: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  stageBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  viewBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  viewBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
 });
 

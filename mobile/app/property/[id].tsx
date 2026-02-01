@@ -841,102 +841,95 @@ export default function PropertyDetailScreen() {
       </ScrollView>
 
       {/* Bottom Action Button */}
-      {/* Bottom Action Button - Floating Island */}
-      <View style={{
-        position: 'absolute',
-        bottom: 40, // Floating from bottom
-        left: 40,
-        right: 40,
-        borderRadius: 100,
-        overflow: 'hidden',
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.25,
-        shadowRadius: 8,
-        elevation: 5,
-      }}>
-        <BlurView
-          intensity={isDark ? 30 : 50}
-          tint={isDark ? 'dark' : 'light'}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            padding: 5,
-            gap: 8,
-            backgroundColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.5)'
-          }}
-        >
-          <Pressable
-            style={[
-              styles.bottomButton,
-              {
-                backgroundColor: (user?.role !== 'INVESTOR' && isFromCollection) ? '#FF6B5D' : theme.primary,
-                height: 44,
-                borderRadius: 22,
-                paddingHorizontal: 20, // Increase padding
-                flex: 1, // Significantly increased width
-              }
-            ]}
-            onPress={user?.role === 'INVESTOR' ? handleSendProjectToChat : () => {
-              if (isFromCollection) {
-                console.log('Remove from collection');
-              } else {
-                setSelectCollectionVisible(true);
-              }
-            }}
-            disabled={isSendingToChat}
+      {/* Standardized Island Footer */}
+      <View style={styles.footerContainer} pointerEvents="box-none">
+        <View style={[styles.footerBackground, { backgroundColor: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)' }]}>
+          <BlurView
+            intensity={100}
+            tint={isDark ? 'dark' : 'light'}
+            style={styles.footerInner}
           >
-            {isSendingToChat ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Text style={[styles.bottomButtonText, { fontSize: 13, fontWeight: '600' }]}>
-                {user?.role === 'INVESTOR' ? 'Get more info' : (isFromCollection ? 'Remove from collection' : 'Add to collection')}
-              </Text>
-            )}
-          </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.submitButton,
+                {
+                  backgroundColor: (user?.role !== 'INVESTOR' && isFromCollection) ? '#FF6B5D' : theme.primary,
+                  transform: [{ scale: pressed ? 0.96 : 1 }],
+                  opacity: pressed ? 0.8 : 1,
+                }
+              ]}
+              onPress={user?.role === 'INVESTOR' ? handleSendProjectToChat : () => {
+                if (isFromCollection) {
+                  console.log('Remove from collection');
+                } else {
+                  setSelectCollectionVisible(true);
+                }
+              }}
+              disabled={isSendingToChat}
+            >
+              {isSendingToChat ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.submitButtonText}>
+                  {user?.role === 'INVESTOR' ? 'Get more info' : (isFromCollection ? 'Remove from collection' : 'Add to collection')}
+                </Text>
+              )}
+            </Pressable>
 
-          {/* Presentation Button - Added next to Add to collection */}
-          {!isFromCollection && user?.role !== 'INVESTOR' && (
-            <Pressable
-              style={[
-                styles.menuButton,
-                {
-                  borderColor: 'transparent',
-                  backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                  width: 44,
-                  height: 44,
-                  borderRadius: 22,
-                  borderWidth: 0
-                }
-              ]}
-              onPress={() => setPresentationModalVisible(true)}
-            >
-              <Ionicons name="document-text-outline" size={20} color={theme.primary} />
-            </Pressable>
-          )}
-          {!isFromCollection && (
-            <Pressable
-              style={[
-                styles.menuButton,
-                {
-                  borderColor: 'transparent',
-                  backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                  width: 44,
-                  height: 44,
-                  borderRadius: 22,
-                  borderWidth: 0
-                }
-              ]}
-              onPress={toggleFavorite}
-            >
-              <Ionicons
-                name={isFavoriteProperty ? "heart" : "heart-outline"}
-                size={24}
-                color={isFavoriteProperty ? "#FF3B30" : theme.primary}
-              />
-            </Pressable>
-          )}
-        </BlurView>
+            {/* Presentation Button */}
+            {!isFromCollection && user?.role !== 'INVESTOR' && (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.iconButton,
+                  {
+                    borderColor: theme.border,
+                    backgroundColor: theme.card, // Or transparent
+                    transform: [{ scale: pressed ? 0.96 : 1 }],
+                    opacity: pressed ? 0.7 : 1,
+                  }
+                ]}
+                onPress={() => setPresentationModalVisible(true)}
+              >
+                <Ionicons name="document-text-outline" size={20} color={theme.text} />
+              </Pressable>
+            )}
+
+            {/* Like Button */}
+            {!isFromCollection && (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.iconButton,
+                  {
+                    borderColor: user?.role === 'INVESTOR' ? 'rgba(255,255,255,0.3)' : theme.border,
+                    backgroundColor: user?.role === 'INVESTOR' ? 'transparent' : theme.card,
+                    transform: [{ scale: pressed ? 0.96 : 1 }],
+                    opacity: pressed ? 0.7 : 1,
+                    overflow: 'hidden',
+                  }
+                ]}
+                onPress={toggleFavorite}
+              >
+                {user?.role === 'INVESTOR' ? (
+                  <BlurView intensity={25} tint="light" style={StyleSheet.absoluteFill}>
+                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                      <Ionicons
+                        name={isFavoriteProperty ? "heart" : "heart-outline"}
+                        size={20}
+                        color={isFavoriteProperty ? "#FF3B30" : theme.primary}
+                      />
+                    </View>
+                  </BlurView>
+                ) : (
+                  <Ionicons
+                    name={isFavoriteProperty ? "heart" : "heart-outline"}
+                    size={20}
+                    color={isFavoriteProperty ? "#FF3B30" : theme.text}
+                  />
+                )}
+              </Pressable>
+            )}
+          </BlurView>
+        </View>
       </View>
 
       {/* Menu Modal */}
@@ -1142,7 +1135,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: 80, // Reduced padding
   },
   imageContainer: {
     width: SCREEN_WIDTH,
@@ -1476,6 +1469,54 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '600',
+  },
+  footerContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 12,
+    paddingBottom: 20,
+    paddingTop: 8,
+    zIndex: 10,
+  },
+  footerBackground: {
+    borderRadius: 999,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -3,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+    overflow: 'hidden',
+  },
+  footerInner: {
+    flexDirection: 'row',
+    gap: 10,
+    padding: 12,
+  },
+  submitButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 999,
+  },
+  submitButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  iconButton: {
+    width: 44, // Slightly larger visual target or explicitly matches height of submit
+    aspectRatio: 1, // Square/Circle
+    borderRadius: 999,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 
