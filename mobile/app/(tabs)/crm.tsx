@@ -22,7 +22,7 @@ interface Lead {
   name: string;
   price?: number;
   stage: string;
-
+  amoLeadId?: number;
   stageId?: number;
   statusName?: string;
 }
@@ -284,7 +284,7 @@ export default function CRMScreen() {
     name: lead.guestName || 'No name',
     price: lead.price,
     stage: lead.status,
-
+    amoLeadId: lead.amoLeadId,
     stageId: (lead as any).stageId,
     statusName: lead.statusName,
   })) || [];
@@ -651,7 +651,7 @@ export default function CRMScreen() {
 
     return (
       <Pressable
-        onPress={() => router.push(`/lead/${item.id}`)}
+        onPress={() => router.push(`/lead/${item.amoLeadId || item.id}`)}
         style={[styles.leadCard, { borderColor: theme.border, backgroundColor: theme.card }]}
       >
         <View style={styles.leadRowMain}>
