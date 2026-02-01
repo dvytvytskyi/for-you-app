@@ -50,39 +50,39 @@ export default function PortfolioScreen() {
         if (!analytics) return null;
 
         return (
-            <View style={[styles.analyticsContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F8F9FA' }]}>
-                <Text style={[styles.sectionTitle, { color: theme.text }]}>Portfolio Analytics</Text>
+            <View style={[styles.analyticsContainer, { backgroundColor: theme.primary }]}>
+                <Text style={[styles.sectionTitle, { color: '#FFFFFF' }]}>Portfolio Analytics</Text>
 
                 <View style={[styles.analyticsGrid, { marginBottom: 0 }]}>
                     <View style={styles.analyticsItem}>
-                        <Text style={[styles.analyticsLabel, { color: theme.textSecondary }]}>Total Invested</Text>
-                        <Text style={[styles.analyticsValue, { color: theme.primary }]}>
+                        <Text style={[styles.analyticsLabel, { color: 'rgba(255,255,255,0.7)' }]}>Total Invested</Text>
+                        <Text style={[styles.analyticsValue, { color: '#FFFFFF' }]}>
                             $ {analytics.totalPurchasePrice.toLocaleString('en-US').replace(/,/g, ' ')}
                         </Text>
                     </View>
 
                     <View style={styles.analyticsItem}>
-                        <Text style={[styles.analyticsLabel, { color: theme.textSecondary }]}>Est. Value</Text>
+                        <Text style={[styles.analyticsLabel, { color: 'rgba(255,255,255,0.7)' }]}>Est. Value</Text>
                         <Text style={[styles.analyticsValue, { color: '#2ECC71' }]}>
                             $ {analytics.totalEstimatedSellingValue.toLocaleString('en-US').replace(/,/g, ' ')}
                         </Text>
                     </View>
                 </View>
 
-                <View style={[styles.divider, { backgroundColor: theme.border, marginVertical: 12 }]} />
+                <View style={[styles.divider, { backgroundColor: 'rgba(255,255,255,0.2)', marginVertical: 12 }]} />
 
                 <View style={styles.analyticsGrid}>
                     <View style={styles.analyticsItem}>
-                        <Text style={[styles.analyticsLabel, { color: theme.textSecondary }]}>Annual Yield</Text>
-                        <Text style={[styles.analyticsValue, { color: theme.text }]}>
+                        <Text style={[styles.analyticsLabel, { color: 'rgba(255,255,255,0.7)' }]}>Annual Yield</Text>
+                        <Text style={[styles.analyticsValue, { color: '#FFFFFF' }]}>
                             $ {analytics.totalAnnualCashFlow.toLocaleString('en-US').replace(/,/g, ' ')}
                         </Text>
                     </View>
 
                     <View style={styles.analyticsItem}>
-                        <Text style={[styles.analyticsLabel, { color: theme.textSecondary }]}>Appreciation</Text>
+                        <Text style={[styles.analyticsLabel, { color: 'rgba(255,255,255,0.7)' }]}>Appreciation</Text>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <Text style={[styles.analyticsValue, { color: theme.text }]}>
+                            <Text style={[styles.analyticsValue, { color: '#FFFFFF' }]}>
                                 {analytics.totalAppreciationPercentage.toFixed(1)}%
                             </Text>
                             <Ionicons name="trending-up" size={16} color="#2ECC71" style={{ marginLeft: 4 }} />
@@ -90,11 +90,11 @@ export default function PortfolioScreen() {
                     </View>
                 </View>
 
-                <View style={[styles.forecastBox, { backgroundColor: theme.primary + '10' }]}>
-                    <Ionicons name="calendar-outline" size={20} color={theme.primary} />
+                <View style={[styles.forecastBox, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
+                    <Ionicons name="calendar-outline" size={20} color="#FFFFFF" />
                     <View style={styles.forecastTextContainer}>
-                        <Text style={[styles.forecastLabel, { color: theme.textSecondary }]}>3-Year Forecast Income</Text>
-                        <Text style={[styles.forecastValue, { color: theme.primary }]}>
+                        <Text style={[styles.forecastLabel, { color: 'rgba(255,255,255,0.7)' }]}>3-Year Forecast Income</Text>
+                        <Text style={[styles.forecastValue, { color: '#FFFFFF' }]}>
                             $ {analytics.annualCashFlowIn3Years.toLocaleString('en-US').replace(/,/g, ' ')}
                         </Text>
                     </View>
@@ -146,17 +146,7 @@ export default function PortfolioScreen() {
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-                <Header
-                    title="My portfolio"
-                    avatar={user?.avatar || undefined}
-                    user={user || undefined}
-                    centered={true}
-                    titleColor="#FFFFFF"
-                    titleSize={16}
-                    onBack={handleWhatsApp}
-                    backIconName="logo-whatsapp"
-                    backColor="#25D366"
-                />
+                {/* Header removed */}
 
                 <FlatList
                     data={items}

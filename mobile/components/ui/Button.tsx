@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { triggerLightHaptic } from '@/utils/haptic';
 
 export type ButtonVariant = 'primary' | 'outline' | 'dark';
 
@@ -22,7 +23,7 @@ export default function Button({
 }: ButtonProps) {
   const getButtonStyles = () => {
     const baseStyle = [styles.base];
-    
+
     if (fullWidth) {
       baseStyle.push(styles.fullWidth);
     } else {
@@ -59,12 +60,15 @@ export default function Button({
     <Pressable
       style={({ pressed }) => [
         ...getButtonStyles(),
-        { 
+        {
           opacity: pressed ? 0.7 : 1,
           transform: [{ scale: pressed ? 0.98 : 1 }]
         },
       ]}
-      onPress={onPress}
+      onPress={() => {
+        triggerLightHaptic();
+        onPress();
+      }}
       disabled={disabled || loading}
     >
       {loading ? (

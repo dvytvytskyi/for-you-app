@@ -14,17 +14,25 @@ import { propertiesApi } from '@/api/properties';
 import { convertPropertyToCard, convertFiltersToAPI, formatPrice, PropertyCardData } from '@/utils/property-utils';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useFavoritesStore } from '@/store/favoritesStore';
+import { useAuthStore } from '@/store/authStore';
+import { UserRole } from '@/types/user';
+import { triggerLightHaptic, triggerMediumHaptic } from '@/utils/haptic';
 import { TextInput } from 'react-native';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_WIDTH = SCREEN_WIDTH - 32; // padding left + right
 
 export default function PropertiesScreen() {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
   const navigation = useNavigation();
   const searchInputRef = useRef<TextInput>(null);
+  const flatListRef = useRef<FlatList>(null);
+  const { user } = useAuthStore();
+
+  const isInvestor = user?.role === UserRole.INVESTOR || (user?.role as string) === 'INVESTOR';
+  const isAgent = user?.role === UserRole.BROKER || (user?.role as string) === 'BROKER' || (user?.role as string) === 'AGENT';
 
   // Reset search on tab change
   useEffect(() => {
@@ -35,19 +43,34 @@ export default function PropertiesScreen() {
     return unsubscribe;
   }, [navigation]);
 
+  // Scroll to top on tab re-press
+  useEffect(() => {
+    const unsubscribe = (navigation as any).addListener('tabPress', (e: any) => {
+      if (navigation.isFocused()) {
+        // Already on this screen, so scroll to top
+        flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+        triggerLightHaptic();
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 500);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [scrollEnabled, setScrollEnabled] = useState(true);
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [filters, setFilters] = useState<PropertyFilters>({
-    listingType: 'all', // Default set to 'all' to ensure everything is visible
+    listingType: 'offplan', // Set to 'offplan' for Projects tab
     minPrice: null,
     maxPrice: null,
     bedrooms: 'any',
     location: 'any',
     developerIds: 'any',
   });
+  const [sortBy, setSortBy] = useState<'newest' | 'price-asc' | 'price-desc'>('newest');
+  const [sortDropdownVisible, setSortDropdownVisible] = useState(false);
 
   // Enable LayoutAnimation for Android
   if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -55,18 +78,33 @@ export default function PropertiesScreen() {
   }
 
   // Конвертуємо UI фільтри в API фільтри (стабільні параметри)
+  // Конвертуємо UI фільтри в API фільтри (стабільні параметри)
   const baseApiFilters = useMemo(() => {
     const baseFilters = convertFiltersToAPI(filters);
+
+    // Determine sort params based on UI state
+    let sortParam: 'createdAt' | 'price' = 'createdAt';
+    let sortOrderParam: 'ASC' | 'DESC' = 'DESC';
+
+    if (sortBy === 'price-asc') {
+      sortParam = 'price';
+      sortOrderParam = 'ASC';
+    } else if (sortBy === 'price-desc') {
+      sortParam = 'price';
+      sortOrderParam = 'DESC';
+    }
+    // 'newest' uses defaults (createdAt, DESC)
+
     return {
       ...baseFilters,
       search: debouncedSearch || undefined,
       limit: 20,
-      sortBy: 'createdAt' as const,
-      sortOrder: 'DESC' as const,
+      sortBy: sortParam,
+      sortOrder: sortOrderParam,
     };
-  }, [filters, debouncedSearch]);
+  }, [filters, debouncedSearch, sortBy]);
 
-  // Завантаження properties з API через Infinite Query
+  // Завантаження проектів (off-plan) з API через Infinite Query
   const {
     data: propertiesInfiniteData,
     fetchNextPage,
@@ -77,13 +115,18 @@ export default function PropertiesScreen() {
     refetch,
     isRefetching
   } = useInfiniteQuery({
-    queryKey: ['properties', baseApiFilters],
+    queryKey: ['projects', baseApiFilters, isInvestor, isAgent],
     queryFn: async ({ pageParam = 1 }) => {
       try {
-        const response = await propertiesApi.getAll({ ...baseApiFilters, page: pageParam });
+        const response = await propertiesApi.getProjects({
+          ...baseApiFilters,
+          page: pageParam,
+          isInvestor,
+          isAgent
+        });
         return response;
       } catch (error: any) {
-        console.error('❌ Помилка завантаження properties:', error);
+        console.error('❌ Помилка завантаження проектів:', error);
         throw error;
       }
     },
@@ -102,9 +145,15 @@ export default function PropertiesScreen() {
     return propertiesInfiniteData.pages.flatMap(page => page.data?.data || []);
   }, [propertiesInfiniteData]);
 
+  // Get total count from first page pagination
+  const totalCount = useMemo(() => {
+    return propertiesInfiniteData?.pages?.[0]?.data?.pagination?.total || 0;
+  }, [propertiesInfiniteData]);
+
   // Favorites store
   const { isFavorite: isFavoriteInStore, favoriteIds, toggleFavorite: toggleFavoriteInStore } = useFavoritesStore();
 
+  // Конвертуємо properties для UI з сортуванням
   // Конвертуємо properties для UI
   const cardProperties = useMemo(() => {
     return properties.map(prop => {
@@ -126,6 +175,41 @@ export default function PropertiesScreen() {
   };
 
   // Оновлення пошуку
+  const [searchDebounced] = useDebounce(searchQuery, 400);
+
+  // Autocomplete пошук для швидкості
+  const {
+    data: autocompleteData,
+    isLoading: isAutocompleteLoading
+  } = useInfiniteQuery({
+    queryKey: ['property-autocomplete-tab', searchQuery],
+    queryFn: async () => {
+      if (searchQuery.trim().length < 2) return [];
+      return await propertiesApi.autocompleteSearch(searchQuery);
+    },
+    initialPageParam: 1,
+    getNextPageParam: () => undefined,
+    enabled: isSearchFocused && searchQuery.trim().length >= 2,
+  });
+
+  const searchResults = useMemo(() => {
+    if (searchQuery.trim().length >= 2) {
+      const data = (autocompleteData?.pages?.[0] || []) as any[];
+      return data.map(item => ({
+        id: item.id,
+        title: item.name,
+        location: item.location,
+        images: [item.photo],
+        price: 0,
+        bedrooms: '...',
+        type: 'off-plan' as const,
+        isAutocomplete: true
+      } as any as PropertyCardData));
+    }
+    // Коли порожній пошук, але фокус - показуємо Featured з основного запиту
+    return cardProperties.slice(0, 10);
+  }, [searchQuery, autocompleteData, cardProperties]);
+
   const handleSearchChange = (text: string) => {
     setSearchQuery(text);
   };
@@ -133,6 +217,7 @@ export default function PropertiesScreen() {
   const handleSearchFocus = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setIsSearchFocused(true);
+    triggerLightHaptic();
 
     // Robustly ensure keyboard opens
     const attemptFocus = (delay: number) => {
@@ -148,6 +233,7 @@ export default function PropertiesScreen() {
   };
 
   const handleCancelSearch = () => {
+    triggerLightHaptic();
     Keyboard.dismiss();
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setIsSearchFocused(false);
@@ -156,6 +242,7 @@ export default function PropertiesScreen() {
 
   // Перемикання улюбленого
   const handleToggleFavorite = useCallback((id: string) => {
+    triggerLightHaptic();
     toggleFavoriteInStore(id);
   }, [toggleFavoriteInStore]);
 
@@ -168,7 +255,7 @@ export default function PropertiesScreen() {
   }, [refetch]);
 
   return (
-    <SafeAreaView style={[{ flex: 1 }, { backgroundColor: theme.background }]} edges={['top']}>
+    <SafeAreaView style={[{ flex: 1 }, { backgroundColor: isDark ? theme.background : '#fdfdfd' }]} edges={['top']}>
       {/* Search Bar */}
       <View style={styles.searchSection} onStartShouldSetResponder={() => false}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
@@ -194,7 +281,10 @@ export default function PropertiesScreen() {
                   { borderColor: theme.primary },
                   { opacity: pressed ? 0.7 : 1 }
                 ]}
-                onPress={() => router.push('/liked')}
+                onPress={() => {
+                  triggerLightHaptic();
+                  router.push('/liked');
+                }}
               >
                 <Ionicons name="heart-outline" size={20} color={theme.primary} />
                 {favoriteIds.length > 0 && (
@@ -224,7 +314,10 @@ export default function PropertiesScreen() {
                   { borderColor: theme.primary },
                   { opacity: pressed ? 0.7 : 1 }
                 ]}
-                onPress={() => setFiltersVisible(true)}
+                onPress={() => {
+                  triggerMediumHaptic();
+                  setFiltersVisible(true);
+                }}
               >
                 <Ionicons name="options-outline" size={20} color={theme.primary} />
               </Pressable>
@@ -232,6 +325,137 @@ export default function PropertiesScreen() {
           )}
         </View>
       </View>
+
+      {/* Second Row: Count and Sort */}
+      {!isSearchFocused && (
+        <View style={[styles.statsRow, { backgroundColor: '#FFFFFF' }]}>
+          <Text style={[styles.countText, { color: theme.primary }]}>
+            {totalCount} {totalCount === 1 ? 'project' : 'projects'}
+          </Text>
+
+          <View>
+            <Pressable
+              style={[styles.sortButton, { borderColor: theme.border }]}
+              onPress={() => {
+                triggerLightHaptic();
+                setSortDropdownVisible(!sortDropdownVisible);
+              }}
+            >
+              <Text style={[styles.sortText, { color: theme.primary }]}>
+                {sortBy === 'newest' ? 'Newest' : sortBy === 'price-asc' ? 'Price: Low-High' : 'Price: High-Low'}
+              </Text>
+              <Ionicons name="chevron-down" size={16} color={theme.primary} />
+            </Pressable>
+
+            {sortDropdownVisible && (
+              <View style={[styles.sortDropdown, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                <Pressable
+                  style={styles.sortOption}
+                  onPress={() => {
+                    triggerLightHaptic();
+                    setSortBy('newest');
+                    setSortDropdownVisible(false);
+                  }}
+                >
+                  <Text style={[styles.sortOptionText, { color: sortBy === 'newest' ? theme.primary : theme.text }]}>
+                    Newest
+                  </Text>
+                  {sortBy === 'newest' && <Ionicons name="checkmark" size={18} color={theme.primary} />}
+                </Pressable>
+
+                <Pressable
+                  style={styles.sortOption}
+                  onPress={() => {
+                    triggerLightHaptic();
+                    setSortBy('price-asc');
+                    setSortDropdownVisible(false);
+                  }}
+                >
+                  <Text style={[styles.sortOptionText, { color: sortBy === 'price-asc' ? theme.primary : theme.text }]}>
+                    Price: Low-High
+                  </Text>
+                  {sortBy === 'price-asc' && <Ionicons name="checkmark" size={18} color={theme.primary} />}
+                </Pressable>
+
+                <Pressable
+                  style={styles.sortOption}
+                  onPress={() => {
+                    triggerLightHaptic();
+                    setSortBy('price-desc');
+                    setSortDropdownVisible(false);
+                  }}
+                >
+                  <Text style={[styles.sortOptionText, { color: sortBy === 'price-desc' ? theme.primary : theme.text }]}>
+                    Price: High-Low
+                  </Text>
+                  {sortBy === 'price-desc' && <Ionicons name="checkmark" size={18} color={theme.primary} />}
+                </Pressable>
+              </View>
+            )}
+          </View>
+        </View>
+      )}
+
+      {/* Search Overlay */}
+      {isSearchFocused && (
+        <View style={{ flex: 1, position: 'absolute', top: 60, left: 0, right: 0, bottom: 0, zIndex: 100, backgroundColor: isDark ? theme.background : '#fdfdfd' }}>
+          <FlatList
+            data={searchResults}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ paddingBottom: 20 }}
+            keyboardShouldPersistTaps="handled"
+            ListEmptyComponent={() => (
+              <View style={{ padding: 40, alignItems: 'center' }}>
+                <Text style={{ color: theme.textSecondary }}>
+                  {searchQuery.length > 0 ? 'No projects found' : 'Type to search projects'}
+                </Text>
+              </View>
+            )}
+            renderItem={({ item }) => (
+              <Pressable
+                key={item.id}
+                style={({ pressed }) => [
+                  {
+                    backgroundColor: pressed ? theme.backgroundSecondary : theme.background,
+                    flexDirection: 'row',
+                    paddingHorizontal: 16,
+                    paddingVertical: 10,
+                    alignItems: 'center',
+                    gap: 12,
+                    borderBottomWidth: 0.5,
+                    borderBottomColor: theme.border
+                  }
+                ]}
+                onPress={() => {
+                  triggerLightHaptic();
+                  router.push(`/property/${item.id}`);
+                }}
+              >
+                <View style={{ width: 56, height: 56, borderRadius: 8, backgroundColor: theme.border, overflow: 'hidden' }}>
+                  {item.images?.[0] && (
+                    <Image source={{ uri: item.images[0] }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                  )}
+                </View>
+
+                <View style={{ flex: 1, justifyContent: 'center', gap: 2 }}>
+                  <Text style={[{ color: theme.text, fontSize: 14, fontWeight: '600' }]} numberOfLines={2}>
+                    {item.title}
+                  </Text>
+                  <Text style={[{ color: theme.textSecondary, fontSize: 13 }]} numberOfLines={1}>
+                    {item.location}
+                  </Text>
+                </View>
+
+                <View style={{ alignSelf: 'stretch', alignItems: 'flex-end', justifyContent: 'flex-end', paddingBottom: 2 }}>
+                  <Text style={{ fontSize: 12, fontWeight: '600', color: theme.primary }}>
+                    {(item as any).isAutocomplete ? 'See project' : formatPrice(item.price)}
+                  </Text>
+                </View>
+              </Pressable>
+            )}
+          />
+        </View>
+      )}
 
       {/* Filters Modal */}
       <PropertyFiltersModal
@@ -270,6 +494,7 @@ export default function PropertiesScreen() {
         </View>
       ) : (
         <FlatList
+          ref={flatListRef}
           data={cardProperties}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
@@ -353,7 +578,6 @@ const PropertyCard = memo(({ property, onToggleFavorite, onScrollStart, onScroll
     return images
       .filter(img => img && typeof img === 'string' && img.trim().length > 0)
       .filter(img => {
-        // Перевіряємо, чи це валідний URI
         return img.startsWith('http://') || img.startsWith('https://') || img.startsWith('data:') || img.startsWith('file://');
       })
       .map(img => img.trim());
@@ -362,20 +586,15 @@ const PropertyCard = memo(({ property, onToggleFavorite, onScrollStart, onScroll
   const images = getValidImages(property.images);
 
   const bedroomsLabel = typeof property.bedrooms === 'string'
-    ? property.bedrooms
+    ? `${property.bedrooms} ${t('properties.bedrooms') || 'bedrooms'}`
     : property.bedrooms === 1
-      ? t('properties.bedroom')
-      : `${property.bedrooms} ${t('properties.bedrooms')}`;
+      ? `1 ${t('properties.bedroom') || 'bedroom'}`
+      : `${property.bedrooms} ${t('properties.bedrooms') || 'bedrooms'}`;
 
-  // Форматуємо payment plan (до 2 рядків, без агресивного обрізання)
+  // Форматуємо payment plan
   const getShortPaymentPlan = (paymentPlan: string | null | undefined): string | null => {
     if (!paymentPlan) return null;
-
-    // Видаляємо всі переноси рядків і зайві пробіли, але залишаємо текст для 2 рядків
-    const singleLine = paymentPlan.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-
-    // Не обрізаємо - дозволяємо React Native автоматично переносити на 2 рядки
-    return singleLine;
+    return paymentPlan.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
   };
 
   return (
@@ -394,13 +613,18 @@ const PropertyCard = memo(({ property, onToggleFavorite, onScrollStart, onScroll
         }}
         scrollEventThrottle={16}
         snapToInterval={CARD_WIDTH}
+        snapToAlignment="center"
+        disableIntervalMomentum={Platform.OS === 'ios'}
         decelerationRate="fast"
         style={styles.imageScroller}
       >
         {images.map((image, index) => (
           <Pressable
             key={`${property.id}-image-${index}`}
-            onPress={() => router.push(`/property/${property.id}`)}
+            onPress={() => {
+              triggerLightHaptic();
+              router.push(`/property/${property.id}`);
+            }}
             style={{ width: CARD_WIDTH, height: 280 }}
           >
             <Image
@@ -419,29 +643,20 @@ const PropertyCard = memo(({ property, onToggleFavorite, onScrollStart, onScroll
         pointerEvents="none"
       />
 
-      {/* Pagination Dots - завжди показуємо максимум 4 крапки, які рухаються при скролі */}
+      {/* Pagination Dots */}
       {images.length > 1 && (() => {
-        const maxDots = 4;
+        const maxDots = 5;
         const totalImages = images.length;
-
-        // Розраховуємо, які крапки показувати та яка активна
         let dotIndices: number[] = [];
         let activeDotIndex = 0;
 
         if (totalImages <= maxDots) {
-          // Якщо фото 4 або менше, показуємо всі
           dotIndices = Array.from({ length: totalImages }, (_, i) => i);
           activeDotIndex = currentImageIndex;
         } else {
-          // Якщо фото більше 4, крапки рухаються
-          // Розраховуємо відносні позиції (0%, 33%, 67%, 100%)
-          dotIndices = [0, Math.floor(totalImages / 3), Math.floor((totalImages * 2) / 3), totalImages - 1];
-
-          // Знаходимо найближчу крапку до поточного фото
+          dotIndices = [0, Math.floor(totalImages / 4), Math.floor(totalImages / 2), Math.floor((totalImages * 3) / 4), totalImages - 1];
           activeDotIndex = dotIndices.reduce((closest, pos, idx) => {
-            return Math.abs(pos - currentImageIndex) < Math.abs(dotIndices[closest] - currentImageIndex)
-              ? idx
-              : closest;
+            return Math.abs(pos - currentImageIndex) < Math.abs(dotIndices[closest] - currentImageIndex) ? idx : closest;
           }, 0);
         }
 
@@ -467,11 +682,37 @@ const PropertyCard = memo(({ property, onToggleFavorite, onScrollStart, onScroll
             {property.type === 'off-plan' ? 'Off-Plan' : 'Secondary'}
           </Text>
         </BlurView>
-        <BlurView intensity={20} tint="light" style={styles.tag}>
-          <Text style={[styles.tagText, { color: '#FFFFFF' }]}>
-            {bedroomsLabel}
-          </Text>
-        </BlurView>
+
+        {property.developerName && (
+          <BlurView intensity={20} tint="light" style={styles.tag}>
+            <Text style={[styles.tagText, { color: '#FFFFFF' }]}>
+              {property.developerName}
+            </Text>
+          </BlurView>
+        )}
+
+        {property.projectedRoi && (
+          <BlurView intensity={30} tint="dark" style={[styles.tag, { backgroundColor: 'rgba(52, 199, 89, 0.3)' }]}>
+            <Text style={[styles.tagText, { color: '#FFFFFF' }]}>
+              ROI: {property.projectedRoi}
+            </Text>
+          </BlurView>
+        )}
+
+        {property.commission && (
+          <BlurView intensity={30} tint="dark" style={[styles.tag, { backgroundColor: 'rgba(175, 82, 222, 0.3)' }]}>
+            <Text style={[styles.tagText, { color: '#FFFFFF' }]}>
+              Com: {property.commission}
+            </Text>
+          </BlurView>
+        )}
+
+        {property.isInvestorFeatured && (
+          <BlurView intensity={30} tint="dark" style={[styles.tag, { backgroundColor: 'rgba(255, 214, 10, 0.3)' }]}>
+            <Ionicons name="star" size={12} color="#FFFFFF" style={{ marginRight: 4 }} />
+            <Text style={[styles.tagText, { color: '#FFFFFF' }]}>Featured</Text>
+          </BlurView>
+        )}
       </View>
 
       <LinearGradient
@@ -481,7 +722,10 @@ const PropertyCard = memo(({ property, onToggleFavorite, onScrollStart, onScroll
       >
         <Pressable
           style={styles.propertyDetails}
-          onPress={() => router.push(`/property/${property.id}`)}
+          onPress={() => {
+            triggerLightHaptic();
+            router.push(`/property/${property.id}`);
+          }}
         >
           <Text style={styles.propertyTitle} numberOfLines={2}>
             {property.title}
@@ -531,12 +775,66 @@ const styles = StyleSheet.create({
   searchSection: {
     flexDirection: 'row',
     paddingHorizontal: 16,
-    paddingTop: 4,
+    paddingTop: 8,
     paddingBottom: 4,
     gap: 8,
     alignItems: 'center',
     zIndex: 10,
     width: '100%',
+    backgroundColor: '#FFFFFF',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  countText: {
+    fontSize: 13,
+    fontWeight: '400',
+  },
+  sortButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  sortText: {
+    fontSize: 13,
+    fontWeight: '400',
+  },
+  sortDropdown: {
+    position: 'absolute',
+    top: 38,
+    right: 0,
+    minWidth: 160,
+    borderRadius: 8,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    zIndex: 1000,
+  },
+  sortOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  sortOptionText: {
+    fontSize: 14,
+    fontWeight: '400',
   },
   searchBarWrapper: {
     flex: 1,
@@ -586,18 +884,20 @@ const styles = StyleSheet.create({
     top: 12,
     right: 12,
     flexDirection: 'row',
-    gap: 6,
+    gap: 3,
     zIndex: 2,
   },
   paginationDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
     backgroundColor: 'rgba(255,255,255,0.5)',
   },
   paginationDotActive: {
     backgroundColor: '#FFFFFF',
-    width: 18,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   gradient: {
     position: 'absolute',
@@ -613,8 +913,8 @@ const styles = StyleSheet.create({
   },
   tagsContainer: {
     position: 'absolute',
-    top: 16,
-    left: 16,
+    top: 10,
+    left: 12,
     right: 16,
     flexDirection: 'row',
     gap: 8,

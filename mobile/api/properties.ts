@@ -87,6 +87,9 @@ export interface OffPlanProperty {
   sizeFromSqft?: number;
   sizeToSqft?: number;
   paymentPlan: string | null;
+  projectedRoi?: string | null; // For investors
+  isInvestorFeatured?: boolean; // For investors
+  commission?: string | null; // For agents
   units?: PropertyUnit[];
   facilities: Facility[];
   plannedCompletionAt: string | null;
@@ -145,9 +148,10 @@ export interface PropertyFilters {
   sizeFrom?: number; // Alias for minSize
   sizeTo?: number; // Alias for maxSize
   search?: string;
-  developerId?: string | number;
+  developerId?: string | number | string[];
   cityId?: string | number;
   areaId?: string | number;
+  locationId?: string | string[];
 }
 
 export interface PropertiesPagination {
@@ -187,9 +191,24 @@ export interface PropertiesStats {
 export interface Location {
   id: string;
   name: string;
-  city: string;
-  cityId: string;
-  label: string;
+  city?: string;
+  cityId?: string;
+  label?: string;
+}
+
+export interface SearchResult {
+  id: string;
+  name: string;
+  location: string;
+  photo: string;
+  type: string;
+}
+
+export interface FilterOptions {
+  locations: Array<{ id: string; name: string }>;
+  developers: Array<{ id: string; name: string }>;
+  priceRange: { min: number; max: number };
+  bedrooms: string[];
 }
 
 export const propertiesApi = {
@@ -227,7 +246,7 @@ export const propertiesApi = {
 
     // 3. Bedrooms (0, 1, 2, 3, 4, 5+) - Send as array
     if (filters?.bedrooms) {
-      params.bedrooms = filters.bedrooms.split(',').map(b => b.trim().toLowerCase());
+      params.bedrooms = filters.bedrooms;
     }
 
     // 4. Location / Town (Dubai Marina, Business Bay) - Send as array
@@ -326,6 +345,78 @@ export const propertiesApi = {
   },
 
   /**
+   * Отримати список проектів (off-plan) з фільтрами та пагінацією
+   * Використовує новий оптимізований ендпоінт /projects
+   */
+  async getProjects(filters?: PropertyFilters & { isInvestor?: boolean, isAgent?: boolean }): Promise<PropertiesResponse> {
+    const params: Record<string, any> = {
+      page: filters?.page || 1,
+      limit: filters?.limit || 20,
+    };
+
+    // Filters for projects
+    if (filters?.search) params.search = filters.search.toLowerCase();
+    if (filters?.locationId) params.locationId = filters.locationId;
+    if (filters?.cityId) params.cityId = filters.cityId;
+    if (filters?.developerId) params.developerId = filters.developerId;
+
+    if (filters?.minPrice) params.minPrice = filters.minPrice;
+    if (filters?.maxPrice) params.maxPrice = filters.maxPrice;
+
+    if (filters?.bedrooms) {
+      params.bedrooms = filters.bedrooms;
+    }
+
+    // Persona specific flags
+    if (filters?.isInvestor) params.isInvestor = true;
+    if (filters?.isInvestor) params.isInvestor = true;
+    if (filters?.isAgent) params.isAgent = true;
+
+    // Sorting
+    if (filters?.sortBy) params.sortBy = filters.sortBy;
+    if (filters?.sortOrder) params.sortOrder = filters.sortOrder;
+
+    console.log('🌐 API Request /projects with params:', JSON.stringify(params, null, 2));
+
+    // Використовуємо повний URL як вказано в документації, щоб не залежати від baseURL
+    const PROJECTS_URL = 'https://admin.foryou-realestate.com/api/public/projects';
+
+    try {
+      const response = await publicApiClient.get<any>(PROJECTS_URL, { params });
+
+      const rawData = response.data?.data;
+      let projects: Property[] = [];
+      let pagination: PropertiesPagination = {
+        total: 0,
+        page: params.page,
+        limit: params.limit,
+        totalPages: 1,
+      };
+
+      if (rawData) {
+        if (Array.isArray(rawData)) {
+          projects = rawData;
+          pagination.total = projects.length;
+        } else if (rawData.data && Array.isArray(rawData.data)) {
+          projects = rawData.data;
+          pagination = rawData.pagination || { ...pagination, total: projects.length };
+        }
+      }
+
+      return {
+        success: true,
+        data: {
+          data: projects,
+          pagination: pagination
+        }
+      };
+    } catch (error) {
+      console.error('❌ Projects API Error:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Отримати property за ID
    */
   async getById(id: string): Promise<PropertyResponse> {
@@ -339,6 +430,36 @@ export const propertiesApi = {
   async getStats(): Promise<PropertiesStats> {
     const response = await publicApiClient.get<PropertiesStats>('/properties/stats');
     return response.data;
+  },
+
+  /**
+   * Autocomplete пошук проектів (вертає до 10 результатів)
+   */
+  async autocompleteSearch(query: string): Promise<SearchResult[]> {
+    try {
+      const PROJECTS_SEARCH_URL = 'https://admin.foryou-realestate.com/api/public/projects/search';
+      const response = await publicApiClient.get<{ success: boolean; data: SearchResult[] }>(PROJECTS_SEARCH_URL, {
+        params: { q: query }
+      });
+      return response.data?.success ? response.data.data : [];
+    } catch (error) {
+      console.warn('Autocomplete search failed:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Отримати метадані для фільтрів проектів одним запитом
+   */
+  async getFilterOptions(): Promise<FilterOptions | null> {
+    try {
+      const FILTER_OPTIONS_URL = 'https://admin.foryou-realestate.com/api/public/projects/filter-options';
+      const response = await publicApiClient.get<{ success: boolean; data: FilterOptions }>(FILTER_OPTIONS_URL);
+      return response.data?.success ? response.data.data : null;
+    } catch (error) {
+      console.warn('Failed to fetch filter options:', error);
+      return null;
+    }
   },
 };
 

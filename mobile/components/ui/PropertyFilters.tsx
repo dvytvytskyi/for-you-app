@@ -16,8 +16,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '@/utils/theme';
 import { useTranslation } from '@/utils/i18n';
-import { propertiesApi } from '@/api/properties';
-import { developersApi } from '@/api/developers';
+import { propertiesApi, FilterOptions } from '@/api/properties';
+import { triggerLightHaptic, triggerMediumHaptic } from '@/utils/haptic';
 import PriceRangeSlider from './PriceRangeSlider';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -86,20 +86,21 @@ export default function PropertyFiltersModal({
   const [locationSearch, setLocationSearch] = useState('');
   const [developerSearch, setDeveloperSearch] = useState('');
 
-  const { data: locationsData } = useQuery({
-    queryKey: ['locations', locationSearch],
-    queryFn: () => propertiesApi.getLocations(locationSearch),
+  // Новий єдиний запит для метаданих фільтрів
+  const { data: filterOptions } = useQuery({
+    queryKey: ['project-filter-options'],
+    queryFn: () => propertiesApi.getFilterOptions(),
     enabled: visible,
+    staleTime: 5 * 60 * 1000, // 5 хвилин кешу
   });
 
-  const { data: developersData } = useQuery({
-    queryKey: ['developers'],
-    queryFn: () => developersApi.getAll(),
-    enabled: visible,
-  });
+  const locations = filterOptions?.locations || [];
+  const developers = filterOptions?.developers || [];
+  const bedroomsOptions = filterOptions?.bedrooms || ['Studio', '1', '2', '3', '4', '5+'];
 
-  const locations = locationsData || [];
-  const developers = developersData?.data || [];
+  // Динамічний діапазон цін
+  const minPriceAllowed = filterOptions?.priceRange?.min || 100000;
+  const maxPriceAllowed = filterOptions?.priceRange?.max || 30000000;
 
   useEffect(() => {
     if (visible) {
@@ -124,6 +125,7 @@ export default function PropertyFiltersModal({
   };
 
   const handleReset = () => {
+    triggerLightHaptic();
     setFilters({
       listingType: 'all',
       minPrice: null,
@@ -135,11 +137,13 @@ export default function PropertyFiltersModal({
   };
 
   const handleApply = () => {
+    triggerLightHaptic();
     onApply(filters);
     closeModal();
   };
 
   const toggleBedroom = (bedroom: string) => {
+    triggerLightHaptic();
     const current = filters.bedrooms === 'any' ? [] : filters.bedrooms.split(',').filter(Boolean);
     let newBedrooms: string[];
 
@@ -156,6 +160,7 @@ export default function PropertyFiltersModal({
   };
 
   const toggleLocation = (locationId: string) => {
+    triggerLightHaptic();
     const current = filters.location === 'any' ? [] : filters.location.split('|').filter(Boolean);
     let newLocations: string[];
 
@@ -172,6 +177,7 @@ export default function PropertyFiltersModal({
   };
 
   const toggleDeveloper = (developerId: string) => {
+    triggerLightHaptic();
     const current = filters.developerIds === 'any' ? [] : filters.developerIds.split(',').filter(Boolean);
     let newDevelopers: string[];
 
@@ -254,23 +260,23 @@ export default function PropertyFiltersModal({
 
                 <View style={[styles.bedsGridContainer, { zIndex: 1 }]}>
                   <View style={styles.bedsRow}>
-                    {['studio', '1', '2'].map((option) => (
+                    {bedroomsOptions.slice(0, 3).map((option) => (
                       <BedOption
                         key={option}
-                        label={option === 'studio' ? 'Studio' : option}
-                        isSelected={filters.bedrooms !== 'any' && filters.bedrooms.split(',').includes(option)}
-                        onPress={() => toggleBedroom(option)}
+                        label={option}
+                        isSelected={filters.bedrooms !== 'any' && filters.bedrooms.split(',').includes(option.toLowerCase())}
+                        onPress={() => toggleBedroom(option.toLowerCase())}
                         theme={theme}
                       />
                     ))}
                   </View>
                   <View style={styles.bedsRow}>
-                    {['3', '4', '5+'].map((option) => (
+                    {bedroomsOptions.slice(3, 6).map((option) => (
                       <BedOption
                         key={option}
                         label={option}
-                        isSelected={filters.bedrooms !== 'any' && filters.bedrooms.split(',').includes(option)}
-                        onPress={() => toggleBedroom(option)}
+                        isSelected={filters.bedrooms !== 'any' && filters.bedrooms.split(',').includes(option.toLowerCase())}
+                        onPress={() => toggleBedroom(option.toLowerCase())}
                         theme={theme}
                       />
                     ))}
@@ -289,7 +295,7 @@ export default function PropertyFiltersModal({
                   searchPlaceholder="Search locations..."
                   searchValue={locationSearch}
                   onSearchChange={setLocationSearch}
-                  options={locations.map(l => ({ id: l.name, label: l.name }))}
+                  options={locations.map(l => ({ id: l.id, label: l.name }))}
                   selectedIds={filters.location === 'any' ? [] : filters.location.split('|')}
                   onToggle={toggleLocation}
                   theme={theme}
@@ -372,10 +378,15 @@ function DropdownMultiSelect({
 }: any) {
   const [expanded, setExpanded] = useState(false);
 
+  const handleToggleExpand = () => {
+    triggerLightHaptic();
+    setExpanded(!expanded);
+  };
+
   return (
     <View style={styles.dropdownContainer}>
       <Pressable
-        onPress={() => setExpanded(!expanded)}
+        onPress={handleToggleExpand}
         style={[
           styles.dropdownHeader,
           {

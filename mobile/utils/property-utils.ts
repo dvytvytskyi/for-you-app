@@ -14,16 +14,23 @@ export interface PropertyCardData {
   images: string[];
   handoverDate?: string;
   paymentPlan?: string | null;
+  projectedRoi?: string | null;
+  commission?: string | null;
+  isInvestorFeatured?: boolean;
   isFavorite?: boolean;
+  developerName?: string | null;
 }
 
 /**
  * Конвертує Property з API в формат для картки
  */
 export function convertPropertyToCard(property: Property, favoriteIds: string[] = []): PropertyCardData {
-  const isOffPlan = property.propertyType === 'off-plan';
-  const offPlanProperty = property as OffPlanProperty;
-  const secondaryProperty = property as SecondaryProperty;
+  // Якщо запит прийшов з ендпоінту /projects, об'єкти часто не мають поля propertyType,
+  // але мають priceFrom та bedroomsFrom. Вважаємо такий об'єкт Off-plan.
+  const isOffPlan = property.propertyType === 'off-plan' || ('priceFrom' in property) || ('bedroomsFrom' in property);
+
+  const offPlanProperty = property as any; // Використовуємо any для гнучкості з полями проекту
+  const secondaryProperty = property as any;
 
   // Визначаємо локацію
   let location: string;
@@ -132,6 +139,16 @@ export function convertPropertyToCard(property: Property, favoriteIds: string[] 
   // Check if favorites logic is implemented
   const isFavorite = favoriteIds.includes(String(property.id));
 
+  // Extract developer name for off-plan properties
+  let developerName: string | null = null;
+  if (isOffPlan && offPlanProperty.developer) {
+    if (typeof offPlanProperty.developer === 'object' && 'name' in offPlanProperty.developer) {
+      developerName = offPlanProperty.developer.name;
+    } else if (typeof offPlanProperty.developer === 'string') {
+      developerName = offPlanProperty.developer;
+    }
+  }
+
   return {
     id: String(property.id || ''),
     title,
@@ -139,11 +156,15 @@ export function convertPropertyToCard(property: Property, favoriteIds: string[] 
     price: typeof price === 'number' ? price : 0,
     priceAED: typeof priceAED === 'number' ? priceAED : undefined,
     bedrooms,
-    type: property.propertyType,
+    type: isOffPlan ? 'off-plan' : (property.propertyType || 'secondary'),
     images,
     handoverDate,
     paymentPlan: isOffPlan ? (typeof offPlanProperty.paymentPlan === 'string' ? offPlanProperty.paymentPlan : null) : null,
+    projectedRoi: isOffPlan ? offPlanProperty.projectedRoi : undefined,
+    commission: isOffPlan ? offPlanProperty.commission : undefined,
+    isInvestorFeatured: isOffPlan ? offPlanProperty.isInvestorFeatured : undefined,
     isFavorite,
+    developerName,
   };
 }
 
@@ -152,11 +173,13 @@ export function convertPropertyToCard(property: Property, favoriteIds: string[] 
  */
 export function formatPrice(price: number, currency: 'USD' | 'AED' = 'USD'): string {
   const symbol = currency === 'USD' ? '$' : 'AED';
-  if (price >= 1000000) {
-    return `${symbol}${(price / 1000000).toFixed(2)}M`;
+  const safePrice = price || 0;
+
+  if (safePrice >= 1000000) {
+    return `${symbol}${(safePrice / 1000000).toFixed(2)}M`;
   }
   // Replace commas with spaces, no decimals
-  return `${symbol}${price.toLocaleString('en-US', { maximumFractionDigits: 0 }).replace(/,/g, ' ')}`;
+  return `${symbol}${safePrice.toLocaleString('en-US', { maximumFractionDigits: 0 }).replace(/,/g, ' ')}`;
 }
 
 /**
@@ -189,23 +212,30 @@ export function convertFiltersToAPI(uiFilters: UIFilters): PropertyFilters {
     apiFilters.maxPrice = uiFilters.maxPrice;
   }
 
-  // 3. Bedrooms (Map 'studio' to '0' for backend)
+  // 3. Bedrooms (Keep raw values like 'studio', '1', '2' as backend expects)
   if (uiFilters.bedrooms && uiFilters.bedrooms !== 'any') {
-    const mappedBedrooms = uiFilters.bedrooms
-      .split(',')
-      .map(b => b.trim() === 'studio' ? '0' : b.trim())
-      .join(',');
-    apiFilters.bedrooms = mappedBedrooms;
+    apiFilters.bedrooms = uiFilters.bedrooms;
   }
 
-  // 5. Locations -> Mapped to 'location'
+  // 5. Locations -> Mapped to 'location' and 'locationId'
   if (uiFilters.location && uiFilters.location !== 'any') {
-    apiFilters.location = uiFilters.location.split('|').filter(Boolean);
+    const locations = uiFilters.location.split('|').filter(Boolean);
+    apiFilters.location = locations;
+
+    // Бекенд тепер підтримує мультиселект через кому
+    const allAreUUIDs = locations.every(loc => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(loc));
+    if (allAreUUIDs) {
+      apiFilters.locationId = locations.join(',');
+    } else {
+      apiFilters.locationId = locations[0];
+    }
   }
 
   // 6. Developers -> Mapped to 'developerId'
   if ((uiFilters as any).developerIds && (uiFilters as any).developerIds !== 'any') {
-    apiFilters.developerId = (uiFilters as any).developerIds;
+    const developers = (uiFilters as any).developerIds.split(',').filter(Boolean);
+    // Використовуємо всі вибрані ID через кому
+    apiFilters.developerId = developers.join(',');
   }
 
   console.log('🔄 Converted UI Filters to API:', apiFilters);

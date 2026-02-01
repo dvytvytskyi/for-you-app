@@ -97,11 +97,28 @@ export const leadsApi = {
   },
 
   async getById(id: string): Promise<LeadDetails> {
+    console.log(`[API] Fetching lead by ID: ${id}`);
     // Switch to the new live AmoCRM endpoint
-    const response = await apiClient.get<any>(`/amo-crm/leads/${id}`);
+    try {
+      const response = await apiClient.get<any>(`/amo-crm/leads/${id}`);
+      console.log(`[API] getById response status:`, response.status);
 
-    // The structure is { success: true, data: { lead, notes, events } }
-    return response.data?.data;
+      const data = response.data;
+      // Handle { success: true, data: { ... } } pattern
+      if (data?.success && data?.data) {
+        return data.data;
+      }
+
+      // Handle direct return { lead: ..., notes: ... }
+      if (data?.lead) {
+        return data;
+      }
+
+      return data?.data || data;
+    } catch (error: any) {
+      console.error(`[API] Error fetching lead ${id}:`, error);
+      throw error;
+    }
   },
 
   async create(data: any): Promise<Lead> {

@@ -16,8 +16,8 @@ export const publicApiClient = axios.create({
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
-    'X-API-Key': API_KEY,
-    'X-API-Secret': API_SECRET,
+    'X-Api-Key': API_KEY,
+    'X-Api-Secret': API_SECRET,
     'User-Agent': 'ForYou-Mobile-App/1.0.0',
   },
 });
@@ -25,16 +25,22 @@ export const publicApiClient = axios.create({
 // Request interceptor - log requests and add auth token if available
 publicApiClient.interceptors.request.use(
   async (config) => {
-    // Також намагаємося додати токен авторизації, щоб бекенд міг повернути userProgress
+    // Перевіряємо, чи це публічний запит (наприклад, до /api/public/)
+    // Якщо так, НЕ додаємо Authorization заголовок, щоб не було конфлікту з API Key
+    const isPublicPath = config.url?.includes('/api/public/');
+
+    // Також намагаємося додати токен авторизації для інших запитів
     const token = await SecureStore.getItemAsync('accessToken');
-    if (token) {
+    if (token && !isPublicPath) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    console.log('🔗 Public API Request:', `${config.baseURL}${config.url}`);
-    console.log('🔑 API Key present:', !!(config.headers['X-API-Key'] || config.headers['x-api-key']));
-    console.log('🔐 API Secret present:', !!(config.headers['X-API-Secret'] || config.headers['x-api-secret']));
-    console.log('🔑 Token present:', !!token);
+    console.log('🔗 Public API Request:', config.url?.startsWith('http') ? config.url : `${config.baseURL}${config.url}`);
+    console.log('📡 Headers snapshot:', {
+      'X-Api-Key': !!(config.headers['X-Api-Key'] || config.headers['x-api-key']),
+      'X-Api-Secret': !!(config.headers['X-Api-Secret'] || config.headers['x-api-secret']),
+      'Authorization': !!config.headers.Authorization,
+    });
     return config;
   },
   (error) => {

@@ -7,9 +7,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { leadsApi } from '@/api/leads';
+import { formatPrice } from '@/utils/property-utils';
 
 export default function LeadDetailScreen() {
   const { id } = useLocalSearchParams();
+  const idString = Array.isArray(id) ? id[0] : id;
   const { theme } = useTheme();
   const router = useRouter();
 
@@ -19,14 +21,15 @@ export default function LeadDetailScreen() {
 
   // Fetch real lead data from live AmoCRM endpoint
   const { data: leadData, isLoading, error } = useQuery({
-    queryKey: ['lead', id],
-    queryFn: () => leadsApi.getById(id as string),
-    enabled: !!id,
+    queryKey: ['lead', idString],
+    queryFn: () => leadsApi.getById(idString as string),
+    enabled: !!idString,
   });
 
   const currentLead = leadData?.lead;
-  const notes = leadData?.notes || [];
-  const events = leadData?.events || [];
+  // Ensure we always have arrays, even if API returns null/undefined or something else
+  const notes = Array.isArray(leadData?.notes) ? leadData.notes : [];
+  const events = Array.isArray(leadData?.events) ? leadData.events : [];
 
   const stage = useMemo(() => {
     return {
@@ -35,8 +38,6 @@ export default function LeadDetailScreen() {
       value: currentLead?.status
     };
   }, [currentLead?.status, currentLead?.statusName]);
-
-  // ... (formatPrice remains same)
 
   // Combined Timeline Data
   const timelineData = useMemo(() => {
@@ -52,7 +53,39 @@ export default function LeadDetailScreen() {
     return new Date(timestamp * 1000).toLocaleString();
   };
 
-  // ... (useEffect, callbacks remain same)
+  const openActivity = useCallback(() => {
+    setActivityVisible(true);
+    Animated.parallel([
+      Animated.timing(activityBackdropOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.spring(activityScrollAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        damping: 20,
+        stiffness: 90,
+      }),
+    ]).start();
+  }, [activityBackdropOpacity, activityScrollAnim]);
+
+  const closeActivity = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(activityBackdropOpacity, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.timing(activityScrollAnim, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setActivityVisible(false);
+    });
+  }, [activityBackdropOpacity, activityScrollAnim]);
 
   if (isLoading) {
     return (
@@ -73,7 +106,17 @@ export default function LeadDetailScreen() {
           <Text style={[styles.headerTitle, { color: theme.text }]}>Error</Text>
         </View>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <Text style={{ color: theme.textSecondary }}>Lead not found or error loading.</Text>
+          <Text style={{ color: theme.textSecondary, marginBottom: 8 }}>
+            Lead not found or error loading.
+          </Text>
+          <Text style={{ color: theme.textTertiary, fontSize: 12 }}>
+            ID: {id}
+          </Text>
+          {error && (
+            <Text style={{ color: theme.error, fontSize: 12, marginTop: 4 }}>
+              {(error as any)?.message || String(error)}
+            </Text>
+          )}
         </View>
       </SafeAreaView>
     );
@@ -300,7 +343,7 @@ export default function LeadDetailScreen() {
                         <Text style={{ fontSize: 14, color: theme.textSecondary, lineHeight: 20 }}>{item.text}</Text>
                       )}
                       {item.params?.text && (
-                        <Text style={{ fontSize: 14, color: theme.textSecondary, lineHeight: 20 }}>{item.params.text}</Text>
+                        <Text style={{ fontSize: 14, color: theme.textSecondary, lineHeight: 20 }}>{String(item.params.text)}</Text>
                       )}
                     </View>
                   </View>

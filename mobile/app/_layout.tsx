@@ -14,6 +14,8 @@ import { useLanguageStore } from '@/store/languageStore';
 import { useThemeStore } from '@/store/themeStore';
 import { useAuthStore } from '@/store/authStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
+import { useState } from 'react';
+import AnimatedSplashScreen from '@/components/AnimatedSplashScreen';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -48,6 +50,9 @@ export default function RootLayout() {
   const { isAuthenticated, loadUser } = useAuthStore();
   const syncFromServer = useFavoritesStore((state) => state.syncFromServer);
 
+  const [isAppReady, setIsAppReady] = useState(false);
+  const [showAnimation, setShowAnimation] = useState(true);
+
   useEffect(() => {
     // Initialize language and theme on app start
     initializeLanguage();
@@ -69,6 +74,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (fontsLoaded) {
+      // Hide native splash screen
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded]);
@@ -83,6 +89,15 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
+        {showAnimation && (
+          <AnimatedSplashScreen
+            isDark={isDark}
+            onAnimationComplete={() => {
+              setShowAnimation(false);
+              setIsAppReady(true);
+            }}
+          />
+        )}
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
           <Stack.Screen name="(auth)" />

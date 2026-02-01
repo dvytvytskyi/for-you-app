@@ -10,6 +10,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 const { width } = Dimensions.get('window');
 const TAB_BAR_WIDTH = width - 40;
 
+import { triggerLightHaptic } from '@/utils/haptic';
+
 // Sub-component for animated tab items
 const TabItem = ({ route, index, state, descriptors, navigation, tabWidth, isInvestor, isDark, theme }: any) => {
     const isFocused = state.index === index;
@@ -58,6 +60,8 @@ const TabItem = ({ route, index, state, descriptors, navigation, tabWidth, isInv
     if (!isVisible || name === 'liked') return null;
 
     const onPress = () => {
+        triggerLightHaptic();
+
         const event = navigation.emit({
             type: 'tabPress',
             target: route.key,

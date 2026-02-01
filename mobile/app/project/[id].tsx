@@ -20,6 +20,62 @@ import * as SecureStore from 'expo-secure-store';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+// Unit Photo with Skeleton Loader Component
+const UnitPhotoWithSkeleton = ({ imageUrl, onPress }: { imageUrl: string; onPress: () => void }) => {
+    const [isLoaded, setIsLoaded] = useState(false);
+    const pulseAnim = useRef(new Animated.Value(0.3)).current;
+
+    useEffect(() => {
+        const animation = Animated.loop(
+            Animated.sequence([
+                Animated.timing(pulseAnim, {
+                    toValue: 0.7,
+                    duration: 1000,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(pulseAnim, {
+                    toValue: 0.3,
+                    duration: 1000,
+                    useNativeDriver: true,
+                }),
+            ])
+        );
+        animation.start();
+        return () => animation.stop();
+    }, []);
+
+    return (
+        <Pressable onPress={onPress} style={{ position: 'relative' }}>
+            {/* Skeleton */}
+            {!isLoaded && (
+                <Animated.View style={{
+                    width: 120,
+                    height: 120,
+                    borderRadius: 12,
+                    backgroundColor: '#CCCCCC',
+                    opacity: pulseAnim,
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                }} />
+            )}
+
+            {/* Actual Image */}
+            <Image
+                source={{ uri: imageUrl }}
+                style={{
+                    width: 120,
+                    height: 120,
+                    borderRadius: 12,
+                    backgroundColor: 'rgba(255,255,255,0.05)',
+                    opacity: isLoaded ? 1 : 0,
+                }}
+                onLoad={() => setIsLoaded(true)}
+            />
+        </Pressable>
+    );
+};
+
 /**
  * ВЕРСІЯ 2.0 - ПОВНА ПРЕМІУМ СТОРІНКА
  */
@@ -400,8 +456,8 @@ export default function ProjectDetailScreen() {
     if (error || !project) return <View style={styles.center}><Text>Failed to load project</Text></View>;
 
     return (
-        <View style={[styles.container, { backgroundColor: '#020B19' }]}>
-            <StatusBar style="light" />
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
+            <StatusBar style={isDark ? "light" : "dark"} />
 
             <ScrollView
                 showsVerticalScrollIndicator={false}
@@ -429,7 +485,7 @@ export default function ProjectDetailScreen() {
 
                             if (validImages.length === 0) {
                                 return (
-                                    <View style={[styles.galleryImage, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#0B0D1E' }]}>
+                                    <View style={[styles.galleryImage, { justifyContent: 'center', alignItems: 'center', backgroundColor: theme.card }]}>
                                         <Image
                                             source={require('@/assets/images/new logo blue.png')}
                                             style={{ width: 120, height: 120, opacity: 0.5 }}
@@ -489,20 +545,20 @@ export default function ProjectDetailScreen() {
                         Portfolio Insights
                     </Text>
                     <View style={styles.analyticsGrid}>
-                        <View style={styles.analyticsCard}>
-                            <Text style={styles.analyticsLabel}>Total Invested</Text>
+                        <View style={[styles.analyticsCard, { backgroundColor: 'transparent' }]}>
+                            <Text style={[styles.analyticsLabel, { color: theme.textTertiary }]}>Total Invested</Text>
                             <Text style={[styles.analyticsValue, { color: theme.primary }]}>{project.financials.totalPurchase}</Text>
                         </View>
-                        <View style={styles.analyticsCard}>
-                            <Text style={styles.analyticsLabel}>Est. Market Value</Text>
+                        <View style={[styles.analyticsCard, { backgroundColor: 'transparent' }]}>
+                            <Text style={[styles.analyticsLabel, { color: theme.textTertiary }]}>Est. Market Value</Text>
                             <Text style={[styles.analyticsValue, { color: '#2ECC71' }]}>{project.financials.estSalePrice}</Text>
                         </View>
-                        <View style={styles.analyticsCard}>
-                            <Text style={styles.analyticsLabel}>Net Appreciation</Text>
+                        <View style={[styles.analyticsCard, { backgroundColor: 'transparent' }]}>
+                            <Text style={[styles.analyticsLabel, { color: theme.textTertiary }]}>Net Appreciation</Text>
                             <Text style={[styles.analyticsValue, { color: theme.text }]}>{project.financials.avgAppreciation}</Text>
                         </View>
-                        <View style={styles.analyticsCard}>
-                            <Text style={styles.analyticsLabel}>Annual Yield</Text>
+                        <View style={[styles.analyticsCard, { backgroundColor: 'transparent' }]}>
+                            <Text style={[styles.analyticsLabel, { color: theme.textTertiary }]}>Annual Yield</Text>
                             <Text style={[styles.analyticsValue, { color: theme.text }]}>{project.financials.annualCashFlow}</Text>
                         </View>
 
@@ -521,12 +577,11 @@ export default function ProjectDetailScreen() {
                                 </Text>
                                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
                                     {project.purchasedUnit.unitPhotos.map((img, index) => (
-                                        <Pressable key={index} onPress={() => { setSelectedImage(img); setIsImageModalVisible(true); }}>
-                                            <Image
-                                                source={{ uri: img }}
-                                                style={{ width: 120, height: 120, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)' }}
-                                            />
-                                        </Pressable>
+                                        <UnitPhotoWithSkeleton
+                                            key={index}
+                                            imageUrl={img}
+                                            onPress={() => { setSelectedImage(img); setIsImageModalVisible(true); }}
+                                        />
                                     ))}
                                 </ScrollView>
                             </View>
@@ -885,24 +940,24 @@ export default function ProjectDetailScreen() {
                             <View style={[styles.dragHandle, { backgroundColor: theme.textSecondary }]} />
                         </View>
 
-                        <View style={{ padding: 24, paddingTop: 16, alignItems: 'center' }}>
+                        <View style={{ padding: 20, paddingTop: 16, paddingBottom: 16, alignItems: 'center' }}>
                             <View style={{
-                                width: 56,
-                                height: 56,
-                                borderRadius: 28,
+                                width: 48,
+                                height: 48,
+                                borderRadius: 24,
                                 backgroundColor: theme.primary + '15',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                marginBottom: 16
+                                marginBottom: 12
                             }}>
-                                <Ionicons name="document-text" size={28} color={theme.primary} />
+                                <Ionicons name="document-text" size={24} color={theme.primary} />
                             </View>
 
-                            <Text style={{ fontSize: 20, fontWeight: '700', color: theme.text, marginBottom: 8, textAlign: 'center' }}>
+                            <Text style={{ fontSize: 16, fontWeight: '700', color: theme.text, marginBottom: 6, textAlign: 'center' }}>
                                 Property Analytics
                             </Text>
 
-                            <Text style={{ fontSize: 16, color: theme.textSecondary, marginBottom: 24, textAlign: 'center', lineHeight: 22, paddingHorizontal: 10 }}>
+                            <Text style={{ fontSize: 14, color: theme.textSecondary, marginBottom: 20, textAlign: 'center', lineHeight: 20, paddingHorizontal: 8 }}>
                                 {isGenerating ? 'We are creating your professional analytics report. This will take a few seconds.' : `Would you like to generate a professional PDF report for ${project?.name}?`}
                             </Text>
 
@@ -920,7 +975,7 @@ export default function ProjectDetailScreen() {
                                 {isGenerating ? (
                                     <ActivityIndicator color="white" style={{ marginRight: 10 }} />
                                 ) : (
-                                    <Ionicons name="sparkles" size={20} color="white" style={{ marginRight: 10 }} />
+                                    <Ionicons name="sparkles" size={18} color="white" style={{ marginRight: 8 }} />
                                 )}
                                 <Text style={styles.actionButtonText}>
                                     {isGenerating ? 'Generating...' : 'Generate PDF'}
@@ -928,11 +983,11 @@ export default function ProjectDetailScreen() {
                             </Pressable>
 
                             <Pressable
-                                style={{ marginTop: 16, padding: 8 }}
+                                style={{ marginTop: 12, padding: 8 }}
                                 onPress={() => !isGenerating && setPresentationModalVisible(false)}
                                 disabled={isGenerating}
                             >
-                                <Text style={{ color: theme.textTertiary, fontSize: 16, fontWeight: '500' }}>Maybe later</Text>
+                                <Text style={{ color: theme.textTertiary, fontSize: 14, fontWeight: '500' }}>Maybe later</Text>
                             </Pressable>
                         </View>
                     </Animated.View>
@@ -953,13 +1008,13 @@ const styles = StyleSheet.create({
     pagination: { position: 'absolute', bottom: 20, flexDirection: 'row', width: '100%', justifyContent: 'center', gap: 6 },
     dot: { height: 6, borderRadius: 3 },
     content: { paddingHorizontal: 16, paddingVertical: 24 },
-    projectName: { fontSize: 22, fontWeight: '700', marginBottom: 4 },
+    projectName: { fontSize: 17, fontWeight: '700', marginBottom: 4 },
     locationText: { fontSize: 13, fontWeight: '500', marginTop: 2 },
     divider: { height: 1, marginVertical: 24, opacity: 0.5 },
     sectionTitle: { fontSize: 20, fontWeight: '700', marginBottom: 16, letterSpacing: -0.3 },
     analyticsGrid: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, rowGap: 8 },
-    analyticsCard: { width: (SCREEN_WIDTH - 44) / 2, paddingVertical: 12, paddingHorizontal: 0, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.02)', borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' },
-    analyticsLabel: { fontSize: 12, color: '#FFFFFF', marginBottom: 4, fontWeight: '600', opacity: 0.7 },
+    analyticsCard: { width: (SCREEN_WIDTH - 44) / 2, paddingVertical: 12, paddingHorizontal: 0, borderRadius: 16 },
+    analyticsLabel: { fontSize: 12, marginBottom: 4, fontWeight: '600' },
     analyticsValue: { fontSize: 18, fontWeight: '700' },
     unitBox: { marginTop: 24, padding: 20, borderRadius: 24 },
     unitHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
@@ -1000,8 +1055,8 @@ const styles = StyleSheet.create({
     },
     actionButton: {
         width: '100%',
-        height: 60,
-        borderRadius: 30,
+        height: 48,
+        borderRadius: 24,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
@@ -1013,7 +1068,7 @@ const styles = StyleSheet.create({
     },
     actionButtonText: {
         color: '#FFFFFF',
-        fontSize: 17,
+        fontSize: 15,
         fontWeight: '700',
     },
 });

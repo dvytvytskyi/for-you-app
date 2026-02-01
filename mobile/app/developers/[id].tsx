@@ -12,6 +12,8 @@ import { propertiesApi } from '@/api/properties';
 import PropertyCard from '@/components/ui/PropertyCard';
 import { convertPropertyToCard, formatPrice } from '@/utils/property-utils';
 import { useFavoritesStore } from '@/store/favoritesStore';
+import { useAuthStore } from '@/store/authStore';
+import { UserRole } from '@/types/user';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -21,6 +23,10 @@ export default function DeveloperDetailScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams();
+  const { user } = useAuthStore();
+
+  const isInvestor = user?.role === UserRole.INVESTOR || (user?.role as string) === 'INVESTOR';
+  const isAgent = user?.role === UserRole.BROKER || (user?.role as string) === 'BROKER' || (user?.role as string) === 'AGENT';
 
   // Завантаження developer з API
   const { data: developerResponse, isLoading, error } = useQuery({
@@ -43,8 +49,13 @@ export default function DeveloperDetailScreen() {
     queryKey: ['developer-properties', id],
     queryFn: async () => {
       if (!id || typeof id !== 'string') return null;
-      console.log('🔄 Завантаження об\'єктів девелопера:', id);
-      return await propertiesApi.getAll({ developerId: id, limit: 50 });
+      console.log('🔄 Завантаження проектів девелопера:', id);
+      return await propertiesApi.getProjects({
+        developerId: id,
+        limit: 50,
+        isInvestor,
+        isAgent
+      });
     },
     enabled: !!id && typeof id === 'string',
   });

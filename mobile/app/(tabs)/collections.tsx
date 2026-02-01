@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Animated } from 'react-native';
 import { useCollectionsStore, Collection } from '@/store/collectionsStore';
 import { useAuthStore } from '@/store/authStore';
+import { triggerLightHaptic } from '@/utils/haptic';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_PADDING = 16;
@@ -113,6 +114,7 @@ export default function CollectionsScreen() {
 
 
   const handleCollectionPress = (collectionId: string) => {
+    triggerLightHaptic();
     router.push(`/collections/${collectionId}`);
   };
 
@@ -159,6 +161,7 @@ export default function CollectionsScreen() {
   };
 
   const handleCancelSearch = () => {
+    triggerLightHaptic();
     Keyboard.dismiss();
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setIsSearchFocused(false);
@@ -177,6 +180,7 @@ export default function CollectionsScreen() {
   }, []);
 
   const handleInfoPress = () => {
+    triggerLightHaptic();
     Alert.alert(
       'View Settings',
       'Manage default categories display.',
@@ -200,6 +204,7 @@ export default function CollectionsScreen() {
 
   /* Logic for handling Default Categories Click */
   const handleDefaultCategoryPress = async (label: string) => {
+    triggerLightHaptic();
     const existing = collectionsFromStore.find(
       (c) => c.title.trim().toLowerCase() === label.toLowerCase()
     );
@@ -223,6 +228,7 @@ export default function CollectionsScreen() {
   };
 
   const handleSave = async () => {
+    triggerLightHaptic();
     const trimmedName = collectionName.trim();
     const trimmedDescription = collectionDescription.trim();
 
@@ -281,7 +287,10 @@ export default function CollectionsScreen() {
           ) : (
             <Pressable
               style={[styles.addButton, { backgroundColor: theme.primary }]}
-              onPress={() => setModalVisible(true)}
+              onPress={() => {
+                triggerLightHaptic();
+                setModalVisible(true);
+              }}
             >
               <Ionicons name="add" size={24} color="#FFFFFF" />
             </Pressable>
@@ -402,7 +411,10 @@ export default function CollectionsScreen() {
                     styles.closeButton,
                     { opacity: pressed ? 0.6 : 1 }
                   ]}
-                  onPress={closeModal}
+                  onPress={() => {
+                    triggerLightHaptic();
+                    closeModal();
+                  }}
                 >
                   <Ionicons name="chevron-back" size={22} color={theme.primary} />
                 </Pressable>
@@ -466,7 +478,10 @@ export default function CollectionsScreen() {
                           opacity: pressed ? 0.7 : 1,
                         }
                       ]}
-                      onPress={closeModal}
+                      onPress={() => {
+                        triggerLightHaptic();
+                        closeModal();
+                      }}
                     >
                       <Text style={[styles.cancelButtonText, { color: theme.text }]}>Cancel</Text>
                     </Pressable>

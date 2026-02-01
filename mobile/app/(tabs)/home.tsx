@@ -15,9 +15,10 @@ import { newsApi } from '@/api/news';
 import { coursesApi } from '@/api/courses';
 import { developersApi } from '@/api/developers';
 import { leadsApi } from '@/api/leads';
-import { formatPrice } from '@/utils/property-utils';
+import { formatPrice, convertPropertyToCard, PropertyCardData } from '@/utils/property-utils';
 import { crmStatsApi } from '@/api/crm-stats';
 import { useCollectionsStore } from '@/store/collectionsStore';
+import { triggerLightHaptic, triggerMediumHaptic } from '@/utils/haptic';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_PADDING = 16;
@@ -35,6 +36,7 @@ export default function HomeScreen() {
   const user = useAuthStore((state) => state.user);
   // Явна перевірка ролі - переконуємося, що це точно строка 'INVESTOR'
   const isInvestor = (user?.role as string) === 'INVESTOR' || user?.role === UserRole.INVESTOR;
+  const isAgent = (user?.role as string) === 'BROKER' || user?.role === UserRole.BROKER || (user?.role as string) === 'AGENT';
 
   // Debug: log user role
   useEffect(() => {
@@ -84,18 +86,18 @@ export default function HomeScreen() {
   const { data: propertiesResponse, isLoading: propertiesLoading, error: propertiesError } = useQuery({
     queryKey: ['home-properties'],
     queryFn: async () => {
-      console.log('🔄 Завантаження properties для home...');
+      console.log('🔄 Завантаження properties (projects) для home...');
       try {
-        const response = await propertiesApi.getAll({
+        const response = await propertiesApi.getProjects({
           page: 1,
-          limit: 30, // Increased limit for vertical feed
-          sortBy: 'createdAt',
-          sortOrder: 'DESC',
+          limit: 30,
+          isInvestor,
+          isAgent
         });
-        console.log('✅ Properties завантажено:', response?.data?.data?.length || 0);
+        console.log('✅ Projects завантажено для home:', response?.data?.data?.length || 0);
         return response;
       } catch (error: any) {
-        console.error('❌ Помилка завантаження properties:', error);
+        console.error('❌ Помилка завантаження проектів для home:', error);
         throw error;
       }
     },
@@ -130,7 +132,7 @@ export default function HomeScreen() {
         // Отримуємо декілька пропертіс по ID
         // Оскільки у нас немає getByIds, можемо просто взяти з Featured або зробити пошук
         // Для спрощення, поки беремо результати які є або мокаємо
-        const response = await propertiesApi.getAll({ limit: 10 });
+        const response = await propertiesApi.getProjects({ limit: 10, isInvestor, isAgent });
         return response?.data?.data?.filter(p => favoriteIds.includes(p.id)) || [];
       } catch (error) {
         console.error('Error fetching liked for home:', error);
@@ -143,15 +145,19 @@ export default function HomeScreen() {
   const likedProperties = useMemo(() => {
     // Якщо у нас є дані з основного запиту, використовуємо їх також
     const allFetched = propertiesResponse?.data?.data || [];
-    const fromMain = allFetched.filter(p => favoriteIds.includes(p.id));
+    const fromMain = allFetched
+      .filter(p => favoriteIds.includes(p.id))
+      .map(p => convertPropertyToCard(p, favoriteIds));
 
     // Об'єднуємо
     const combined = [...fromMain];
     const combinedIds = new Set(combined.map(p => p.id));
 
-    (likedPropertiesResponse || []).forEach(p => {
-      if (!combinedIds.has(p.id)) combined.push(p);
-    });
+    (likedPropertiesResponse || [])
+      .map(p => convertPropertyToCard(p, favoriteIds))
+      .forEach(p => {
+        if (!combinedIds.has(p.id)) combined.push(p);
+      });
 
     return combined;
   }, [likedPropertiesResponse, propertiesResponse, favoriteIds]);
@@ -205,61 +211,21 @@ export default function HomeScreen() {
     }).start();
   }, [showSearchAction]);
 
-  const handleSearchFocus = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setIsSearchFocused(true);
-    navigation.setOptions({ tabBarStyle: { display: 'none' } });
 
-    // Robustly ensure keyboard opens by trying multiple times after layout settles
-    const attemptFocus = (delay: number) => {
-      setTimeout(() => {
-        if (searchInputRef.current && !searchInputRef.current.isFocused()) {
-          searchInputRef.current.focus();
-        }
-      }, delay);
-    };
 
-    // Try immediately after next tick, and after animation
-    attemptFocus(50);
-    attemptFocus(300);
-    attemptFocus(600);
-  };
-
-  const handleCancelSearch = () => {
-    Keyboard.dismiss();
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setIsSearchFocused(false);
-    setSearchQuery('');
-    navigation.setOptions({ tabBarStyle: { display: 'flex' } });
-  };
-
-  // Search results logic
-  // Search results logic
+  // Початкові результати для пошукового екрану (коли ще нічого не введено)
   const {
     data: searchResultsData,
-    isLoading: searchLoading,
+    isLoading: searchLoadingInfinite,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery({
-    queryKey: ['property-search', debouncedSearchQuery],
+    queryKey: ['property-search-initial'],
     initialPageParam: 1,
     queryFn: async ({ pageParam = 1 }) => {
-      const isInitial = !debouncedSearchQuery || debouncedSearchQuery.trim().length === 0;
-
-      const params: any = {
-        limit: isInitial ? 50 : 20,
-        page: pageParam as number,
-      };
-
-      if (!isInitial) {
-        params.search = debouncedSearchQuery.trim();
-      }
-
-      const response = await propertiesApi.getAll(params);
-
-      // Manual A-Z sort for initial load if backend doesn't support generic 'name_asc'
-      if (isInitial && response?.data?.data && pageParam === 1) {
+      const response = await propertiesApi.getProjects({ limit: 50, page: pageParam as number, isInvestor, isAgent });
+      if (response?.data?.data && pageParam === 1) {
         response.data.data.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
       }
       return response;
@@ -271,8 +237,8 @@ export default function HomeScreen() {
       }
       return undefined;
     },
-    enabled: true,
-    staleTime: 10000,
+    enabled: isSearchFocused,
+    staleTime: 10 * 60 * 1000,
   });
 
   const scrollX = useRef(new Animated.Value(0)).current;
@@ -281,18 +247,61 @@ export default function HomeScreen() {
     [{ nativeEvent: { contentOffset: { x: scrollX } } }],
     { useNativeDriver: false }
   );
+  // Нова логіка пошуку: Autocomplete для швидкості
+  const {
+    data: autocompleteData,
+    isLoading: isAutocompleteLoading
+  } = useQuery({
+    queryKey: ['property-autocomplete', debouncedSearchQuery],
+    queryFn: () => propertiesApi.autocompleteSearch(debouncedSearchQuery),
+    enabled: debouncedSearchQuery.trim().length >= 2,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const searchResults = useMemo(() => {
-    return searchResultsData?.pages.flatMap((page: any) => page?.data?.data || []) || [];
-  }, [searchResultsData]);
-
-  useEffect(() => {
-    if (searchQuery.trim().length >= 2) {
-      setShowSearchResults(true);
-    } else {
-      setShowSearchResults(false);
+    if (debouncedSearchQuery.trim().length >= 2) {
+      // Повертаємо результати з autocomplete
+      return (autocompleteData || []).map(item => ({
+        id: item.id,
+        title: item.name,
+        location: item.location,
+        images: [item.photo],
+        price: 0,
+        bedrooms: '...', // Autocomplete не повертає к-сть спалень
+        type: 'off-plan' as const,
+        isAutocomplete: true
+      } as any as PropertyCardData));
     }
-  }, [searchQuery]);
+
+    // Якщо пошуку немає, показуємо початкові результати (Featured)
+    const rawData = searchResultsData?.pages.flatMap((page: any) => page?.data?.data || []) || [];
+    return rawData.map(p => convertPropertyToCard(p, favoriteIds));
+  }, [debouncedSearchQuery, autocompleteData, searchResultsData, favoriteIds]);
+
+  const searchLoading = debouncedSearchQuery.trim().length >= 2 ? isAutocompleteLoading : searchLoadingInfinite;
+
+  const handleSearchFocus = () => {
+    triggerLightHaptic();
+    setIsSearchFocused(true);
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    navigation.setOptions({ tabBarStyle: { display: 'none' } });
+
+    // Robustly ensure keyboard opens
+    setTimeout(() => {
+      if (searchInputRef.current && !searchInputRef.current.isFocused()) {
+        searchInputRef.current.focus();
+      }
+    }, 100);
+  };
+
+  const handleCancelSearch = () => {
+    triggerLightHaptic();
+    Keyboard.dismiss();
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setIsSearchFocused(false);
+    setSearchQuery('');
+    navigation.setOptions({ tabBarStyle: { display: 'flex' } });
+  };
 
   // Collections count from store
   const collectionsFromStore = useCollectionsStore((state) => state.collections);
@@ -301,85 +310,11 @@ export default function HomeScreen() {
 
   // Конвертуємо properties для UI
   const properties = useMemo(() => {
-    console.log('📦 Конвертація properties:', {
-      hasResponse: !!propertiesResponse,
-      hasData: !!propertiesResponse?.data,
-      hasProperties: !!propertiesResponse?.data?.data,
-      propertiesCount: propertiesResponse?.data?.data?.length || 0,
-      error: propertiesError?.message,
-    });
-
     if (!propertiesResponse?.data?.data) {
-      console.warn('⚠️ Немає даних для properties');
       return [];
     }
-
-    const propertiesList = propertiesResponse.data.data.slice(0, 30);
-    console.log('✅ Конвертація:', propertiesList.length, 'properties');
-
-    return propertiesList.map((property) => {
-      const isOffPlan = property.propertyType === 'off-plan';
-      const offPlanProperty = property as OffPlanProperty;
-      const secondaryProperty = property as SecondaryProperty;
-
-      // Визначаємо локацію
-      let location: string;
-      if (isOffPlan) {
-        location = offPlanProperty.area || `${offPlanProperty.city.nameEn} `;
-      } else {
-        const area = typeof secondaryProperty.area === 'object'
-          ? secondaryProperty.area.nameEn
-          : secondaryProperty.area;
-        location = `${area}, ${secondaryProperty.city.nameEn} `;
-      }
-
-      // Визначаємо ціну (конвертуємо рядки в числа якщо потрібно)
-      let price: number;
-      if (isOffPlan) {
-        price = typeof offPlanProperty.priceFrom === 'string'
-          ? parseFloat(offPlanProperty.priceFrom) || 0
-          : (offPlanProperty.priceFrom as number);
-      } else {
-        price = typeof secondaryProperty.price === 'string'
-          ? parseFloat(secondaryProperty.price) || 0
-          : (secondaryProperty.price as number);
-      }
-      const priceFormatted = formatPrice(price, 'USD');
-
-      // Визначаємо зображення з валідацією URI (використовуємо ту саму логіку, що й в property-utils.ts)
-      const getValidImageUri = (photos: string[] | undefined): string => {
-        if (!photos || !Array.isArray(photos) || photos.length === 0) {
-          return 'https://via.placeholder.com/400x300?text=No+Image';
-        }
-
-        // Фільтруємо та валідуємо фото
-        const validPhotos = photos
-          .filter((photo): photo is string => typeof photo === 'string' && photo.trim().length > 0)
-          .filter(photo => {
-            // Перевіряємо, чи це валідний URI
-            return photo.startsWith('http://') || photo.startsWith('https://') || photo.startsWith('data:') || photo.startsWith('file://');
-          });
-
-        if (validPhotos.length === 0) {
-          return 'https://via.placeholder.com/400x300?text=No+Image';
-        }
-
-        return validPhotos[0];
-      };
-      const image = getValidImageUri(property.photos);
-
-      return {
-        id: property.id,
-        image,
-        title: property.name,
-        location,
-        price: priceFormatted,
-        handoverDate: property.propertyType === 'off-plan' && property.plannedCompletionAt
-          ? new Date(property.plannedCompletionAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
-          : '',
-      };
-    });
-  }, [propertiesResponse]);
+    return propertiesResponse.data.data.slice(0, 30).map(p => convertPropertyToCard(p, favoriteIds));
+  }, [propertiesResponse, favoriteIds]);
 
   // Завантаження новин з API
   const { data: newsResponse, isLoading: newsLoading } = useQuery({
@@ -639,12 +574,12 @@ export default function HomeScreen() {
     if (!item) return null;
 
     const handlePropertyPress = () => {
-      // Use router.push but ensure the path is clean
+      triggerLightHaptic();
       router.push(`/property/${item.id}`);
     };
 
     const handleFavoriteToggle = (id: string, e: any) => {
-      // e.stopPropagation() is usually handled inside the card, but good to have safety
+      triggerLightHaptic();
       toggleFavorite(id);
     };
 
@@ -840,29 +775,27 @@ export default function HomeScreen() {
                       }
                     ]}
                     onPress={() => {
+                      triggerLightHaptic();
                       router.push(`/property/${item.id}`);
                     }}
                   >
                     <View style={{ width: 56, height: 56, borderRadius: 8, backgroundColor: theme.border, overflow: 'hidden' }}>
-                      {item.photos?.[0] && (
-                        <Image source={{ uri: item.photos[0] }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                      {item.images?.[0] && (
+                        <Image source={{ uri: item.images[0] }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                       )}
                     </View>
-
                     <View style={{ flex: 1, justifyContent: 'center', gap: 2 }}>
                       <Text style={[{ color: theme.text, fontSize: 14, fontWeight: '600' }]} numberOfLines={2}>
-                        {item.name}
+                        {item.title}
                       </Text>
                       <Text style={[{ color: theme.textSecondary, fontSize: 13 }]} numberOfLines={1}>
-                        {item.propertyType === 'off-plan'
-                          ? (item.area || '')
-                          : (item.area && typeof item.area === 'object' ? item.area.nameEn : '')}
+                        {item.location}
                       </Text>
                     </View>
 
                     <View style={{ alignSelf: 'stretch', alignItems: 'flex-end', justifyContent: 'flex-end', paddingBottom: 2 }}>
                       <Text style={{ fontSize: 13, fontWeight: '600', color: theme.primary }}>
-                        {formatPrice(Number(item.propertyType === 'off-plan' ? item.priceFrom : item.price) || 0)}
+                        {(item as any).isAutocomplete ? 'See project' : formatPrice(item.price)}
                       </Text>
                     </View>
                   </Pressable>
@@ -892,7 +825,10 @@ export default function HomeScreen() {
                     title={t('home.newLeads')}
                     value={crmStatsLoading ? '...' : (crmStats?.totalLeads?.toString() || '0')}
                     buttonText={t('home.explore')}
-                    onPress={() => router.push('/(tabs)/crm')}
+                    onPress={() => {
+                      triggerLightHaptic();
+                      router.push('/(tabs)/crm');
+                    }}
                   />
 
                   <View style={styles.smallStatsRow}>
@@ -916,7 +852,10 @@ export default function HomeScreen() {
                   title={t('home.yourLikedProjects')}
                   description={t('home.collectionDescription')}
                   gradientImage={require('@/assets/images/gradient-1.png')}
-                  onPress={() => router.push('/liked')}
+                  onPress={() => {
+                    triggerLightHaptic();
+                    router.push('/liked');
+                  }}
                 />
               </View>
 
@@ -936,7 +875,10 @@ export default function HomeScreen() {
                 <QuickActionCard
                   icon={isInvestor ? "wallet" : "layers"}
                   label={isInvestor ? "Portfolio" : t('home.collections')}
-                  onPress={() => router.push(isInvestor ? '/portfolio' : '/collections')}
+                  onPress={() => {
+                    triggerLightHaptic();
+                    router.push(isInvestor ? '/portfolio' : '/collections');
+                  }}
                 />
               </View>
             </View>
@@ -944,7 +886,7 @@ export default function HomeScreen() {
             <View style={styles.propertySection}>
               <View style={{ paddingHorizontal: 16, marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Text style={[styles.sectionTitle, { color: theme.text }]}>Featured Properties</Text>
-                <Pressable onPress={() => router.push('/(tabs)/properties')}>
+                <Pressable onPress={() => { triggerLightHaptic(); router.push('/(tabs)/properties'); }}>
                   <Text style={[styles.viewAllText, { color: theme.primary }]}>{t('home.viewAll')}</Text>
                 </Pressable>
               </View>
@@ -990,7 +932,7 @@ export default function HomeScreen() {
             <View style={styles.developersSection}>
               <View style={styles.developersHeader}>
                 <Text style={[styles.sectionTitle, { color: theme.text }]}>Developers</Text>
-                <Pressable onPress={() => router.push('/developers')}>
+                <Pressable onPress={() => { triggerLightHaptic(); router.push('/developers'); }}>
                   <Text style={[styles.viewAllText, { color: theme.primary }]}>{t('home.viewAll')}</Text>
                 </Pressable>
               </View>
@@ -1175,7 +1117,7 @@ export default function HomeScreen() {
               <View style={styles.knowledgeBaseSection}>
                 <View style={styles.knowledgeBaseHeader}>
                   <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('home.knowledgeBase')}</Text>
-                  <Pressable onPress={() => router.push('/profile/knowledge-base')}>
+                  <Pressable onPress={() => { triggerLightHaptic(); router.push('/profile/knowledge-base'); }}>
                     <Text style={[styles.viewAllText, { color: theme.primary }]}>{t('home.viewAll')}</Text>
                   </Pressable>
                 </View>
@@ -1194,7 +1136,10 @@ export default function HomeScreen() {
                         styles.knowledgeModuleCard,
                         { backgroundColor: theme.card, borderColor: theme.border },
                       ]}
-                      onPress={() => router.push(`/profile/module/${module.id}`)}
+                      onPress={() => {
+                        triggerLightHaptic();
+                        router.push(`/profile/module/${module.id}`);
+                      }}
                     >
                       <View style={styles.knowledgeModuleContent}>
                         <Text style={[styles.knowledgeModuleTitle, { color: theme.text }]} numberOfLines={2}>

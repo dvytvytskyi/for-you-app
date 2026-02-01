@@ -26,6 +26,8 @@ import { convertPropertyToCard, formatPrice } from '@/utils/property-utils';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import { useCollectionsStore } from '@/store/collectionsStore';
+import { useAuthStore } from '@/store/authStore';
+import { UserRole } from '@/types/user';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -134,6 +136,10 @@ export default function AddPropertyScreen() {
     const { t } = useTranslation();
     const router = useRouter();
     const { collectionId } = useLocalSearchParams();
+    const { user } = useAuthStore();
+
+    const isInvestor = user?.role === UserRole.INVESTOR || (user?.role as string) === 'INVESTOR';
+    const isAgent = user?.role === UserRole.BROKER || (user?.role as string) === 'BROKER' || (user?.role as string) === 'AGENT';
 
     // Calculate a visible border color
     // In Dark Mode, theme.border is too dark, so we use a semi-transparent white
@@ -191,10 +197,14 @@ export default function AddPropertyScreen() {
                 apiFilters.priceFrom = filters.minPrice;
             }
             if (filters.maxPrice) {
-                apiFilters.priceTo = filters.maxPrice;
+                apiFilters.maxPrice = filters.maxPrice;
             }
 
-            const response = await propertiesApi.getAll(apiFilters);
+            const response = await propertiesApi.getProjects({
+                ...apiFilters,
+                isInvestor,
+                isAgent
+            });
             return response;
         },
         staleTime: 0,

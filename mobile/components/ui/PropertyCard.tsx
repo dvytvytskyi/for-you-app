@@ -1,20 +1,25 @@
-import { View, Text, StyleSheet, ImageBackground, Pressable } from 'react-native';
+import { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ImageBackground, Pressable, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
+import { formatPrice } from '@/utils/property-utils';
+
 interface PropertyCardProps {
   property?: {
-    image: string;
+    image?: string;
+    images?: string[];
     title: string;
     location: string;
-    price: string;
+    price: string | number;
     handoverDate: string;
   };
   // Fallback for old usage
   image?: string;
+  images?: string[];
   title?: string;
   location?: string;
-  price?: string;
+  price?: string | number;
   handoverDate?: string;
 
   onPress?: (id?: string) => void;
@@ -27,6 +32,7 @@ interface PropertyCardProps {
 export default function PropertyCard({
   property,
   image,
+  images,
   title,
   location,
   price,
@@ -37,12 +43,48 @@ export default function PropertyCard({
   onToggleFavorite,
   style
 }: PropertyCardProps) {
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const pulseAnim = useRef(new Animated.Value(0.3)).current;
+
   // Normalize data from either 'property' object or individual props
-  const displayImage = property?.image || image;
+  // Handle images array (take first) or single image string
+  const propImages = property?.images || images;
+  const firstImage = propImages && propImages.length > 0 ? propImages[0] : null;
+  const displayImage = property?.image || image || firstImage;
+
   const displayTitle = property?.title || title;
   const displayLocation = property?.location || location;
-  const displayPrice = property?.price || price;
+
+  // Format price if it's a number
+  const rawPrice = property?.price ?? price;
+  const displayPrice = typeof rawPrice === 'number'
+    ? formatPrice(rawPrice)
+    : rawPrice;
+
   const displayHandover = property?.handoverDate || handoverDate;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 0.6,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 0.3,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, []);
+
+  const handleImageLoad = () => {
+    setIsImageLoaded(true);
+  };
 
   return (
     <Pressable
@@ -61,27 +103,39 @@ export default function PropertyCard({
         }
         style={styles.image}
         imageStyle={{ borderRadius: 12 }}
+        onLoad={handleImageLoad}
       >
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.8)']}
-          style={styles.gradient}
-        >
-          <View style={styles.content}>
-            <Text style={styles.title} numberOfLines={1}>{displayTitle}</Text>
-            <Text style={styles.location} numberOfLines={1}>{displayLocation}</Text>
+        {isImageLoaded ? (
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.85)']}
+            style={styles.gradient}
+          >
+            <View style={styles.content}>
+              <Text style={styles.title} numberOfLines={1}>{displayTitle}</Text>
+              <Text style={styles.location} numberOfLines={1}>{displayLocation}</Text>
 
-            <View style={styles.footer}>
-              <Text style={styles.price}>{displayPrice}</Text>
-              <Text style={styles.date}>{displayHandover}</Text>
+              <View style={styles.footer}>
+                <Text style={styles.price}>{displayPrice}</Text>
+                <Text style={styles.date}>{displayHandover}</Text>
+              </View>
             </View>
+          </LinearGradient>
+        ) : (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: theme?.isDark ? '#1A1A1A' : '#F0F0F0', justifyContent: 'center', alignItems: 'center' }]}>
+            <Animated.View style={{ opacity: pulseAnim }}>
+              <Ionicons name="cube-outline" size={32} color={theme?.primary || '#102F73'} />
+            </Animated.View>
           </View>
-        </LinearGradient>
+        )}
 
         {/* Favorite Button (if provided) */}
         {isFavorite !== undefined && onToggleFavorite && (
           <Pressable
             style={styles.favButton}
-            onPress={(e) => onToggleFavorite('id-placeholder', e)}
+            onPress={(e) => {
+              e?.stopPropagation?.();
+              onToggleFavorite('id-placeholder', e);
+            }}
           >
             <Ionicons
               name={isFavorite ? "heart" : "heart-outline"}
@@ -101,7 +155,7 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#E1E1E1',
   },
   image: {
     width: '100%',
@@ -113,11 +167,11 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     paddingHorizontal: 12,
     paddingTop: 12,
-    paddingBottom: 0, // Pushed to absolute bottom
+    paddingBottom: 1,
   },
   content: {
     gap: 2,
-    paddingBottom: 0, // Minimal spacing from bottom edge
+    paddingBottom: 0,
   },
   title: {
     color: '#FFFFFF',
@@ -131,11 +185,10 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.9)',
     fontSize: 13,
     fontWeight: '400',
-    marginBottom: 2, // Reduced margin
+    marginBottom: 2,
   },
   footer: {
-    // marginTop removed to keeping tighter with location
-    gap: 2, // Stack price and date vertically
+    gap: 2,
   },
   price: {
     color: '#FFFFFF',
@@ -154,6 +207,21 @@ const styles = StyleSheet.create({
     height: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    // No background, just icon
+  },
+  skeleton: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#CCCCCC',
+  },
+  skeletonContent: {
+    position: 'absolute',
+    bottom: 12,
+    left: 12,
+    right: 12,
+  },
+  skeletonLine: {
+    height: 16,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 4,
   },
 });
+
