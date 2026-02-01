@@ -112,8 +112,13 @@ export default function ChatScreen() {
         const showSubscription = Keyboard.addListener(showEvent as any, (e: any) => {
             setIsKeyboardVisible(true);
             Animated.parallel([
+                Animated.timing(marginAnim, {
+                    toValue: e.endCoordinates.height + 10,
+                    duration: 250,
+                    useNativeDriver: false,
+                }),
                 Animated.spring(paddingAnim, {
-                    toValue: 4,
+                    toValue: 8,
                     useNativeDriver: false,
                     friction: 9,
                     tension: 50
@@ -130,6 +135,11 @@ export default function ChatScreen() {
         const hideSubscription = Keyboard.addListener(hideEvent as any, () => {
             setIsKeyboardVisible(false);
             Animated.parallel([
+                Animated.timing(marginAnim, {
+                    toValue: insets.bottom > 0 ? insets.bottom : 12,
+                    duration: 250,
+                    useNativeDriver: false,
+                }),
                 Animated.spring(paddingAnim, {
                     toValue: 12,
                     useNativeDriver: false,
@@ -162,12 +172,12 @@ export default function ChatScreen() {
 
         Animated.spring(sendAnim, {
             toValue: hasText ? 1 : 0,
-            useNativeDriver: false,
+            useNativeDriver: false, // width/padding animations supported
             friction: 8,
             tension: 40
         }).start();
 
-        // Pop effect ONLY when transitioning from empty to having text
+        // Pop effect ONLY when transitioning from empty to having text (typing)
         if (wasEmpty.current && hasText) {
             Animated.sequence([
                 Animated.spring(iconScaleAnim, {
@@ -484,7 +494,7 @@ export default function ChatScreen() {
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: isDark ? '#010312' : '#FFFFFF' }}>
+        <View style={{ flex: 1, backgroundColor: isDark ? '#010312' : '#f7f9fc' }}>
             {isDark && (
                 <LinearGradient
                     colors={['#010312', '#081333', '#010312']}
@@ -493,7 +503,7 @@ export default function ChatScreen() {
             )}
             <ImageBackground
                 source={chatBgPattern}
-                style={[StyleSheet.absoluteFill, { backgroundColor: 'transparent' }]}
+                style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? 'transparent' : '#f7f9fc' }]}
                 resizeMode="repeat"
                 imageStyle={{ opacity: isDark ? 0.4 : 0.05 }}
             >
@@ -502,7 +512,8 @@ export default function ChatScreen() {
                         barStyle={isDark ? 'light-content' : 'dark-content'}
                         backgroundColor={isDark ? 'transparent' : '#FFFFFF'}
                     />
-                    <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+                    <View style={{ flex: 1, backgroundColor: isDark ? 'transparent' : '#f7f9fc' }}>
+
                         <Header
                             title="Investor Chat"
                             subtitle={participantsCount ? `${participantsCount} participants` : 'Loading participants...'}
@@ -526,7 +537,7 @@ export default function ChatScreen() {
 
                         <KeyboardAvoidingView
                             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                            enabled={true}
+                            enabled={false}
                             style={styles.keyboardView}
                             keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
                         >
@@ -565,7 +576,7 @@ export default function ChatScreen() {
                                 keyboardDismissMode={Platform.OS === 'ios' ? "interactive" : "on-drag"}
                                 keyboardShouldPersistTaps="handled"
                                 ListHeaderComponent={
-                                    <Animated.View style={{ height: Animated.add(marginAnim, 60) }} />
+                                    <Animated.View style={{ height: Animated.add(marginAnim, 45) }} />
                                 }
                             />
 
@@ -596,8 +607,22 @@ export default function ChatScreen() {
                                     paddingHorizontal: paddingAnim
                                 }
                             ]}>
+
                                 <View style={styles.inputPodRow}>
-                                    <BlurView intensity={isDark ? 40 : 60} tint={isDark ? 'dark' : 'light'} style={styles.attachmentPod}>
+                                    <Animated.View style={[
+                                        styles.attachmentPod,
+                                        {
+                                            backgroundColor: isDark ? 'transparent' : '#FFFFFF',
+                                            overflow: 'hidden',
+                                            marginRight: focusAnim.interpolate({
+                                                inputRange: [0, 1],
+                                                outputRange: [6, 2]
+                                            })
+                                        }
+                                    ]}>
+                                        {isDark && (
+                                            <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+                                        )}
                                         <Pressable
                                             onPress={handlePickFile}
                                             onPressIn={handleAttachPressIn}
@@ -608,22 +633,46 @@ export default function ChatScreen() {
                                                 <Ionicons name="attach" size={26} color={isDark ? theme.textTertiary : '#102F73'} style={{ transform: [{ rotate: '45deg' }] }} />
                                             </Animated.View>
                                         </Pressable>
-                                    </BlurView>
+                                    </Animated.View>
 
                                     <Animated.View style={[
                                         styles.textInputContainer,
                                         {
-                                            paddingRight: sendAnim.interpolate({
+                                            backgroundColor: focusAnim.interpolate({
                                                 inputRange: [0, 1],
-                                                outputRange: [66, 52]
-                                            })
+                                                outputRange: ['rgba(255,255,255,0)', isDark ? 'rgba(0,0,0,0.5)' : '#FFFFFF']
+                                            }),
+                                            borderColor: focusAnim.interpolate({
+                                                inputRange: [0, 1],
+                                                outputRange: ['rgba(255,255,255,0)', 'rgba(255,255,255,0.1)'] // Add border when merged
+                                            }),
+                                            borderWidth: 1,
+                                            borderRadius: 21,
+                                            overflow: 'hidden',
                                         }
                                     ]}>
-                                        <BlurView intensity={isDark ? 40 : 60} tint={isDark ? 'dark' : 'light'} style={styles.textInputPod}>
+                                        <Animated.View style={[
+                                            styles.textInputPod,
+                                            {
+                                                backgroundColor: focusAnim.interpolate({
+                                                    inputRange: [0, 1],
+                                                    outputRange: [isDark ? 'rgba(0,0,0,0.5)' : '#FFFFFF', 'rgba(255,255,255,0)']
+                                                }),
+                                                borderColor: focusAnim.interpolate({
+                                                    inputRange: [0, 1],
+                                                    outputRange: ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0)']
+                                                }),
+                                                marginRight: 0, // Removed animated margin as parent padding (12px) is sufficient
+                                            }
+                                        ]}>
+                                            {isDark && (
+                                                <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+                                            )}
                                             <AnimatedTextInput
                                                 style={[
                                                     styles.input,
                                                     {
+                                                        flex: 1,
                                                         color: isDark ? theme.text : '#010312',
                                                         paddingRight: 10
                                                     }
@@ -634,81 +683,109 @@ export default function ChatScreen() {
                                                 onChangeText={setInputText}
                                                 multiline
                                                 maxLength={1000}
-                                            />
-                                        </BlurView>
-
-                                        <Animated.View
-                                            style={[
-                                                styles.inlineSendButton,
-                                                {
-                                                    zIndex: 100,
-                                                    opacity: 1,
-                                                    transform: [
-                                                        {
-                                                            scale: sendAnim.interpolate({
-                                                                inputRange: [0, 1],
-                                                                outputRange: [0.95, 1]
-                                                            })
-                                                        },
-                                                        {
-                                                            translateX: sendAnim.interpolate({
-                                                                inputRange: [0, 1],
-                                                                outputRange: [2, 0]
-                                                            })
-                                                        }
-                                                    ],
-                                                    backgroundColor: 'transparent',
-                                                    overflow: 'hidden',
-                                                }
-                                            ]}
-                                        >
-                                            <BlurView
-                                                intensity={isDark ? 40 : 60}
-                                                tint={isDark ? 'dark' : 'light'}
-                                                style={StyleSheet.absoluteFill}
+                                                onFocus={() => setIsKeyboardVisible(true)} // Ensure focus triggers animation state if not caught by keyboard listener
                                             />
 
                                             <Animated.View
                                                 style={[
-                                                    StyleSheet.absoluteFill,
+                                                    styles.inlineSendButton,
                                                     {
-                                                        backgroundColor: sendAnim.interpolate({
-                                                            inputRange: [0, 1],
-                                                            outputRange: [
-                                                                'transparent',
-                                                                isDark ? 'rgba(10, 132, 255, 1)' : 'rgba(16, 47, 115, 1)'
-                                                            ]
-                                                        })
+                                                        zIndex: 100,
+                                                        backgroundColor: 'transparent', // Handled by inner views
+                                                        width: 44, // Fixed width
+                                                        // When merged (focus=1), transform? No, let flex handle it.
+                                                        // Actually, removing transforms simplify it.
                                                     }
                                                 ]}
-                                            />
-
-                                            <Pressable
-                                                onPress={handleSendText}
-                                                style={styles.innerSendAction}
-                                                disabled={!inputText.trim() || isSending}
                                             >
-                                                {isSending ? (
-                                                    <ActivityIndicator size="small" color="#FFFFFF" />
-                                                ) : (
-                                                    <Animated.View style={{ transform: [{ scale: iconScaleAnim }] }}>
-                                                        <Ionicons
-                                                            name="send"
-                                                            size={16}
-                                                            color={inputText.trim() ? "#FFFFFF" : (isDark ? theme.textTertiary : '#999999')}
-                                                        />
-                                                    </Animated.View>
-                                                )}
-                                            </Pressable>
+                                                {/* Inactive Background (Grey) - Fades OUT when focused */}
+                                                <Animated.View
+                                                    style={[
+                                                        StyleSheet.absoluteFill,
+                                                        {
+                                                            backgroundColor: 'transparent',
+                                                            opacity: focusAnim.interpolate({
+                                                                inputRange: [0, 1],
+                                                                outputRange: [1, 0]
+                                                            }),
+                                                            borderRadius: 21,
+                                                        }
+                                                    ]}
+                                                />
+
+                                                {/* Active Background (Blue) - Fades IN when sends active */}
+                                                <Animated.View
+                                                    style={[
+                                                        StyleSheet.absoluteFill,
+                                                        {
+                                                            backgroundColor: isDark ? 'rgba(10, 132, 255, 1)' : '#102F73',
+                                                            opacity: sendAnim, // 0 -> 1 based on text
+                                                            borderRadius: 21,
+                                                        }
+                                                    ]}
+                                                />
+
+                                                <Pressable
+                                                    onPress={handleSendText}
+                                                    style={styles.innerSendAction}
+                                                    disabled={!inputText.trim() || isSending}
+                                                >
+                                                    {isSending ? (
+                                                        <ActivityIndicator size="small" color="#FFFFFF" />
+                                                    ) : (
+                                                        <Animated.View style={{ transform: [{ scale: iconScaleAnim }] }}>
+                                                            {/* Icon color interpolation */}
+                                                            {/* If sendAnim > 0.5 (Active), convert to White. Else Grey */}
+                                                            {/* Since color interpolation is tricky on Icons without Animated.Text/Image, we can swap View opacity? */}
+                                                            {/* Or just use a conditional re-render or setNativeProps? No. */}
+                                                            {/* Simplest: Two icons on top of each other. */}
+
+                                                            <View>
+                                                                {/* Gray Icon (Default) */}
+                                                                <Animated.View style={{ opacity: sendAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }}>
+                                                                    <Ionicons
+                                                                        name="send" // Use generic send
+                                                                        size={18}
+                                                                        color={isDark ? theme.textTertiary : '#8E8E93'}
+                                                                    />
+                                                                </Animated.View>
+                                                                {/* White Icon (Active) */}
+                                                                <Animated.View style={[StyleSheet.absoluteFill, { opacity: sendAnim }]}>
+                                                                    <Ionicons
+                                                                        name="send"
+                                                                        size={18}
+                                                                        color="#FFFFFF"
+                                                                    />
+                                                                </Animated.View>
+                                                            </View>
+
+                                                        </Animated.View>
+                                                    )}
+                                                </Pressable>
+                                            </Animated.View>
                                         </Animated.View>
                                     </Animated.View>
                                 </View>
                             </Animated.View>
                         </KeyboardAvoidingView>
+                        {!isDark && (
+                            <LinearGradient
+                                colors={['rgba(247, 249, 252, 0)', '#f7f9fc']}
+                                style={{
+                                    position: 'absolute',
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    height: 60,
+                                    zIndex: 15, // Below inputSection (20) but above list
+                                }}
+                                pointerEvents="none"
+                            />
+                        )}
                     </View>
                 </SafeAreaView>
             </ImageBackground>
-        </View>
+        </View >
     );
 }
 
@@ -893,7 +970,7 @@ const styles = StyleSheet.create({
     inputPodRow: {
         flexDirection: 'row',
         alignItems: 'flex-end',
-        gap: 6,
+        // Gap removed to handle via margin
     },
     attachmentPod: {
         width: 42,
@@ -919,17 +996,15 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.1)',
+        flexDirection: 'row',
+        alignItems: 'flex-end',
     },
     inlineSendButton: {
-        position: 'absolute',
-        right: 10,
-        bottom: 0,
         width: 48,
         height: 42,
         borderRadius: 21,
         justifyContent: 'center',
         alignItems: 'center',
-        elevation: 10,
     },
     innerSendAction: {
         width: '100%',
@@ -941,8 +1016,8 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 14,
         paddingLeft: 16,
-        paddingTop: Platform.OS === 'ios' ? 10 : 7,
-        paddingBottom: Platform.OS === 'ios' ? 8 : 7,
+        paddingTop: Platform.OS === 'ios' ? 6 : 7,
+        paddingBottom: Platform.OS === 'ios' ? 12 : 7,
         textAlignVertical: 'center',
     },
     iconButton: {

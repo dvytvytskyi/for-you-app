@@ -27,11 +27,21 @@ export default function ChatInfoScreen() {
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
             {/* Header: < Back */}
-            <View style={styles.header}>
-                <Pressable onPress={() => router.back()} style={styles.backButton}>
+            {/* Header */}
+            <View style={[styles.header, { borderBottomColor: theme.border }]}>
+                <Pressable
+                    style={({ pressed }) => [
+                        styles.backButton,
+                        { opacity: pressed ? 0.6 : 1 }
+                    ]}
+                    onPress={() => router.back()}
+                >
                     <Ionicons name="chevron-back" size={24} color={theme.primary} />
-                    <Text style={[styles.backText, { color: theme.primary }]}>Back</Text>
                 </Pressable>
+
+                <Text style={[styles.headerTitle, { color: theme.text }]}>Investor Chat</Text>
+
+                <View style={styles.backButton} />
             </View>
 
             <ScrollView contentContainerStyle={styles.content}>
@@ -52,12 +62,9 @@ export default function ChatInfoScreen() {
                     {participantsCount ? `${participantsCount} participants` : 'Loading...'}
                 </Text>
 
-                <View style={[styles.divider, { backgroundColor: theme.border }]} />
-
                 {/* Description */}
                 <View style={styles.descriptionSection}>
-                    <Text style={[styles.sectionTitle, { color: theme.text }]}>About this group</Text>
-                    <Text style={[styles.description, { color: theme.textSecondary }]}>
+                    <Text style={[styles.description, { color: theme.textSecondary, textAlign: 'center' }]}>
                         Welcome to the exclusive FOR YOU Real Estate Investor Community. This group is designed for premium clients to receive first-hand information about off-market deals, luxury developments, and market insights.
                         {"\n\n"}
                         Our team of brokers is here to provide you with personalized support and answer any questions regarding the featured properties. Group participants are verified investors interested in the UAE and international real estate markets.
@@ -73,20 +80,22 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
-        height: 56,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 8,
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderBottomWidth: 0.5,
     },
     backButton: {
-        flexDirection: 'row',
+        width: 32,
+        height: 32,
         alignItems: 'center',
-        padding: 8,
+        justifyContent: 'center',
     },
-    backText: {
-        fontSize: 15,
-        fontWeight: '400',
-        marginLeft: -4,
+    headerTitle: {
+        fontSize: 16,
+        fontWeight: '600',
     },
     content: {
         alignItems: 'center',
@@ -117,29 +126,29 @@ const styles = StyleSheet.create({
         height: 70,
     },
     title: {
-        fontSize: 24,
+        fontSize: 15,
         fontWeight: '700',
-        marginBottom: 8,
+        marginBottom: 4,
         textAlign: 'center',
     },
     subtitle: {
-        fontSize: 16,
+        fontSize: 13,
         fontWeight: '400',
-        marginBottom: 30,
+        marginBottom: 24,
         textAlign: 'center',
     },
     divider: {
         width: '100%',
         height: 1,
-        marginBottom: 30,
+        marginBottom: 24,
     },
     descriptionSection: {
         alignSelf: 'stretch',
     },
     sectionTitle: {
-        fontSize: 18,
+        fontSize: 15,
         fontWeight: '600',
-        marginBottom: 12,
+        marginBottom: 8,
     },
     description: {
         fontSize: 15,
